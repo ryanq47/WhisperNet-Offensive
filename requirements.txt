@@ -1,0 +1,5 @@
+flask
+flask-restplus
+flask-bcrypt
+Flask-JWT-Extended
+pyopenssl
