@@ -4,5 +4,13 @@
 			"path": "../.."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.formatting.provider": "black",
+		"editor.formatOnSave": true,
+		"python.sortImports.path": "isort",
+		"python.sortImports.args": [
+			"--profile",
+			"black"
+		],
+	}
 }

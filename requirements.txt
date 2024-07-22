@@ -3,3 +3,6 @@ flask-restplus
 flask-bcrypt
 Flask-JWT-Extended
 pyopenssl
+pathlib
+pyyaml
+munch
