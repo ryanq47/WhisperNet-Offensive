@@ -1,5 +1,3 @@
 server:
   name: "name"
 
-  logging:
-    color: True

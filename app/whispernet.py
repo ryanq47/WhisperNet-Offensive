@@ -2,6 +2,7 @@ from flask import Flask
 from modules.log import log
 from modules.config import Config
 import pathlib
+import time
 
 logger = log(__name__)
 
@@ -11,7 +12,6 @@ launch_path = pathlib.Path(__file__).parent
 config_file = launch_path / "config" / "config.yaml"
 Config().launch_path = launch_path
 Config().load_config(config_file=config_file)
-
 
 # Logic for other stuff here
 

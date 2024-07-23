@@ -1,3 +1,29 @@
+"""
+This module provides a custom logger class that extends the functionality of the standard logging.Logger.
+It supports colored console output and logs to a file.
+
+Classes:
+    - log: Custom logger with colored output and file logging.
+
+Functions:
+    - debug: Logs a message with level DEBUG.
+    - info: Logs a message with level INFO.
+    - warning: Logs a message with level WARNING.
+    - error: Logs a message with level ERROR.
+    - critical: Logs a message with level CRITICAL.
+
+Usage:
+    # init log class
+        log_class = log("testlogger", color=True)
+
+    # call log statements
+        log_class.info("HIIIIIII")
+        log_class.debug("HIIIIIII")
+        log_class.warning("HIIIIIII")
+        log_class.error("HIIIIIII")
+        log_class.critical("HIIIIIII")
+"""
+
 import logging
 
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -31,6 +57,7 @@ class log(logging.Logger):
         # setup file handler to ALSO write to the file
         file_handler = logging.FileHandler("whispernet.log", mode="w")
         # other options: RotatingFileHandler, rotates based on file size.
+        # This is a PITA with current setup, as it has issues when mutliple loggers are open/writing to same file & errors out.
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(logging.Formatter(log_format))
         self.addHandler(file_handler)

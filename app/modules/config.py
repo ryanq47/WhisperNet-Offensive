@@ -1,3 +1,40 @@
+"""
+This module handles the configuration management for the application.
+It uses a singleton pattern to ensure only one instance of the configuration is loaded, which also  eases access to config values,
+rather than passing a config object throughout everything.
+
+Classes:
+    - Config: Manages loading and accessing the configuration.
+
+Functions:
+    - load_config: Loads the configuration from a specified YAML file.
+
+Usage:
+    # First call
+
+        # load config file pathlib object
+        config_file = pathlib.Path.cwd() / "app" / "config" / "config.yaml"
+        # init Config singleton
+        config_obj = Config()
+        # load config file
+        config_obj.load_config(config_file=config_file)
+
+        # access values
+        print(config_obj.example)
+        # yaml key
+        print(config_obj.config.server.name)
+        # OR, because it's a singleton
+        print(Config().config.server.name)  # << preffered
+
+    # All other calls
+        import config
+
+        # access config values
+        Config().config.server.name
+
+
+"""
+
 import yaml
 import munch
 import pathlib
