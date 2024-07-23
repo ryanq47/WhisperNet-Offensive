@@ -13,6 +13,8 @@ Config().launch_path = launch_path
 Config().load_config(config_file=config_file)
 
 
+# Logic for other stuff here
+
 if __name__ == "__main__":
     try:
         whispernet = Flask(__name__)
