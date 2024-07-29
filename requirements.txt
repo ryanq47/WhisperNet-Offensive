@@ -6,3 +6,4 @@ pyopenssl
 pathlib
 pyyaml
 munch
+gunicorn
