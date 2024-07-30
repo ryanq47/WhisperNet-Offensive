@@ -1,6 +1,22 @@
 server:
   name: !!str "name"
 
+  tls:
+    # These do not need to exist, however, if they don't, start.sh will create them with the below options
+    tls_key_file: !!str ./server.key
+    tls_crt_file: !!str ./server.crt
+
+    # common name for tls cert
+    tls_cn: !!str "some.domain"
+    # org name for tls cert
+    tls_org: !!str "some-company"
+    # country code for tls cert, 2 letters
+    tls_country: !!str "AA"
+    # email for tls cert - if you feel like doxing yourself. 
+    tls_email: !!str "some@email.com"
+    # How long before the cert expires
+    tls_expire: !!int 180
+
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
 wsgi:
@@ -11,4 +27,3 @@ wsgi:
 
   # Number of workers for WSGI. 
   workers: !!int 4
-
