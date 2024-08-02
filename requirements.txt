@@ -1,6 +1,7 @@
 flask
 flask-restplus
 flask-bcrypt
+flask-sqlalchemy
 Flask-JWT-Extended
 pyopenssl
 pathlib

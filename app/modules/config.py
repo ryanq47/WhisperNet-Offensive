@@ -59,7 +59,7 @@ class Config:
 
         # non-config file values (env vars, etc)
         self.example = "somevalue"
-        self.launch_path = None
+        # self.launch_path = ""
 
     def load_config(self, config_file: str | pathlib.Path):
         """

@@ -1,0 +1,14 @@
+# Project Architecture
+
+
+`config` - DIR: Holds the config files
+
+
+`databases` - DIR: Holds databases
+
+
+`modules` - DIR: Holds modules, which are non-flexible, and non-routable components of the application
+
+
+`plugins` - DIR: Holds plugins, which are used to enhance the functionality of the app. Plugins *have* routable endpoints.
+    What is a plugin? A plugin is a single python file that adds extensibilty to the app

@@ -17,6 +17,10 @@ server:
     # How long before the cert expires
     tls_expire: !!int 180
 
+  authentication:
+    secret_key: !!str "somekey"
+    jwt_secret_key: !!str "somejwtkey"
+
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
 wsgi:
