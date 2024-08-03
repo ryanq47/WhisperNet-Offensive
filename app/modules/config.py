@@ -32,6 +32,11 @@ Usage:
         # access config values
         Config().config.server.name
 
+        
+Pre-Fork Considerations
+   - The Config singleton is used to load and store configuration data.
+   - It is initialized at startup and remains read-only during the application's runtime. 
+   - Since each worker process reads the same configuration file at startup, this ensures consistent configuration across workers.
 
 """
 
@@ -53,13 +58,16 @@ class Config:
 
     # def load_config(config_file: str | pathlib.Path):
     def __init__(self):
-        if not hasattr(self, "initialized"):
-            self.value = None
-            self.initialized = True
+        # Check if already initialized
+        if hasattr(self, "initialized") and self.initialized:
+            return  # Skip re-initialization
 
-        # non-config file values (env vars, etc)
-        self.example = "somevalue"
-        # self.launch_path = ""
+        print("Initializing Instance")
+
+        self.value = None
+        self.initialized = True
+
+        # Initialize any other values here
 
     def load_config(self, config_file: str | pathlib.Path):
         """

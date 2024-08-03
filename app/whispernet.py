@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from modules.log import log
 from modules.utils import plugin_loader
 from modules.config import Config
+from modules.instances import Instance
 import pathlib
 import time
 
@@ -32,11 +33,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///databases/users.db"
 app.config["SECRET_KEY"] = Config().config.server.authentication.secret_key
 app.config["JWT_SECRET_KEY"] = Config().config.server.authentication.secret_key
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-db = SQLAlchemy(app)
-# JWT Initialization
-jwt = JWTManager(app)
 
 
+# setting up instances
+logger.debug("Setting up instances")
+Instance().jwt_manager = JWTManager(app)  # jwt manager
+# db engine - might have some issues here w concurrency, not sure how this will be used yet.
+Instance().db_engine = SQLAlchemy(app)
+Instance().app = app
 plugin_loader()
 
 

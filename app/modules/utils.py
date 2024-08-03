@@ -2,6 +2,7 @@ from modules.config import Config
 from modules.log import log
 import importlib
 import sys
+import flask
 
 logger = log(__name__)
 
@@ -32,7 +33,7 @@ def plugin_loader():
                     if class_name and hasattr(module, class_name):
                         PluginClass = getattr(module, class_name)
 
-                        # Instantiate the class
+                        # Instantiate the class, with flask app instance
                         # Currently, we don't need to keep access to these classes.
                         PluginClass()
                     else:
