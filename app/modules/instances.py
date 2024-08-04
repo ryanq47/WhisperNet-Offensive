@@ -6,6 +6,7 @@ Prefork considerations
 """
 
 import flask
+from flask_sqlalchemy import SQLAlchemy
 from modules.log import log
 from typing import Optional
 
@@ -33,6 +34,7 @@ class Instance:
 
         # Initialize any other instances here
         self._app = None
+        self._db_engine = None
 
     @property
     def app(self):
@@ -47,4 +49,19 @@ class Instance:
         else:
             raise TypeError(
                 f"Expected an instance of 'flask.Flask', but got '{type(value).__name__}' instead."
+            )
+
+    @property
+    def db_engine(self):
+        if self._db_engine is None:
+            raise ValueError("The db_engine instance has not been set yet.")
+        return self._db_engine
+
+    @db_engine.setter
+    def db_engine(self, value):
+        if isinstance(value, SQLAlchemy):
+            self._db_engine = value
+        else:
+            raise TypeError(
+                f"Expected an instance of 'SQLAlchemy', but got '{type(value).__name__}' instead."
             )
