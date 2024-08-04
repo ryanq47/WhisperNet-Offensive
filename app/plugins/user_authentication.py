@@ -46,6 +46,8 @@ class UserManagement:
         #    return jsonify({"message": "Login Failed"}), 401
 
     def register(self):
+        db = Instance().db_engine
+
         try:
             data = request.get_json()
             username = data.get("username")
@@ -63,8 +65,6 @@ class UserManagement:
                 )
 
             # Now that we are sure the parameters are correct, move onto more heavy computation stuff
-            db = Instance().db_engine
-
             hashed_password = bcrypt.hashpw(
                 password,
                 bcrypt.gensalt(
@@ -107,3 +107,6 @@ class UserManagement:
             db.session.rollback()
             logger.error(e)
             raise e
+
+        finally:
+            db.session.close()
