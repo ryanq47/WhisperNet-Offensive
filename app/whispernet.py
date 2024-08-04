@@ -19,28 +19,44 @@ logger = log(__name__)
 # Gunicorn want's the app to be globally accessible.
 app = Flask(__name__)
 
-logger.debug("Setting up config singleton")  # setup config
-# Absolute path to this file being run, handy for running from any dir
+# Configuration Setup
+logger.debug("Setting up config singleton")
 launch_path = pathlib.Path(__file__).parent
 config_file = launch_path / "config" / "config.yaml"
-Config().launch_path = (
-    launch_path  # Note, this does not exist by default in the config class
-)
-Config().load_config(config_file=config_file)
 
-# User Setup
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///databases/users.db"
-app.config["SECRET_KEY"] = Config().config.server.authentication.secret_key
-app.config["JWT_SECRET_KEY"] = Config().config.server.authentication.secret_key
+# Config Singleton
+config = Config()
+config.launch_path = launch_path  # Adding custom launch_path attribute
+config.load_config(config_file=config_file)
+
+# Database Configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "sqlite:///users.db"  # puts in instance/users.db
+)
+app.config["SECRET_KEY"] = config.config.server.authentication.secret_key
+app.config["JWT_SECRET_KEY"] = config.config.server.authentication.secret_key
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 
-
-# setting up instances
+# Instance Setup
 logger.debug("Setting up instances")
-Instance().jwt_manager = JWTManager(app)  # jwt manager
-# db engine - might have some issues here w concurrency, not sure how this will be used yet.
-Instance().db_engine = SQLAlchemy(app)
+
+# JWT Manager Instance
+Instance().jwt_manager = JWTManager(app)
+
+# Database Instance
+db = SQLAlchemy(app)
+Instance().db_engine = db
+# Import models after the singleton setup
+from modules.models import *
+
+# Create database tables within the app context
+with app.app_context():
+    db.create_all()
+
+# Application Instance
 Instance().app = app
+
+# Plugin Loader
 plugin_loader()
 
 
@@ -56,5 +72,6 @@ def start():
 if __name__ == "__main__":
     try:
         app.run(debug=True)
+
     except Exception as e:
         print(e)

@@ -4,7 +4,7 @@
 `config` - DIR: Holds the config files
 
 
-`databases` - DIR: Holds databases
+`databases` - DIR: Holds databases, and database models
 
 
 `modules` - DIR: Holds modules, which are non-flexible, and non-routable components of the application
@@ -12,3 +12,15 @@
 
 `plugins` - DIR: Holds plugins, which are used to enhance the functionality of the app. Plugins *have* routable endpoints.
     What is a plugin? A plugin is a single python file that adds extensibilty to the app
+
+
+
+
+# IN DEV/Ideas
+
+Technologies to use & waht for: 
+Redis: Shared fast data, such as command queues. PERSISTENT DATA DOES NOT GO HERE. IT WILL GO AWAY ON CRASH. used for multiple gunicorn workers/concurrency reasons. 
+
+Neo4j: Data modeling of clients
+
+How are things like commands run, etc going to be stored? Loggers. Log files will tell what's been run, responses, etc. 
