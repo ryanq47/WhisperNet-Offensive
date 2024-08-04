@@ -20,6 +20,10 @@ server:
   authentication:
     secret_key: !!str "somekey"
     jwt_secret_key: !!str "somejwtkey"
+    bcrypt:
+      rounds: !!int 14 # Rounds for Bcrpyt encryption. Up to 24, however the higher you go, the higher the computation time. 
+
+
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference

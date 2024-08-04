@@ -9,7 +9,12 @@ class User(db.Model):
 
     __tablename__ = "user"
 
-    user_id = db.Column(db.String, primary_key=True)
+    username = db.Column(
+        db.String, unique=True, nullable=False
+    )  # non nullable, but unique
+    id = db.Column(
+        db.String, primary_key=True
+    )  # prim key, allows for changing actual username
     password = db.Column(db.String)
     authenticated = db.Column(db.Boolean, default=False)
 
@@ -19,7 +24,7 @@ class User(db.Model):
 
     def get_id(self):
         """Return the email address to satisfy Flask-Login's requirements."""
-        return self.email
+        return ""
 
     def is_authenticated(self):
         """Return True if the user is authenticated."""
