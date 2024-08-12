@@ -34,16 +34,37 @@ class UserManagement:
         data = request.get_json()
         username = data["username"]
         password = data["password"]
-        print("Received data:", username, password)
-        return "{}", 200
+        
+        #print("Received data:", username, password)
+        #return "{}", 200
 
         # user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username)
 
-        # if user and bcrypt.check_password_hash(user.password, password):
-        #    access_token = create_access_token(identity=user.id)
-        #    return jsonify({"message": "Login Success", "access_token": access_token})
-        # else:
-        #    return jsonify({"message": "Login Failed"}), 401
+        # user.password gets password feild from db, comps to password entered in request. 
+        # this *could* allow for a null password, if the bcrypt lib doesn't spit an error.  
+        if user and bcrypt.check_password_hash(user.password, password):
+            logger.info("%s:%s logging in", user.id, user.username)
+            access_token = create_access_token(identity=user.id)
+            # replave with better response
+            #return jsonify({"message": "Login Success", "access_token": access_token})
+        
+            # store/track that access token now
+
+            api_response(
+                message="Login Success",
+                data={"access_token":access_token}
+            )
+        
+        else:
+            #logger.info("%s:%s failed to log in", user.id, user.username)# will fail if no results, 
+            # need to use user inputted values 
+            logger.info("%s failed to log in", username)
+            
+            api_response(
+                message="Login Failure",
+                data={"access_token":""}
+            )
 
     def register(self):
         db = Instance().db_engine

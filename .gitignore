@@ -177,3 +177,6 @@ cython_debug/
 
 *snyk-linux*
 *.db
+
+yq
+yq_linux_amd64

@@ -5,7 +5,12 @@
 # Ensure yq is installed
 if ! command -v yq &> /dev/null
 then
-    echo "start.sh: yq could not be found, please install it first"
+    echo "start.sh: yq could not be found, installing locally at ~/.local/bin/yq"
+
+    wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O yq_linux_amd64 --show-progress
+    cp yq_linux_amd64 ~./local/bin/yq # install locally JUST for current user
+    rm yq_linux_amd64
+
     exit
 fi
 
