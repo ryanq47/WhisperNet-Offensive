@@ -71,7 +71,7 @@ def start():
 # Used when calling whispernet.py directly
 if __name__ == "__main__":
     try:
-        app.run(debug=True)
+        app.run(debug=True, port=8081)
 
     except Exception as e:
         print(e)

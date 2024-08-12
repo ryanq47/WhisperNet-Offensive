@@ -15,7 +15,7 @@ then
         echo "start.sh: Installing yq locally..."
 
         # Download yq
-        wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O yq_linux_amd64 --show-progress
+        wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O yq_linux_amd64 --show-progress -nv
         
         # Create directory if it does not exist
         mkdir -p ~/.local/bin
@@ -35,7 +35,7 @@ then
             echo "start.sh: Reminder: Ensure ~/.local/bin is in your PATH to use yq easily. \n If not, try 'sudo cp ~/.local/bin/yq /usr/bin/yq' to install for all users"
         fi
     else
-        echo "Installation aborted."
+        echo "Installation aborted. Cannot continue without yq."
         exit 1
     fi
 fi

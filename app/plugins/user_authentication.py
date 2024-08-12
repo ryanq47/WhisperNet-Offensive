@@ -4,10 +4,11 @@ from modules.instances import Instance
 from modules.config import Config
 from modules.models import User
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from modules.utils import api_response
 from modules.log import log
 from modules.utils import generate_unique_id
+from flask_jwt_extended import create_access_token
 
 logger = log(__name__)
 
@@ -34,37 +35,60 @@ class UserManagement:
         data = request.get_json()
         username = data["username"]
         password = data["password"]
-        
-        #print("Received data:", username, password)
-        #return "{}", 200
 
-        # user = User.query.filter_by(username=username).first()
-        user = User.query.filter_by(username=username)
+        try:
+            user = User.query.filter_by(username=username).one()
+        except NoResultFound:
+            logger.debug("No user found with the given username.")
+            user = None
 
-        # user.password gets password feild from db, comps to password entered in request. 
-        # this *could* allow for a null password, if the bcrypt lib doesn't spit an error.  
-        if user and bcrypt.check_password_hash(user.password, password):
-            logger.info("%s:%s logging in", user.id, user.username)
-            access_token = create_access_token(identity=user.id)
-            # replave with better response
-            #return jsonify({"message": "Login Success", "access_token": access_token})
-        
-            # store/track that access token now
+        try:
+            if user:
+                # checking things needed to actually log in
+                conditions = [
+                    user.username is not None and user.username != "",
+                    user.password is not None and user.password != "",
+                    user.id is not None
+                ]
 
-            api_response(
-                message="Login Success",
-                data={"access_token":access_token}
-            )
-        
-        else:
-            #logger.info("%s:%s failed to log in", user.id, user.username)# will fail if no results, 
-            # need to use user inputted values 
-            logger.info("%s failed to log in", username)
+                # user.password gets password feild from db, comps to password entered in request. 
+                # this *could* allow for a null password, if the bcrypt lib doesn't spit an error.  
+                # or the above check fails for whatever reason. Just something to keep in mind
+
+                # Note, checkpw takes password inputted, and password to check against.
+                if bcrypt.checkpw(password.encode(), user.password):
+                    logger.info(f"{user.id}:{user.username} logging in")
+                    access_token = create_access_token(identity=user.id)
+                    # replave with better response
+                    #return jsonify({"message": "Login Success", "access_token": access_token})
+                
+                    # store/track that access token now
+
+                    return api_response(
+                        message="Login Success",
+                        data={"access_token":access_token}
+                    )
+                
+                else:
+                    #logger.info("%s:%s failed to log in", user.id, user.username)# will fail if no results, 
+                    # need to use user inputted values 
+                    logger.info(f"{username} failed to log in")
+                    
+                    return api_response(
+                        message="Login Failure",
+                        data={"access_token":""}
+                    )
             
-            api_response(
-                message="Login Failure",
-                data={"access_token":""}
-            )
+            else:
+                logger.warning("User '%s' tried to log in, but was not found.", username)
+                return api_response(
+                    message="Login Failure",
+                    data={"access_token":""}
+                )
+
+        except Exception as e:
+            logger.error(e)
+            raise e
 
     def register(self):
         db = Instance().db_engine
