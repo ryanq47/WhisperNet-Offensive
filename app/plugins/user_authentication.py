@@ -2,7 +2,7 @@ from flask import request, jsonify
 import bcrypt
 from modules.instances import Instance
 from modules.config import Config
-from modules.models import User
+from modules.models import User, Token
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from modules.utils import api_response
@@ -32,6 +32,8 @@ class UserManagement:
         self.app.route(f"/register", methods=["POST"])(self.register)
 
     def login(self):
+        db = Instance().db_engine
+
         data = request.get_json()
         username = data["username"]
         password = data["password"]
@@ -48,7 +50,7 @@ class UserManagement:
                 conditions = [
                     user.username is not None and user.username != "",
                     user.password is not None and user.password != "",
-                    user.id is not None
+                    user.uuid is not None
                 ]
 
                 # user.password gets password feild from db, comps to password entered in request. 
@@ -57,12 +59,21 @@ class UserManagement:
 
                 # Note, checkpw takes password inputted, and password to check against.
                 if bcrypt.checkpw(password.encode(), user.password):
-                    logger.info(f"{user.id}:{user.username} logging in")
-                    access_token = create_access_token(identity=user.id)
+                    logger.info(f"{user.uuid}:{user.username} logging in")
+                    logger.debug(f"Creating token for user {user.uuid}")
+                    access_token = create_access_token(identity=user.uuid)
                     # replave with better response
                     #return jsonify({"message": "Login Success", "access_token": access_token})
                 
+                    logger.debug(f"Adding token to db for user {user.uuid}")
                     # store/track that access token now
+                    # I actually fucking love ORMs
+                    new_token = Token(
+                        uuid = user.uuid,
+                        token = access_token
+                    )
+                    db.session.add(new_token)
+                    db.session.commit()
 
                     return api_response(
                         message="Login Success",
@@ -119,7 +130,7 @@ class UserManagement:
             user_id = generate_unique_id()
 
             new_user = User(
-                id=user_id,
+                uuid=user_id,
                 username=username,
                 password=hashed_password,
                 authenticated=True,
