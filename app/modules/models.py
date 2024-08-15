@@ -34,35 +34,3 @@ class User(db.Model):
     def is_authenticated(self):
         """Return True if the user is authenticated."""
         return self.authenticated
-
-
-class Token(db.Model):
-    """
-        ORM mapping for tokens
-
-    """
-    __tablename__ = 'tokens'
-
-    # needs some work
-    '''ate
-        id: id of row, used for indexing/primary key
-        uuid: user id (UUID). NOT uniuqe, can have mult tokens per user. NOT nullable
-        token: Active token, unique. do not want repeat tokens. NOT nullable
-        created_at: timestamp
-        expires_at: timestamp when it expires
-        active: is active or not (up for debate)
-
-
-    Note, need to figure out if we are storing UUID as string or binary too
-    '''
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uuid = db.Column(db.String(36), index=True, nullable=False)  # Adjust length if using UUIDs
-    token = db.Column(db.String(256), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    expires_at = db.Column(db.DateTime)
-    active = db.Column(db.Boolean, default=True)
-
-    def is_active(self):
-        """Check if the token is still active and not expired."""
-        return self.active and (self.expires_at > datetime.datetime.utcnow())

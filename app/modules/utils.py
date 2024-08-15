@@ -11,7 +11,6 @@ import time
 
 logger = log(__name__)
 
-
 # Add warnings N stuff to this
 def plugin_loader():
     logger.info("Loading plugins")
@@ -35,16 +34,6 @@ def plugin_loader():
                     Info = getattr(module, "Info")
                     class_name = getattr(Info, "classname", None)
 
-                    if class_name and hasattr(module, class_name):
-                        PluginClass = getattr(module, class_name)
-
-                        # Instantiate the class, with flask app instance
-                        # Currently, we don't need to keep access to these classes.
-                        PluginClass()
-                    else:
-                        logger.warning(
-                            f"Plugin '{plugin_name}' skipped: 'classname' not found in Info or class '{class_name}' does not exist in module."
-                        )
                 else:
                     logger.warning(
                         f"Plugin '{plugin_name}' skipped: 'Info' class not found."
@@ -52,7 +41,6 @@ def plugin_loader():
 
             except Exception as e:
                 logger.warning(f"Plugin '{plugin_name}' failed to load: {e}")
-
 
 def api_response(
     message: str = "success",
