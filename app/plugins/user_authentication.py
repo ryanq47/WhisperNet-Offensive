@@ -79,7 +79,14 @@ def login():
         raise e
 
 @app.route('/register', methods=['POST'])
+@jwt_required()
 def register():
+    if not Config().config.server.endpoints.enable_registration:
+        return api_response(
+            message="Route is disabled", status=410
+        )  # other error
+
+    
     db = Instance().db_engine
 
     try:
@@ -145,7 +152,9 @@ def register():
     finally:
         db.session.close()
 
+'''
 @app.route('/protected', methods=['POST'])
 @jwt_required()
 def test():
     return jsonify({"protected":"true"})
+'''

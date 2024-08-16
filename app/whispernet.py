@@ -34,8 +34,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///users.db"  # puts in instance/users.db
 )
 app.config["SECRET_KEY"] = config.config.server.authentication.secret_key
-app.config["JWT_SECRET_KEY"] = config.config.server.authentication.secret_key
+app.config["JWT_SECRET_KEY"] = config.config.server.authentication.jwt.secret_key
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.config.server.authentication.jwt.expiration
 
 # Instance Setup
 logger.debug("Setting up instances")

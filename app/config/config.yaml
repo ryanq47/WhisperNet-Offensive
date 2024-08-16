@@ -18,12 +18,16 @@ server:
     tls_expire: !!int 180
 
   authentication:
-    secret_key: !!str "somekey"
-    jwt_secret_key: !!str "somejwtkey"
+    secret_key: !!str "somekey" # secret key for flask, make this strong
     bcrypt:
       rounds: !!int 14 # Rounds for Bcrpyt encryption. Up to 24, however the higher you go, the higher the computation time. 
 
+    jwt:
+      secret_key: !!str "somejwtkey" # JWT secret key, used to sign all the JWT tokens, MAKE THIS STRONG!
+      expiration: !!int  900 # Expiration time for tokens once generated, in seconds
 
+  endpoints: # endpoint settings
+    enable_registration: !!bool True # enable/disable registration endpoint
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference

@@ -8,17 +8,16 @@ optional 2fa if possible
 #### Todo:
 - [X] user register function
 - [X - Review] User Login function ( creates token )
-- [ ] User logout function (invalidates token)
-- [ ] Login tracking/Token tracking w DB
 
 
 - [ ] look into 2fa/auth options?
 
+- [ ] Default args for a user/pass if none specified in DB. 
+    currently, registration endpoint is open to anyone. Can change this by disabling registrion endpoint through settings, or doing a jwt_required. 
 
-#### DB Stuff
+## Notes:
 
-Primary Key:
- - `id`: A unique id (UUID) is created for each user when registering. This should not ever change. A User's ID is used as the identity portion of the JWT
+#### Tokens:
+- Expire after 15 minutes, by default. You can change this via the `config.server.authentication.token.expiration` key in the config.yaml
 
-Unique Keys:
- - `username`. Not primary key, so it can be changed if necessary (change not implemented). Authentication is checked against the username, not the ID.
+
