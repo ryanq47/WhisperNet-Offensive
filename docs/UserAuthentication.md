@@ -22,4 +22,4 @@ optional 2fa if possible
 
 
 #### Default User:
-If the user table is empty, a new user will be created with the credentials in the .env file. 
+If the user table is empty, a new user will be created with the credentials in the .env file. Use the env.example to create a `.env` file.
