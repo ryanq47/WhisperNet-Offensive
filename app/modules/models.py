@@ -21,7 +21,6 @@ class User(db.Model):
     )  # prim key, allows for changing actual username
     #id = db.Column(db.Integer, autoincrement=True)
     password = db.Column(db.String)
-    authenticated = db.Column(db.Boolean, default=False)
 
     def is_active(self):
         """True, as all users are active."""

@@ -43,6 +43,8 @@ Pre-Fork Considerations
 import yaml
 import munch
 import pathlib
+from dotenv import load_dotenv
+import os
 from modules.log import log
 
 logger = log(__name__)
@@ -85,6 +87,31 @@ class Config:
         # yaml loader
         with open(config_file, "r") as f:
             self.config = munch.munchify(yaml.safe_load(f))
+
+    def load_env(self, env_file: str | pathlib.Path):
+        """
+        Load environment variables from a .env file.
+
+        env_file: path to .env file, absolute, or relative.  str or pathlib obj
+        """
+        if type(env_file) == pathlib.Path:
+            # if a pathlib is passed in, convert path to str
+            env_file = str(env_file)
+
+        logger.info(f"Loading environment variables from '{env_file}'")
+        load_dotenv(env_file)
+
+        # Create a dictionary of environment variables
+        env_vars = {
+            'jwt_secret_key': os.getenv('JWT_SECRET_KEY'),
+            'secret_key': os.getenv('SECRET_KEY'),
+            'default_username': os.getenv('DEFAULT_USERNAME'),
+            'default_password': os.getenv('DEFAULT_PASSWORD'),
+        }
+
+        # Store the environment variables in a munch object
+        self.env = munch.munchify(env_vars)
+        logger.info("Environment variables loaded")
 
 
 if __name__ == "__main__":

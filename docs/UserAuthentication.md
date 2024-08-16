@@ -21,3 +21,5 @@ optional 2fa if possible
 - Expire after 15 minutes, by default. You can change this via the `config.server.authentication.token.expiration` key in the config.yaml
 
 
+#### Default User:
+If the user table is empty, a new user will be created with the credentials in the .env file. 

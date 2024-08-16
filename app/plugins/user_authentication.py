@@ -118,7 +118,6 @@ def register():
             uuid=user_id,
             username=username,
             password=hashed_password,
-            authenticated=True,
         )
         db.session.add(new_user)
         db.session.commit()

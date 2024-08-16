@@ -8,12 +8,12 @@ from flask_jwt_extended import (
 )
 from flask_sqlalchemy import SQLAlchemy
 from modules.log import log
-from modules.utils import plugin_loader
+from modules.utils import plugin_loader, generate_unique_id
 from modules.config import Config
 from modules.instances import Instance
 import pathlib
 import time
-
+import bcrypt
 
 logger = log(__name__)
 # Gunicorn want's the app to be globally accessible.
@@ -23,20 +23,21 @@ app = Flask(__name__)
 logger.debug("Setting up config singleton")
 launch_path = pathlib.Path(__file__).parent
 config_file = launch_path / "config" / "config.yaml"
+env_file = launch_path / ".env"
 
 # Config Singleton
-config = Config()
-config.launch_path = launch_path  # Adding custom launch_path attribute
-config.load_config(config_file=config_file)
+Config().launch_path = launch_path  # Adding custom launch_path attribute
+Config().load_config(config_file=config_file)
+Config().load_env(env_file=env_file)
 
 # Database Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///users.db"  # puts in instance/users.db
 )
-app.config["SECRET_KEY"] = config.config.server.authentication.secret_key
-app.config["JWT_SECRET_KEY"] = config.config.server.authentication.jwt.secret_key
+app.config["SECRET_KEY"] = Config().env.secret_key
+app.config["JWT_SECRET_KEY"] = Config().env.jwt_secret_key
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.config.server.authentication.jwt.expiration
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = Config().config.server.authentication.jwt.expiration
 
 # Instance Setup
 logger.debug("Setting up instances")
@@ -61,6 +62,33 @@ Instance().app = app
 plugin_loader()
 
 
+# add default user if DB is empty
+# kinda fugly but it works
+with app.app_context():
+    # Query to check if any users exist
+    user_count = User.query.count()
+
+    if user_count == 0:
+        logger.warning("No users found, creating default user with creds from .env")
+        logger.debug("Hashing password for default user...")
+        hashed_password = bcrypt.hashpw(
+            Config().env.default_password.encode(),
+            bcrypt.gensalt(
+                rounds=Config().config.server.authentication.bcrypt.rounds
+            ),
+        )
+        default_user = User(
+            username=Config().env.default_username,
+            password=hashed_password,
+            uuid=generate_unique_id()
+        )
+        # Add and commit the new user to the database
+        db.session.add(default_user)
+        db.session.commit()
+        logger.info(f"Created default user: {Config().env.default_username}")
+    else:
+        logger.info("User DB is not empty, not adding default user.")
+
 # Used when calling from Gunicorn
 def start():
     try:
@@ -76,3 +104,5 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(e)
+
+

@@ -84,6 +84,9 @@ else
     generate_ssl
 fi
 
+echo "Changing perms on .env file to 400..."
+chmod 400 .env
+
 echo "start.sh: Starting Gunicorn & Whispernet on $bind_ip:$bind_port"
 gunicorn -w $workers 'whispernet:app' --certfile=$tls_crt --keyfile=$tls_key -b $bind_ip:$bind_port 
 

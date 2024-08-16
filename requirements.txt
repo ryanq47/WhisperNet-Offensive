@@ -8,3 +8,4 @@ pathlib
 pyyaml
 munch
 gunicorn
+python-dotenv
