@@ -92,22 +92,44 @@ def test_user_already_exists(jwt):
 
 
 if __name__ == "__main__":
-    jwt = test_login_user()
-    test_login_user_invalid_credentials()
-    test_register_user(jwt)
-    # test_registration_disabled(jwt)
-    test_user_already_exists(jwt)
+    results = {}
 
-    # Adding a summary table for all test cases (Optional)
+    try:
+        jwt = test_login_user()
+        results["Login User"] = "✅ Success"
+    except Exception as e:
+        console.print(f"[red]Login User Failed: {e}[/red]")
+        results["Login User"] = "❌ Failed"
+
+    try:
+        test_login_user_invalid_credentials()
+        results["Login Invalid Credentials"] = "✅ Success"
+    except Exception as e:
+        console.print(f"[red]Login Invalid Credentials Failed: {e}[/red]")
+        results["Login Invalid Credentials"] = "❌ Failed"
+
+    if jwt:
+        try:
+            test_register_user(jwt)
+            results["Register User"] = "✅ Success"
+        except Exception as e:
+            console.print(f"[red]Register User Failed: {e}[/red]")
+            results["Register User"] = "❌ Failed"
+
+        try:
+            test_user_already_exists(jwt)
+            results["User Already Exists"] = "✅ Success"
+        except Exception as e:
+            console.print(f"[red]User Already Exists Failed: {e}[/red]")
+            results["User Already Exists"] = "❌ Failed"
+
+    # Adding a summary table for all test cases
     table = Table(title="Test Summary")
 
     table.add_column("Test Case", justify="left", style="cyan", no_wrap=True)
     table.add_column("Status", justify="center", style="magenta")
 
-    table.add_row("Register User", "✅ Success")
-    table.add_row("Login User", "✅ Success")
-    table.add_row("Login Invalid Credentials", "✅ Success")
-    table.add_row("Registration Disabled", "✅ Success")
-    table.add_row("User Already Exists", "✅ Success")
+    for test_case, status in results.items():
+        table.add_row(test_case, status)
 
     console.print(table)
