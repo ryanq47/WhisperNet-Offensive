@@ -16,15 +16,21 @@ import time
 import bcrypt
 
 logger = log(__name__)
-# Gunicorn want's the app to be globally accessible.
-app = Flask(__name__)
 
-# Configuration Setup
+# Configuration Setup - GOES FIRST
 logger.debug("Setting up config singleton")
 launch_path = pathlib.Path(__file__).parent
 config_file = launch_path / "config" / "config.yaml"
 env_file = launch_path / ".env"
 
+# make sure instance path is ALWAYS under the app folder
+instance_path = launch_path / "instance"
+
+# Setup app variable, second.
+# Gunicorn want's the app to be globally accessible.
+app = Flask(__name__, instance_path=instance_path)
+
+# the rest of the crap
 # Config Singleton
 Config().launch_path = launch_path  # Adding custom launch_path attribute
 Config().load_config(config_file=config_file)

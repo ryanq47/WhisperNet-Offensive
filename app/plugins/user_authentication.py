@@ -69,11 +69,16 @@ def login():
                 # need to use user inputted values
                 logger.info(f"{username} failed to log in")
 
-                return api_response(message="Login Failure", data={"access_token": ""})
+                return api_response(
+                    message="Login Failure", data={"access_token": ""}, status=401
+                )
 
         else:
+            # keeping this a 401 as its still technically invalid creds
             logger.warning("User '%s' tried to log in, but was not found.", username)
-            return api_response(message="Login Failure", data={"access_token": ""})
+            return api_response(
+                message="Login Failure", data={"access_token": ""}, status=401
+            )
 
     except Exception as e:
         logger.error(e)
