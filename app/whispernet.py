@@ -37,7 +37,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 app.config["SECRET_KEY"] = Config().env.secret_key
 app.config["JWT_SECRET_KEY"] = Config().env.jwt_secret_key
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = Config().config.server.authentication.jwt.expiration
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = (
+    Config().config.server.authentication.jwt.expiration
+)
 
 # Instance Setup
 logger.debug("Setting up instances")
@@ -73,14 +75,12 @@ with app.app_context():
         logger.debug("Hashing password for default user...")
         hashed_password = bcrypt.hashpw(
             Config().env.default_password.encode(),
-            bcrypt.gensalt(
-                rounds=Config().config.server.authentication.bcrypt.rounds
-            ),
+            bcrypt.gensalt(rounds=Config().config.server.authentication.bcrypt.rounds),
         )
         default_user = User(
             username=Config().env.default_username,
             password=hashed_password,
-            uuid=generate_unique_id()
+            uuid=generate_unique_id(),
         )
         # Add and commit the new user to the database
         db.session.add(default_user)
@@ -88,6 +88,7 @@ with app.app_context():
         logger.info(f"Created default user: {Config().env.default_username}")
     else:
         logger.info("User DB is not empty, not adding default user.")
+
 
 # Used when calling from Gunicorn
 def start():
@@ -104,5 +105,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(e)
-
-

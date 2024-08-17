@@ -16,17 +16,7 @@ This is the documentation for the User Authentication Plugin. This plugin handle
 
 - [ ] Clean up/re-go over code, then merge into main
 
-# Additional Notes
-#### Tokens:
-- Expire after 15 minutes, by default. You can change this via the `config.server.authentication.token.expiration` key in the config.yaml
-
-
-#### Default User:
-- If the user table is empty, a new user will be created with the credentials in the .env file. Use the env.example to create a `.env` file.
-
 # Endpoints
-
-Here's the provided documentation formatted with Markdown syntax:
 
 ## 1. Login Endpoint
 
@@ -106,6 +96,7 @@ Here's the provided documentation formatted with Markdown syntax:
 - **URL**: `/register`
 - **Method**: `POST`
 - **Description**: Registers a new user. Requires JWT authentication to access.
+- **Protection**: JWT required
 
 ### Request
 
@@ -166,10 +157,6 @@ Here's the provided documentation formatted with Markdown syntax:
         "status": 410
       }
       ```
-
-
-This Markdown format will render properly on platforms that support Markdown, providing clear and organized API documentation.
-
 
 
 ## Configuration settings

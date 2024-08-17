@@ -13,6 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 logger = log(__name__)
 
+
 # Add warnings N stuff to this
 def plugin_loader():
     logger.info("Loading plugins")
@@ -43,6 +44,7 @@ def plugin_loader():
 
             except Exception as e:
                 logger.warning(f"Plugin '{plugin_name}' failed to load: {e}")
+
 
 def api_response(
     message: str = "success",
@@ -115,4 +117,3 @@ def generate_timestamp() -> int:
         int: The current timestamp in seconds since the epoch.
     """
     return int(time.time())
-

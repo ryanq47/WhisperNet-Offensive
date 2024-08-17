@@ -6,11 +6,13 @@ db = Instance().db_engine
 
 # change id to user_id
 
+
 class User(db.Model):
     """
-        ORM mapping for users
+    ORM mapping for users
 
     """
+
     __tablename__ = "user"
 
     username = db.Column(
@@ -19,7 +21,7 @@ class User(db.Model):
     uuid = db.Column(
         db.String, primary_key=True
     )  # prim key, allows for changing actual username
-    #id = db.Column(db.Integer, autoincrement=True)
+    # id = db.Column(db.Integer, autoincrement=True)
     password = db.Column(db.String)
 
     def is_active(self):

@@ -8,16 +8,24 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 from modules.utils import api_response
 from modules.log import log
 from modules.utils import generate_unique_id
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, decode_token, get_jwt_identity
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    jwt_required,
+    decode_token,
+    get_jwt_identity,
+)
 
 logger = log(__name__)
 app = Instance().app
+
 
 class Info:
     name = "UserAuthentication"
     author = "ryanq47"
 
-@app.route('/login', methods=['POST'])
+
+@app.route("/login", methods=["POST"])
 def login():
     db = Instance().db_engine
 
@@ -37,11 +45,11 @@ def login():
             conditions = [
                 user.username is not None and user.username != "",
                 user.password is not None and user.password != "",
-                user.uuid is not None
+                user.uuid is not None,
             ]
 
-            # user.password gets password feild from db, comps to password entered in request. 
-            # this *could* allow for a null password, if the bcrypt lib doesn't spit an error.  
+            # user.password gets password feild from db, comps to password entered in request.
+            # this *could* allow for a null password, if the bcrypt lib doesn't spit an error.
             # or the above check fails for whatever reason. Just something to keep in mind
 
             # Note, checkpw takes password inputted, and password to check against.
@@ -50,43 +58,34 @@ def login():
                 logger.debug(f"Creating token for user {user.uuid}")
                 access_token = create_access_token(identity=user.uuid)
                 # replave with better response
-                #return jsonify({"message": "Login Success", "access_token": access_token})
+                # return jsonify({"message": "Login Success", "access_token": access_token})
 
                 return api_response(
-                    message="Login Success",
-                    data={"access_token":access_token}
+                    message="Login Success", data={"access_token": access_token}
                 )
-            
+
             else:
-                #logger.info("%s:%s failed to log in", user.id, user.username)# will fail if no results, 
-                # need to use user inputted values 
+                # logger.info("%s:%s failed to log in", user.id, user.username)# will fail if no results,
+                # need to use user inputted values
                 logger.info(f"{username} failed to log in")
-                
-                return api_response(
-                    message="Login Failure",
-                    data={"access_token":""}
-                )
-        
+
+                return api_response(message="Login Failure", data={"access_token": ""})
+
         else:
             logger.warning("User '%s' tried to log in, but was not found.", username)
-            return api_response(
-                message="Login Failure",
-                data={"access_token":""}
-            )
+            return api_response(message="Login Failure", data={"access_token": ""})
 
     except Exception as e:
         logger.error(e)
         raise e
 
-@app.route('/register', methods=['POST'])
+
+@app.route("/register", methods=["POST"])
 @jwt_required()
 def register():
     if not Config().config.server.endpoints.enable_registration:
-        return api_response(
-            message="Route is disabled", status=410
-        )  # other error
+        return api_response(message="Route is disabled", status=410)  # other error
 
-    
     db = Instance().db_engine
 
     try:
@@ -108,9 +107,7 @@ def register():
         # Now that we are sure the parameters are correct, move onto more heavy computation stuff
         hashed_password = bcrypt.hashpw(
             password,
-            bcrypt.gensalt(
-                rounds=Config().config.server.authentication.bcrypt.rounds
-            ),
+            bcrypt.gensalt(rounds=Config().config.server.authentication.bcrypt.rounds),
         )
         user_id = generate_unique_id()
 
@@ -150,10 +147,3 @@ def register():
 
     finally:
         db.session.close()
-
-'''
-@app.route('/protected', methods=['POST'])
-@jwt_required()
-def test():
-    return jsonify({"protected":"true"})
-'''

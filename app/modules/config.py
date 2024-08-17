@@ -103,10 +103,10 @@ class Config:
 
         # Create a dictionary of environment variables
         env_vars = {
-            'jwt_secret_key': os.getenv('JWT_SECRET_KEY'),
-            'secret_key': os.getenv('SECRET_KEY'),
-            'default_username': os.getenv('DEFAULT_USERNAME'),
-            'default_password': os.getenv('DEFAULT_PASSWORD'),
+            "jwt_secret_key": os.getenv("JWT_SECRET_KEY"),
+            "secret_key": os.getenv("SECRET_KEY"),
+            "default_username": os.getenv("DEFAULT_USERNAME"),
+            "default_password": os.getenv("DEFAULT_PASSWORD"),
         }
 
         # Store the environment variables in a munch object
