@@ -32,12 +32,19 @@ Usage:
         # access config values
         Config().config.server.name
 
+        
+Pre-Fork Considerations
+   - The Config singleton is used to load and store configuration data.
+   - It is initialized at startup and remains read-only during the application's runtime. 
+   - Since each worker process reads the same configuration file at startup, this ensures consistent configuration across workers.
 
 """
 
 import yaml
 import munch
 import pathlib
+from dotenv import load_dotenv
+import os
 from modules.log import log
 
 logger = log(__name__)
@@ -53,13 +60,16 @@ class Config:
 
     # def load_config(config_file: str | pathlib.Path):
     def __init__(self):
-        if not hasattr(self, "initialized"):
-            self.value = None
-            self.initialized = True
+        # Check if already initialized
+        if hasattr(self, "initialized") and self.initialized:
+            return  # Skip re-initialization
 
-        # non-config file values (env vars, etc)
-        self.example = "somevalue"
-        self.launch_path = None
+        print("Initializing Instance")
+
+        self.value = None
+        self.initialized = True
+
+        # Initialize any other values here
 
     def load_config(self, config_file: str | pathlib.Path):
         """
@@ -77,6 +87,31 @@ class Config:
         # yaml loader
         with open(config_file, "r") as f:
             self.config = munch.munchify(yaml.safe_load(f))
+
+    def load_env(self, env_file: str | pathlib.Path):
+        """
+        Load environment variables from a .env file.
+
+        env_file: path to .env file, absolute, or relative.  str or pathlib obj
+        """
+        if type(env_file) == pathlib.Path:
+            # if a pathlib is passed in, convert path to str
+            env_file = str(env_file)
+
+        logger.info(f"Loading environment variables from '{env_file}'")
+        load_dotenv(env_file)
+
+        # Create a dictionary of environment variables
+        env_vars = {
+            "jwt_secret_key": os.getenv("JWT_SECRET_KEY"),
+            "secret_key": os.getenv("SECRET_KEY"),
+            "default_username": os.getenv("DEFAULT_USERNAME"),
+            "default_password": os.getenv("DEFAULT_PASSWORD"),
+        }
+
+        # Store the environment variables in a munch object
+        self.env = munch.munchify(env_vars)
+        logger.info("Environment variables loaded")
 
 
 if __name__ == "__main__":

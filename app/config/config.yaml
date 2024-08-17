@@ -17,6 +17,16 @@ server:
     # How long before the cert expires
     tls_expire: !!int 180
 
+  authentication:
+    bcrypt:
+      rounds: !!int 14 # Rounds for Bcrpyt encryption. Up to 24, however the higher you go, the higher the computation time. 
+
+    jwt:
+      expiration: !!int  900 # Expiration time for tokens once generated, in seconds
+
+  endpoints: # endpoint settings
+    enable_registration: !!bool True # enable/disable registration endpoint
+
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
 wsgi:

@@ -1,9 +1,11 @@
 flask
 flask-restplus
-flask-bcrypt
+bcrypt
+flask-sqlalchemy
 Flask-JWT-Extended
 pyopenssl
 pathlib
 pyyaml
 munch
 gunicorn
+python-dotenv
