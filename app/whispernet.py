@@ -33,7 +33,16 @@ app = Flask(__name__, instance_path=instance_path)
 # the rest of the crap
 # Config Singleton
 Config().launch_path = launch_path  # Adding custom launch_path attribute
+
+if not config_file.exists():
+    exit("config.yaml file does not exist, cannot continue.")
 Config().load_config(config_file=config_file)
+
+if not env_file.exists():
+    exit(
+        ".env file does not exist, please copy example.env into .env & fill out appropriately"
+    )
+
 Config().load_env(env_file=env_file)
 
 # Database Configuration
