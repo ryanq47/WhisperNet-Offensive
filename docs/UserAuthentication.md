@@ -8,7 +8,7 @@ This is the documentation for the User Authentication Plugin. This plugin handle
 
 #### Todo:
 - [X] user register function
-- [X - Review] User Login function ( creates token )
+- [X] User Login function ( creates token )
 - [ ] look into 2fa/auth options?
 
 - [X] Default args for a user/pass if none specified in DB. 
