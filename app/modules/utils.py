@@ -17,33 +17,40 @@ logger = log(__name__)
 # Add warnings N stuff to this
 def plugin_loader():
     logger.info("Loading plugins")
+
     # Plugin Root Dir
     plugin_dir = Config().launch_path / "plugins"
 
-    for plugin_path in plugin_dir.iterdir():
-        if plugin_path.is_file() and plugin_path.suffix == ".py":
-            plugin_name = plugin_path.stem
-            logger.info(f"{plugin_name} discovered")
+    # Iterate through all subdirectories in the plugin_dir
+    for subdir in plugin_dir.iterdir():
+        if subdir.is_dir():
+            # Look for the Python file with the same name as the subdirectory
+            plugin_path = subdir / f"{subdir.name}.py"
 
-            try:
-                # Load the module from the file path - better than the importlib.import_module
-                spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[plugin_name] = module
-                spec.loader.exec_module(module)
+            if plugin_path.is_file():
+                plugin_name = subdir.name
+                logger.info(f"Plugin '{plugin_name}' discovered")
 
-                # Get class name from Info class and execute
-                if hasattr(module, "Info"):
-                    Info = getattr(module, "Info")
-                    class_name = getattr(Info, "classname", None)
-
-                else:
-                    logger.warning(
-                        f"Plugin '{plugin_name}' skipped: 'Info' class not found."
+                try:
+                    # Load the module from the file path
+                    spec = importlib.util.spec_from_file_location(
+                        plugin_name, plugin_path
                     )
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[plugin_name] = module
+                    spec.loader.exec_module(module)
 
-            except Exception as e:
-                logger.warning(f"Plugin '{plugin_name}' failed to load: {e}")
+                    # Get class name from Info class and execute
+                    if hasattr(module, "Info"):
+                        Info = getattr(module, "Info")
+
+                    else:
+                        logger.warning(
+                            f"Plugin '{plugin_name}' skipped: 'Info' class not found."
+                        )
+
+                except Exception as e:
+                    logger.warning(f"Plugin '{plugin_name}' failed to load: {e}")
 
 
 def api_response(

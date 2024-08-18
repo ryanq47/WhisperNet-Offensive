@@ -14,7 +14,7 @@ This is the documentation for the User Authentication Plugin. This plugin handle
 - [X] Default args for a user/pass if none specified in DB. 
     currently, registration endpoint is open to anyone. Can change this by disabling registrion endpoint through settings, or doing a jwt_required. 
 
-- [ ] Clean up/re-go over code, then merge into main
+- [X] Clean up/re-go over code, then merge into main
 
 # Endpoints
 
