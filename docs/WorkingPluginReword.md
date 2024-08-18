@@ -9,9 +9,11 @@
 
 # Layout
 
+```
 .
 ├── docs
 │   └── somedocs.md
 ├── modules
 │   └── somemodule.py
 └── plugin_file.py
+```
