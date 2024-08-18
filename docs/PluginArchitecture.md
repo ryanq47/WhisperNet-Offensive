@@ -89,9 +89,9 @@ The plugins can interact with the main program in endless ways. Basically, if yo
 
 However, there are a few "interfaces" that are exposed to make creating plugins easier.
 
-#### Singletons:
+## Singletons:
 
-There's a few singletons
+There's a few singletons which act as gateways for the main program.
 
 #### `Instance`:
 ---
