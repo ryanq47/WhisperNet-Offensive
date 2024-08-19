@@ -14,6 +14,9 @@ from modules.instances import Instance
 import pathlib
 import time
 import bcrypt
+from modules.banner import print_banner
+
+print_banner()
 
 logger = log(__name__)
 
