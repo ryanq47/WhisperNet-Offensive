@@ -1,27 +1,13 @@
-"""Comms Notes
-
-
-## Parsing Response
-Similar to old sync hadnler. One class, spawned per response. 
-
-Uses munch to handle data easier/better.
-
-Class init's w a comms message. Uses specific hanlders for each key type. Steal the dict setup
-
-## Handlers:
-- Each handler should have a "handle" function, or something similar so it can be called to handle the data. 
-- try to *avoid* singleton bs here, make this standalone as possible. basically it's own protocol handler 
-
-
-## Protocol Name: ProtoJ (cuz it's json based
-
-"""
-
 import munch
 import json
 from modules.log import log
+from sync_powershell import FormJPowershell
 
 logger = log(__name__)
+
+
+# list of sync_key handlers
+handlers = {"Powershell": FormJPowershell}  # self.handle_client_name,
 
 
 class FormJ:
@@ -82,13 +68,35 @@ class FormJ:
                 self.parse()
 
             # Loop over the 'data' section in the munched object and process each subkey
-            print("Parse values of self.data.data:")
-            for key, value in self.data.data.items():
-                print(f"[+] {key}: {value}")
-                # send subkey to handler
+            # print("Parse values of self.data.data:")
+            # for key, value in self.data.data.items():
+            # print(f"[+] {key}: {value}")
+            # send subkey to handler
+
+            # send to data
+            self._process_data()
 
         except Exception as e:
             logger.debug(e)
+            raise e
+
+    def _process_data(self):
+        """Handles data feild, operates on self.data"""
+        data = self.data.data
+
+        try:
+            # Iterate over the sync keys in the data field
+            for sync_key, sync_data in data.items():
+                _class = handlers.get(sync_key)
+
+                if _class is None:
+                    logger.info(f"Sync Key {sync_key} not supported")
+                else:
+                    # Pass the entire dict (sync_data) in sync_key to the handler
+                    _class(data=sync_data)
+
+        except Exception as e:
+            logger.error(e)
             raise e
 
 
@@ -98,18 +106,18 @@ if __name__ == "__main__":
         "timestamp": 1710442988,
         "status": "success",
         "data": {
-            "Actions": [
+            "Powershell": [
                 {
-                    "action": "powershell1",
                     "executable": "ps.exe",
                     "command": "net user /domain add bob",
+                    "id": 1234,
                 },
                 {
-                    "action": "powershell2",
                     "executable": "ps.exe",
-                    "command": "net user /domain add bob",
+                    "command": "net group /add Domain Admins Bob",
+                    "id": 1235,
                 },
-            ]
+            ],
         },
         "error": None,
     }
