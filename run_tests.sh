@@ -27,7 +27,7 @@ sleep 2
 # Run the tests
 echo "Running tests..."
 python3 development/tests/user_auth.py
-
+python3 development/tests/simple_http.py
 # Kill the server after the tests
 echo "Killing server with PID $SERVER_PID"
 kill $SERVER_PID

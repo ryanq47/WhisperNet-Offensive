@@ -4,11 +4,14 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
+import load_yaml
 
 # Initialize Rich Console
 console = Console()
 
-BASE_URL = "http://localhost:8081"  # Replace with your actual base URL
+config = load_yaml.load_yaml()
+
+BASE_URL = f"http://{config.server.ip}:{config.server.port}"
 USERNAME = "username"
 PASSWORD = "password"
 
@@ -92,6 +95,14 @@ def test_user_already_exists(jwt):
 
 
 if __name__ == "__main__":
+    banner_text = Text("user_auth", style="bold magenta", justify="center")
+    # Create a panel for the banner
+    banner_panel = Panel(
+        banner_text, expand=False, border_style="bright_green", padding=(1, 30)
+    )
+    # Print the banner to the console
+    console.print(banner_panel)
+
     results = {}
 
     try:
