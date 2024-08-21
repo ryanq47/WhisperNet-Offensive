@@ -20,6 +20,10 @@ class Info:
 def simple_http_get(client_id):
     return jsonify({"client_id": f"{client_id}"})
 
+    # for queue, create a key with a queue, named the name of the client id?
+
+    # then pop command from queue
+
 
 @app.route("/post/<client_id>", methods=["POST"])
 def simple_http_post(client_id):
@@ -65,30 +69,33 @@ def simple_http_post(client_id):
             timestamp=dict_data.get("timestamp", 0),
         )
 
-        # logger.debug(formj_message)
-
         formj_message.save()
 
         # retrieved_message = FormJModel.get(dict_data.get("rid"))
         # logger.debug(retrieved_message)
 
-        rid = dict_data.get("rid")
+        #rid = dict_data.get("rid")
 
         # WORKS! yay. now figuroe out waht we even fucing need here
+        # need to store message in 
 
-        try:
+        #try:
             # Assuming `rid` is unique, this query should return the correct instance
-            retrieved_message = FormJModel.get(rid)
-            if not retrieved_message:
-                logger.debug("Could not find")
-                # raise NotFoundError
-        except Exception as e:
-            print(f"Entry with rid {rid} not found in Redis: {e}")
-            # Handle the case where the entry is not found
-            return jsonify({"client_id": "client_id"}), 500
+        #    retrieved_message = FormJModel.get(rid)
+        #    if not retrieved_message:
+        #        logger.debug("Could not find")
+        #        # raise NotFoundError
+        #except Exception as e:
+        #    print(f"Entry with rid {rid} not found in Redis: {e}")
+        #    # Handle the case where the entry is not found
+        #    return jsonify({"client_id": "client_id"}), 500
 
 
-        return jsonify({"client_id": "client_id"}), 200
+        #return jsonify({"client_id": "client_id"}), 200
+        return api_response(
+            status = 200,
+            message="Request stored successfully"
+        )
 
     except Exception as e:
         import traceback

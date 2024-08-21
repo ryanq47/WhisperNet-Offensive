@@ -39,6 +39,8 @@ class FormJModel(JsonModel):
         #global_key_prefix = "FormJ"
 
 
+
+
 if __name__ == "__main__":
     formj_message = FormJModel(
         message="SomeMessage",
