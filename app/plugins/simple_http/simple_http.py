@@ -3,7 +3,7 @@ from modules.instances import Instance
 from modules.log import log
 from plugins.simple_http.modules.redis_models import FormJModel, PowerShellKeyModel
 import json
-from redis_om import get_redis_connection, HashModel, Field
+from redis_om import get_redis_connection, HashModel
 from modules.utils import api_response
 
 logger = log(__name__)
@@ -72,18 +72,21 @@ def simple_http_post(client_id):
         # retrieved_message = FormJModel.get(dict_data.get("rid"))
         # logger.debug(retrieved_message)
 
+        rid = dict_data.get("rid")
+
+        # WORKS! yay. now figuroe out waht we even fucing need here
+
         try:
             # Assuming `rid` is unique, this query should return the correct instance
-            retrieved_message = FormJModel.find(
-                FormJModel.rid == dict_data.get("rid")
-            ).first()
+            retrieved_message = FormJModel.get(rid)
             if not retrieved_message:
                 logger.debug("Could not find")
                 # raise NotFoundError
         except Exception as e:
-            print(f"Entry with rid {dict_data.get('rid')} not found in Redis: {e}")
+            print(f"Entry with rid {rid} not found in Redis: {e}")
             # Handle the case where the entry is not found
-            retrieved_message = None
+            return jsonify({"client_id": "client_id"}), 500
+
 
         return jsonify({"client_id": "client_id"}), 200
 

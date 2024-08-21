@@ -13,59 +13,6 @@ cleanup() {
 trap cleanup EXIT
 
 
-# Ensure yq is installed
-if ! command -v yq &> /dev/null
-then
-    echo "start.sh: yq could not be found."
-
-    # Prompt the user for installation
-    read -p "start.sh: Do you want to install yq locally at ~/.local/bin/yq? [Y/n]: " answer
-    answer=${answer:-Y}  # Default to 'Y' if no input is provided
-
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        echo "start.sh: Installing yq locally..."
-
-        # Download yq
-        wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O yq_linux_amd64 --show-progress -nv
-        
-        # Create directory if it does not exist
-        mkdir -p ~/.local/bin
-
-        # Install yq locally
-        mv yq_linux_amd64 ~/.local/bin/yq
-        chmod +x ~/.local/bin/yq  # Make it executable
-
-        # Clean up
-        echo "start.sh: Cleaning up..."
-        rm yq_linux_amd64
-        
-        echo "start.sh: yq has been installed successfully at ~/.local/bin/yq."
-
-        # Optionally, inform the user to add to PATH if not already
-        if ! echo "$PATH" | grep -q "~/.local/bin"; then
-            echo "start.sh: Reminder: Ensure ~/.local/bin is in your PATH to use yq easily. \n If not, try 'sudo cp ~/.local/bin/yq /usr/bin/yq' to install for all users"
-        fi
-    else
-        echo "Installation aborted. Cannot continue without yq."
-        exit 1
-    fi
-fi
-
-# redis install
-if ! command -v redis-server &> /dev/null
-then
-    echo "start.sh: Redis is not installed. Installing now..."
-    sudo apt-get update -y
-    sudo apt-get install redis-server -y
-    echo "start.sh: Redis installation complete."
-else
-    echo "start.sh: Redis is already installed."
-fi
-
-echo "start.sh: Starting Redis server"
-redis-server --loadmodule ../lib/librejson.so &
-pids+=($!)
-
 echo "start.sh: Loading Configuration Values"
 # Load the configuration values from the YAML file
 workers=$(yq eval '.wsgi.workers' config/config.yaml)

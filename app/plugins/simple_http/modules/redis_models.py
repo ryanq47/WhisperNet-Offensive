@@ -28,7 +28,7 @@ class PowerShellKeyModel(JsonModel):
 
 
 class FormJModel(JsonModel):
-    rid: str = Field(index=True)
+    rid: str = Field(index=True, primary_key=True) # use RID as primary key. these are all unique
     data: Dict[str, Any] = Field(default_factory=dict)  # temp basic dict
     message: str
     status: int
@@ -36,6 +36,7 @@ class FormJModel(JsonModel):
 
     class Meta:
         database = redis  # The Redis connection
+        #global_key_prefix = "FormJ"
 
 
 if __name__ == "__main__":
