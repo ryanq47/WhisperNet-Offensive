@@ -42,7 +42,7 @@ def test_simple_http_post():
     url = f"{BASE_URL}/post/{client_id}"
 
     dict_data = {
-        "rid": "unique_request_identifier",
+        "rid": "12345-56789-09187",
         "message": "somemessage",
         "timestamp": 1234567890,
         "status": 200,

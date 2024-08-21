@@ -56,8 +56,9 @@ def simple_http_post(client_id):
 
         # Error lies in here
         # Unpack the dict_data into the FormJModel, handling potential missing data
+        logger.debug(f"RID: {dict_data.get('rid')}")
         formj_message = FormJModel(
-            rid="1234",  # dict_data.get("rid"),
+            rid=dict_data.get("rid"),
             data=dict_data.get("data", {}),
             message=dict_data.get("message", ""),
             status=dict_data.get("status", 0),
@@ -68,8 +69,21 @@ def simple_http_post(client_id):
 
         formj_message.save()
 
-        retrieved_message = FormJModel.get(dict_data.get("1234"))
-        logger.debug(retrieved_message)
+        # retrieved_message = FormJModel.get(dict_data.get("rid"))
+        # logger.debug(retrieved_message)
+
+        try:
+            # Assuming `rid` is unique, this query should return the correct instance
+            retrieved_message = FormJModel.find(
+                FormJModel.rid == dict_data.get("rid")
+            ).first()
+            if not retrieved_message:
+                logger.debug("Could not find")
+                # raise NotFoundError
+        except Exception as e:
+            print(f"Entry with rid {dict_data.get('rid')} not found in Redis: {e}")
+            # Handle the case where the entry is not found
+            retrieved_message = None
 
         return jsonify({"client_id": "client_id"}), 200
 

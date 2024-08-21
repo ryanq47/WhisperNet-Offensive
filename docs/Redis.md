@@ -4,6 +4,10 @@ Whispernet requires Redis for fast in-memory operations, along with RedisJSON fo
 
 If you ARE on Ubuntu/Debian/Kali, it should just all work, as I've included the `lib/librejson.so` object in the project. 
 
+
+HEYYYYYYYYYYY
+- Once laptop re installed, use redis-stack-server in docker container. 
+
 ## 1. Install Redis
 
 To install Redis, run the following command:
