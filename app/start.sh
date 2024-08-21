@@ -64,7 +64,7 @@ fi
 
 echo "start.sh: Starting Redis server"
 redis-server --loadmodule ../lib/librejson.so &
-
+pids+=($!)
 
 echo "start.sh: Loading Configuration Values"
 # Load the configuration values from the YAML file
