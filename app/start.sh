@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Function to kill background processes so they don't stay alive
+cleanup() {
+    echo "start.sh: Cleaning up background processes..."
+    for pid in "${pids[@]}"; do
+        echo "start.sh: Killing process with PID $pid"
+        kill "$pid" 2>/dev/null
+    done
+    echo "start.sh: Cleanup complete."
+}
+# Ensure cleanup happens on script exit
+trap cleanup EXIT
 
 
 # Ensure yq is installed
@@ -51,6 +62,8 @@ else
     echo "start.sh: Redis is already installed."
 fi
 
+echo "start.sh: Starting Redis server"
+redis-server --loadmodule ../lib/librejson.so &
 
 
 echo "start.sh: Loading Configuration Values"
