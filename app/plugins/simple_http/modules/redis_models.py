@@ -1,6 +1,7 @@
 from redis_om import get_redis_connection, HashModel, Field
 from modules.config import Config
 from modules.log import log
+from typing import Any, Dict, Optional
 
 logger = log(__name__)
 
@@ -28,8 +29,7 @@ class PowerShellKeyModel(JsonModel):
 
 class FormJModel(JsonModel):
     rid: str = Field(index=True)
-    data: Dict[str, List[PowerShellKeyModel]] = Field(default_factory=dict)
-    error: Dict[str, Optional[str]] = Field(default_factory=dict)
+    data: Dict[str, Any] = Field(default_factory=dict)  # temp basic dict
     message: str
     status: int
     timestamp: int

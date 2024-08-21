@@ -24,41 +24,61 @@ def simple_http_get(client_id):
 @app.route("/post/<client_id>", methods=["POST"])
 def simple_http_post(client_id):
     try:
-        dict_data = request.get_json()  # gets request and turns into json
-
-        if dict_data == None:
+        dict_data = request.get_json()
+        if dict_data is None:
             return api_response(message="No data in request", status=400)
 
-        client_id = dict_data.get("rid", None)
+        # Ensure the necessary keys are present in the dict_data
+        required_keys = ["rid", "data", "message", "status", "timestamp"]
+        for key in required_keys:
+            if key not in dict_data:
+                logger.error(f"Missing required field: {key}")
+                return api_response(
+                    message=f"Missing required field: {key}", status=400
+                )
 
-        # if these == none... reutrn failed 400
+        # Addtl validation for input data types
+        if not isinstance(dict_data.get("rid"), str):
+            logger.error("Invalid type for 'rid'")
+            return api_response(message="Invalid type for 'rid'", status=400)
 
-        # formj_message = FormJModel(response.text)
-        # depack dict for values for FormJModel
+        if not isinstance(dict_data.get("status"), int):
+            logger.error("Invalid type for 'status'")
+            return api_response(message="Invalid type for 'status'", status=400)
 
-        ## Redis stuff causing issues, nonetype not subscriptable.
-        ## Go learn redis first then come back to this
-        # formj_message = FormJModel(**dict_data)
+        if not isinstance(dict_data.get("timestamp"), int):
+            logger.error("Invalid type for 'timestamp'")
+            return api_response(message="Invalid type for 'timestamp'", status=400)
 
-        # Save it to Redis
-        # formj_message.save()
+        if not isinstance(dict_data.get("data"), dict):
+            logger.error("Invalid type for 'data'")
+            return api_response(message="Invalid type for 'data'", status=400)
 
-        # retrieved_message = FormJModel.get(client_id)
-        # logger.debug(retrieved_message)
-        # if retrieved_message is None:
-        #    return api_response(message="Failed to retrieve saved message", status=500)
+        # Error lies in here
+        # Unpack the dict_data into the FormJModel, handling potential missing data
+        formj_message = FormJModel(
+            rid="1234",  # dict_data.get("rid"),
+            data=dict_data.get("data", {}),
+            message=dict_data.get("message", ""),
+            status=dict_data.get("status", 0),
+            timestamp=dict_data.get("timestamp", 0),
+        )
 
-        # Retrieve it using the rid
-        ##retrieved_message = FormJModel.get(dict_data.get("rid", None))
-        # print(retrieved_message)
-        # return jsonify({"client_id": f"{client_id}"})
-        # replace w api_response
-        return jsonify({"client_id": client_id}), 200
+        # logger.debug(formj_message)
+
+        formj_message.save()
+
+        retrieved_message = FormJModel.get(dict_data.get("1234"))
+        logger.debug(retrieved_message)
+
+        return jsonify({"client_id": "client_id"}), 200
 
     except Exception as e:
-        logger.debug(f"Request: {request if request else ''}")
-        logger.error(e)
-        return api_response(status=500, message="")
+        import traceback
+
+        logger.error(f"An error occurred: {e}")
+        logger.error(traceback.format_exc())  # This will print the full stack trace
+        return api_response(message="Internal server error", status=500)
 
 
 """

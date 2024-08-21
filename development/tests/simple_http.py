@@ -43,8 +43,9 @@ def test_simple_http_post():
 
     dict_data = {
         "rid": "unique_request_identifier",
+        "message": "somemessage",
         "timestamp": 1234567890,
-        "status": "success",
+        "status": 200,
         "data": {
             # Example Sync Keys types
             # Powershell Key which will contain info for running powershell
@@ -63,7 +64,6 @@ def test_simple_http_post():
             # Some other Sync Key, that does Some Other thing
             "SomeSync": [{"somedata": "somedata"}, {"somedata": "somedata"}],
         },
-        "error": {"message": "null", "aid": ["null", "null"], "rid": "null"},
     }
 
     # bugged out here

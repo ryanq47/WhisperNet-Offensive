@@ -13,9 +13,13 @@ echo "Nuking old logs..."
 rm ./app/whispernet.log
 rm ./whispernet.log
 
+echo "Starting Redis"
+redis-server --loadmodule /home/ryan/librejson.so &
+
 # Start the server in the background
 echo "Starting Server..."
 python3 ./app/whispernet.py &
+
 
 # Capture the server's PID
 SERVER_PID=$!
