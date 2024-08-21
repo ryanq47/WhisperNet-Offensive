@@ -40,6 +40,18 @@ then
     fi
 fi
 
+# redis install
+if ! command -v redis-server &> /dev/null
+then
+    echo "start.sh: Redis is not installed. Installing now..."
+    sudo apt-get update -y
+    sudo apt-get install redis-server -y
+    echo "start.sh: Redis installation complete."
+else
+    echo "start.sh: Redis is already installed."
+fi
+
+
 
 echo "start.sh: Loading Configuration Values"
 # Load the configuration values from the YAML file

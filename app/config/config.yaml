@@ -37,3 +37,8 @@ wsgi:
 
   # Number of workers for WSGI. 
   workers: !!int 4
+
+redis:
+  bind:
+    ip: !!str "localhost"
+    port: !!int 6379

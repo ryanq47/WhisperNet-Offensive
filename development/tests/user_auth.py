@@ -17,6 +17,8 @@ PASSWORD = "password"
 
 
 def test_register_user(jwt):
+    console.print(Panel("Register User", title="Test Case", expand=False))
+
     url = f"{BASE_URL}/register"
     payload = {"username": "somenewuser", "password": "somenewpassword"}
     headers = {
@@ -26,20 +28,20 @@ def test_register_user(jwt):
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    console.print(Panel("Register User", title="Test Case", expand=False))
     console.print_json(data=response.json())
 
     assert response.status_code == 200
 
 
 def test_login_user():
+    console.print(Panel("Login User", title="Test Case", expand=False))
+
     url = f"{BASE_URL}/login"
     payload = {"username": USERNAME, "password": PASSWORD}
     headers = {"Content-Type": "application/json"}
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    console.print(Panel("Login User", title="Test Case", expand=False))
     console.print_json(data=response.json())
 
     assert response.status_code == 200
@@ -52,13 +54,14 @@ def test_login_user():
 
 
 def test_login_user_invalid_credentials():
+    console.print(Panel("Login Invalid Credentials", title="Test Case", expand=False))
+
     url = f"{BASE_URL}/login"
     payload = {"username": "wronguser", "password": "wrongpassword"}
     headers = {"Content-Type": "application/json"}
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    console.print(Panel("Login Invalid Credentials", title="Test Case", expand=False))
     console.print_json(data=response.json())
 
     assert response.status_code == 401
@@ -66,6 +69,8 @@ def test_login_user_invalid_credentials():
 
 
 def test_registration_disabled(jwt):
+    console.print(Panel("Registration Disabled", title="Test Case", expand=False))
+
     url = f"{BASE_URL}/register"
     payload = {"username": "newuser", "password": "newpassword"}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {jwt}"}
@@ -73,7 +78,6 @@ def test_registration_disabled(jwt):
     # Simulate registration being disabled by adjusting the server config (if possible)
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    console.print(Panel("Registration Disabled", title="Test Case", expand=False))
     console.print_json(data=response.json())
 
     assert response.status_code == 410
@@ -81,13 +85,14 @@ def test_registration_disabled(jwt):
 
 
 def test_user_already_exists(jwt):
+    console.print(Panel("User Already Exists", title="Test Case", expand=False))
+
     url = f"{BASE_URL}/register"
     payload = {"username": USERNAME, "password": PASSWORD}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {jwt}"}
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    console.print(Panel("User Already Exists", title="Test Case", expand=False))
     console.print_json(data=response.json())
 
     assert response.status_code == 409
