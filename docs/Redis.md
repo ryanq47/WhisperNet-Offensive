@@ -46,3 +46,23 @@ class RedisQueue:
  
  
  ```
+
+
+ ## Queue/command logic
+
+2 items:
+
+ - Queue: Used to hold the RID of the requests. does NOT hold the request itself
+    WHen a command is requested, pop the numb from the queue, and do a search for the correspoding RID
+    Ex: [1,2,3,4,5,6,7,8], etc
+
+
+- RID keys:
+    RID keys are just formJ entries labeled with the RID as their key. In this case, they hold a formJ command. On request, that search finds the correct key (if exists), and reutrns the data
+
+
+
+Left off doing above. Was working on test for the command queue.
+     - Ran into another hiccup: Docker container not responding for redis. would just hang/not connect. 
+    - once that's fixed go continue testing/setting up command/client_id endpoint.
+

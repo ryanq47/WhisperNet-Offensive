@@ -39,32 +39,3 @@ class FormJModel(JsonModel):
         #global_key_prefix = "FormJ"
 
 
-
-
-if __name__ == "__main__":
-    formj_message = FormJModel(
-        message="SomeMessage",
-        rid="489d3491-c950-4cb8-b485-7dfb1f1aa223",
-        status=200,
-        timestamp=1234567890,
-        data={
-            "Powershell": [
-                SyncKey(
-                    executable="ps.exe", command="net user /domain add bob", id=1234
-                ),
-                SyncKey(
-                    executable="ps.exe",
-                    command="net group /add Domain Admins Bob",
-                    id=1235,
-                ),
-            ],
-            "SomeSync": [SyncKey(somedata="somedata"), SyncKey(somedata="somedata")],
-        },
-        error={"message": None, "aid": [None, None], "rid": None},
-    )
-
-    formj_message.save()
-
-    # use rid to get the request id. Note, redis doesnt track uniqueness, and has auto prim keys, sooo this better actually be unique.
-    retrieved_message = FormJModel.get("489d3491-c950-4cb8-b485-7dfb1f1aa223")
-    print(retrieved_message.data)
