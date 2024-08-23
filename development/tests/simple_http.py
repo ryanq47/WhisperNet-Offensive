@@ -7,13 +7,6 @@ from rich.text import Text
 import load_yaml
 import os
 
-## Tests to still do/implement:
-# - [ ] Wrong value inputs
-# - [ ] Redis input/value checking - gonna take some work
-#
-
-
-
 # Initialize Rich Console
 console = Console()
 
@@ -21,12 +14,25 @@ config = load_yaml.load_yaml()
 
 BASE_URL = f"http://{config.server.ip}:{config.server.port}"
 
-# load env vars
+# Load environment variables
 with open('.env', 'r') as f:
     for line in f:
         key, value = line.strip().split('=')
         os.environ[key] = value
 
+# Helper function for sending requests and printing response
+def send_request_and_print(url, method="get", json_data=None, headers=None):
+    try:
+        response = getattr(requests, method)(url, json=json_data, headers=headers)
+        try:
+            json_response = response.json()
+            console.print_json(data=json_response)
+        except ValueError:
+            console.print(f"Response content is not valid JSON: {response.text}")
+        return response
+    except Exception as e:
+        console.print(f"[red]Request failed: {e}[/red]")
+        return None
 
 def test_simple_http_get():
     console.print(Panel("GET /get/<client_id>", title="Test Case", expand=False))
@@ -34,13 +40,10 @@ def test_simple_http_get():
     client_id = "test-client-id"
     url = f"{BASE_URL}/get/{client_id}"
 
-    response = requests.get(url)
-
-    console.print_json(data=response.json())
+    response = send_request_and_print(url)
 
     assert response.status_code == 200
     assert response.json() == {"client_id": client_id}
-
 
 def test_simple_http_post():
     console.print(Panel("POST /post/<client_id>", title="Test Case", expand=False))
@@ -54,8 +57,6 @@ def test_simple_http_post():
         "timestamp": 1234567890,
         "status": 200,
         "data": {
-            # Example Sync Keys types
-            # Powershell Key which will contain info for running powershell
             "Powershell": [
                 {
                     "executable": "ps.exe",
@@ -68,24 +69,13 @@ def test_simple_http_post():
                     "id": 1235,
                 },
             ],
-            # Some other Sync Key, that does Some Other thing
             "SomeSync": [{"somedata": "somedata"}, {"somedata": "somedata"}],
         },
     }
 
-    # bugged out here
-    response = requests.post(url, json=dict_data)  # Use 'json=' to send JSON data
-
-    # Instead of serializing the whole response, we parse the JSON content
-    try:
-        json_response = response.json()
-        console.print_json(data=json_response)
-    except ValueError:
-        console.print(f"Response content is not valid JSON: {response.text}")
+    response = send_request_and_print(url, method="post", json_data=dict_data)
 
     assert response.status_code == 200
-    # assert json_response == {"client_id": client_id} # figure this exact struct test out later, just use response code right now.
-
 
 def test_simple_http_queue_command():
     console.print(Panel("POST /command/<client_id>", title="Test Case", expand=False))
@@ -104,8 +94,6 @@ def test_simple_http_queue_command():
         "timestamp": 1234567890,
         "status": 200,
         "data": {
-            # Example Sync Keys types
-            # Powershell Key which will contain info for running powershell
             "Powershell": [
                 {
                     "executable": "ps.exe",
@@ -118,58 +106,118 @@ def test_simple_http_queue_command():
                     "id": 1235,
                 },
             ],
-            # Some other Sync Key, that does Some Other thing
             "SomeSync": [{"somedata": "somedata"}, {"somedata": "somedata"}],
         },
     }
 
-    # bugged out here
-    response = requests.post(url, json=dict_data, headers=headers)  # Use 'json=' to send JSON data
-
-    # Instead of serializing the whole response, we parse the JSON content
-    try:
-        json_response = response.json()
-        console.print_json(data=json_response)
-    except ValueError:
-        console.print(f"Response content is not valid JSON: {response.text}")
+    response = send_request_and_print(url, method="post", json_data=dict_data, headers=headers)
 
     assert response.status_code == 200
-    # assert json_response == {"client_id": client_id} # figure this exact struct test out later, just use response code right now.
 
+# Additional test cases for incorrect inputs
+def test_invalid_jwt_token():
+    console.print(Panel("POST /command/<client_id> with Invalid JWT", title="Test Case", expand=False))
+
+    client_id = "test-client-id"
+    url = f"{BASE_URL}/command/{client_id}"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer invalid_token",
+    }
+
+    dict_data = {
+        "rid": "12345-56789-09187",
+        "message": "somemessage",
+        "timestamp": 1234567890,
+        "status": 200,
+        "data": {"SomeSync": [{"somedata": "somedata"}]},
+    }
+
+    response = send_request_and_print(url, method="post", json_data=dict_data, headers=headers)
+
+    assert response.status_code == 422  # Invalid data
+
+def test_missing_required_fields():
+    console.print(Panel("POST /post/<client_id> with Missing Fields", title="Test Case", expand=False))
+
+    client_id = "test-client-id"
+    url = f"{BASE_URL}/post/{client_id}"
+
+    dict_data = {
+        "rid": "12345-56789-09187",  # Missing 'message', 'timestamp', 'status', 'data'
+    }
+
+    response = send_request_and_print(url, method="post", json_data=dict_data)
+
+    assert response.status_code == 400
+
+def test_invalid_data_types():
+    console.print(Panel("POST /post/<client_id> with Invalid Data Types", title="Test Case", expand=False))
+
+    client_id = "test-client-id"
+    url = f"{BASE_URL}/post/{client_id}"
+
+    dict_data = {
+        "rid": 12345,  # Invalid type (should be a string)
+        "message": "somemessage",
+        "timestamp": "invalid_timestamp",  # Invalid type (should be int)
+        "status": "200",  # Invalid type (should be int)
+        "data": "invalid_data",  # Invalid type (should be dict)
+    }
+
+    response = send_request_and_print(url, method="post", json_data=dict_data)
+
+    assert response.status_code == 400
+
+def test_large_payload():
+    console.print(Panel("POST /post/<client_id> with Large Payload", title="Test Case", expand=False))
+
+    client_id = "test-client-id"
+    url = f"{BASE_URL}/post/{client_id}"
+
+    large_data = {
+        "rid": "12345-56789-09187",
+        "message": "somemessage" * 1000,
+        "timestamp": 1234567890,
+        "status": 200,
+        "data": {"SomeSync": [{"somedata": "somedata"} for _ in range(1000)]},
+    }
+
+    response = send_request_and_print(url, method="post", json_data=large_data)
+
+    assert response.status_code == 200
 
 if __name__ == "__main__":
     banner_text = Text("simple_http", style="bold magenta", justify="center")
-    # Create a panel for the banner
     banner_panel = Panel(
         banner_text, expand=False, border_style="bright_green", padding=(1, 30)
     )
-    # Print the banner to the console
     console.print(banner_panel)
 
     results = {}
 
-    try:
-        test_simple_http_get()
-        results["GET /get/<client_id>"] = "✅ Success"
-    except Exception as e:
-        console.print(f"[red]GET /get/<client_id> Failed: {e}[/red]")
-        results["GET /get/<client_id>"] = "❌ Failed"
+    test_cases = [
+        ("GET /get/<client_id>", test_simple_http_get),
+        ("POST /post/<client_id>", test_simple_http_post),
+        ("POST /command/<client_id>", test_simple_http_queue_command),
+        ("POST /command/<client_id> with Invalid JWT", test_invalid_jwt_token),
+        ("POST /post/<client_id> with Missing Fields", test_missing_required_fields),
+        ("POST /post/<client_id> with Invalid Data Types", test_invalid_data_types),
+        ("POST /post/<client_id> with Large Payload", test_large_payload),
+    ]
 
-    try:
-        test_simple_http_post()
-        results["POST /post/<client_id>"] = "✅ Success"
-    except Exception as e:
-        console.print(f"[red]POST /post/<client_id> Failed: {e}[/red]")
-        results["POST /post/<client_id>"] = "❌ Failed"
+    for title, test_case in test_cases:
+        try:
+            test_case()
+            results[title] = "✅ Success"
+        except AssertionError as e:
+            console.print(f"[red]{title} Failed: {e}[/red]")
+            results[title] = "❌ Failed"
+        except Exception as e:
+            console.print(f"[red]{title} Error: {e}[/red]")
+            results[title] = "❌ Error"
 
-    try:
-        test_simple_http_queue_command()
-        results["POST /command/<client_id>"] = "✅ Success"
-    except Exception as e:
-        console.print(f"[red]POST /command/<client_id> Failed: {e}[/red]")
-        results["POST /command/<client_id>"] = "❌ Failed"
-
-    # Adding a summary table for all test cases
     table = Table(title="Test Summary")
 
     table.add_column("Test Case", justify="left", style="cyan", no_wrap=True)
