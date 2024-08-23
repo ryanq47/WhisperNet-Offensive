@@ -82,7 +82,7 @@ def simple_http_queue_command(client_id):
         dict_data['audit']['user_identity'] = user_identity  # Add user identity to the log
 
         a = Audit()
-        a.log_action(dict_data)
+        a.audit(dict_data)
 
         return api_response(
             status = 200,

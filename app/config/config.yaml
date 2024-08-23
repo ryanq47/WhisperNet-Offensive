@@ -27,6 +27,13 @@ server:
   endpoints: # endpoint settings
     enable_registration: !!bool True # enable/disable registration endpoint
 
+  audit: # audit settings
+    log:
+      max_file_size: !!int 1000000 # in Bytes
+      max_file_backups: !!int 10   # how many files to keep after rollover
+      file_name: !!str "audit.log"
+
+
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
 wsgi:
