@@ -20,12 +20,13 @@ from redis_om import JsonModel, Field
 from typing import List, Dict, Optional
 
 
+''' Don't need.
 class PowerShellKeyModel(JsonModel):
     executable: Optional[str] = None
     command: Optional[str] = None
     id: Optional[int] = None
     somedata: Optional[str] = None
-
+'''
 
 class FormJModel(JsonModel):
     rid: str = Field(index=True, primary_key=True) # use RID as primary key. these are all unique

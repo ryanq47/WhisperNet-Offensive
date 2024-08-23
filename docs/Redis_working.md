@@ -6,7 +6,7 @@ Whispernet requires Redis for fast in-memory operations, along with RedisJSON fo
 ## Todo:
  - [ ] Handle start/stop of docker container?/better startup docker chekcing if containre is there etc
 
- - [ ] Get endpoint: Figure out the reqis queue stuff, one queue per client, based on client uuid
+ - [X] Get endpoint: Figure out the reqis queue stuff, one queue per client, based on client uuid
 
 
 # idea: 

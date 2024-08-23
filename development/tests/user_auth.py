@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 import load_yaml
-
+import os
 # Initialize Rich Console
 console = Console()
 
@@ -43,6 +43,10 @@ def test_login_user():
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
     console.print_json(data=response.json())
+
+    # Set an environment variable and save it to a file
+    with open('.env', 'w') as f:
+        f.write(f'jwt_token={response.json()["data"]["access_token"]}')
 
     assert response.status_code == 200
     assert "access_token" in response.json()["data"]

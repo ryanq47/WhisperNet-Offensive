@@ -1,11 +1,12 @@
 from flask import jsonify, request
 from modules.instances import Instance
 from modules.log import log
-from plugins.simple_http.modules.redis_models import FormJModel, PowerShellKeyModel
+from plugins.simple_http.modules.redis_models import FormJModel
 import json
 from redis_om import get_redis_connection, HashModel
 from modules.utils import api_response
 from plugins.simple_http.modules.redis_queue import RedisQueue
+from flask_jwt_extended import jwt_required
 
 logger = log(__name__)
 app = Instance().app
@@ -17,6 +18,7 @@ class Info:
 
 # for queuing commands. Should be protected endpoint
 @app.route("/command/<client_id>", methods=["POST"])
+@jwt_required()
 def simple_http_queue_command(client_id):
     try:
         # get data from req
@@ -175,34 +177,3 @@ def simple_http_post(client_id):
         logger.error(f"An error occurred: {e}")
         logger.error(traceback.format_exc())  # This will print the full stack trace
         return api_response(message="Internal server error", status=500)
-
-
-"""
-    formj_message = FormJModel(
-        message="SomeMessage",
-        rid="489d3491-c950-4cb8-b485-7dfb1f1aa223",
-        status=200,
-        timestamp=1234567890,
-        data={
-            "Powershell": [
-                SyncKey(
-                    executable="ps.exe", command="net user /domain add bob", id=1234
-                ),
-                SyncKey(
-                    executable="ps.exe",
-                    command="net group /add Domain Admins Bob",
-                    id=1235,
-                ),
-            ],
-            "SomeSync": [SyncKey(somedata="somedata"), SyncKey(somedata="somedata")],
-        },
-        error={"message": None, "aid": [None, None], "rid": None},
-    )
-
-    formj_message.save()
-
-    # use rid to get the request id. Note, redis doesnt track uniqueness, and has auto prim keys, sooo this better actually be unique.
-    retrieved_message = FormJModel.get("489d3491-c950-4cb8-b485-7dfb1f1aa223")
-    print(retrieved_message.data)
-
-"""

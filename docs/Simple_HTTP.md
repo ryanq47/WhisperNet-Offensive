@@ -3,15 +3,26 @@
 A simple HTTP C2 protocol. Designed to be stupid simple, no tricks, etc, just straight up HTTP. More of a testbed for the rest of the framework. Uses FormJ to communicate
 
 
+## TODO:
+[ ] Validate all endpoints
+
+[X] Protect queue command endpoint
+
+[ ] logging EVERYWHERE. Actionlogger?
+
 ## Endpoints
 
 #### `get/{clientname}`
 
-Gets the next command
+Gets the next command for the client.
 
 #### `post/{clientname}`
 
-Post the resulting command back
+For clients to post the results of the command back to.
+
+#### `command/{clientname}`
+
+Queue a command to the client. 
 
 
 ## Backend
@@ -30,9 +41,10 @@ Beacon Style:
 jump to step 1
 
 ## Redis setup
+Details related to the redis setup in the simple_http plugin
 
-#### Keys:
-
+### Keys:
+---
 #### Command Key
 `:plugins.simple_http.modules.redis_models.FormJModel:12345-56789-09187`
 
@@ -60,3 +72,7 @@ Example contents of this key:
 ```
 
 Then, when a command is requested, it does alookup with the RID that was popped from the FormJQueue, gets the command, and sends it back to the client.
+
+
+#### Addtl Notes
+The data field for the Command keys in redis do not validate the type(s) of sync keys in said field. TLDR: Any json dict can go into the data field. 

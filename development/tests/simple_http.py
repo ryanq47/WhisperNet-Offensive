@@ -5,12 +5,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 import load_yaml
-
+import os
 
 ## Tests to still do/implement:
 # - [ ] Wrong value inputs
 # - [ ] Redis input/value checking - gonna take some work
 #
+
 
 
 # Initialize Rich Console
@@ -19,6 +20,12 @@ console = Console()
 config = load_yaml.load_yaml()
 
 BASE_URL = f"http://{config.server.ip}:{config.server.port}"
+
+# load env vars
+with open('.env', 'r') as f:
+    for line in f:
+        key, value = line.strip().split('=')
+        os.environ[key] = value
 
 
 def test_simple_http_get():
@@ -86,6 +93,11 @@ def test_simple_http_queue_command():
     client_id = "test-client-id"
     url = f"{BASE_URL}/command/{client_id}"
 
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.environ['jwt_token']}",
+    }
+
     dict_data = {
         "rid": "12345-56789-09187",
         "message": "somemessage",
@@ -112,7 +124,7 @@ def test_simple_http_queue_command():
     }
 
     # bugged out here
-    response = requests.post(url, json=dict_data)  # Use 'json=' to send JSON data
+    response = requests.post(url, json=dict_data, headers=headers)  # Use 'json=' to send JSON data
 
     # Instead of serializing the whole response, we parse the JSON content
     try:
