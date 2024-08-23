@@ -28,3 +28,35 @@ Beacon Style:
     - Client sleeps for specified time
 3. Client posts command back to `post/{clientname}`
 jump to step 1
+
+## Redis setup
+
+#### Keys:
+
+#### Command Key
+`:plugins.simple_http.modules.redis_models.FormJModel:12345-56789-09187`
+
+The command key holds the command receieved for the client.
+
+Example contents of this key, which is just a condensed FormJ message.  
+
+This should be stored in a much more efficent way than just the JSON string, I used json.get in redis-cli to view the contents of it, which returned the string.
+
+```
+"{\"pk\":\"01J5YET9G4Z7Q9FE8XKT9MTHR5\",\"rid\":\"12345-56789-09187\",\"data\":{\"Powershell\":[{\"executable\":\"ps.exe\",\"command\":\"net user /domain add bob\",\"id\":1234},{\"executable\":\"ps.exe\",\"command\":\"net group /add Domain Admins Bob\",\"id\":1235}],\"SomeSync\":[{\"somedata\":\"somedata\"},{\"somedata\":\"somedata\"}]},\"message\":\"somemessage\",\"status\":200,\"timestamp\":1234567890}"
+```
+
+You may notice that besides the RID, there's no tracking for which client this command goes to. That's where the FormJQueue comes into play
+
+#### FormJQueue Key
+`FormJQueue:1234-5678-0000`: A Queue key, meant to hold the next command to be sent to the client. 
+
+Example contents of this key:
+
+```
+127.0.0.1:6379> LRANGE test-client-id 0 -1
+1) "12345-56789-00001" # These are the ID's of the next message for the client
+2) "12345-56789-00002"
+```
+
+Then, when a command is requested, it does alookup with the RID that was popped from the FormJQueue, gets the command, and sends it back to the client.

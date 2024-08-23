@@ -64,5 +64,6 @@ class RedisQueue:
 
 Left off doing above. Was working on test for the command queue.
      - Ran into another hiccup: Docker container not responding for redis. would just hang/not connect. 
+        - reboot fixed it, weird
     - once that's fixed go continue testing/setting up command/client_id endpoint.
 

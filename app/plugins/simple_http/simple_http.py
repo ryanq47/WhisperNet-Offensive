@@ -18,7 +18,6 @@ class Info:
 # for queuing commands. Should be protected endpoint
 @app.route("/command/<client_id>", methods=["POST"])
 def simple_http_queue_command(client_id):
-
     try:
         # get data from req
         dict_data = request.get_json()
@@ -66,7 +65,7 @@ def simple_http_queue_command(client_id):
 
         # set up queue
         queue = RedisQueue(
-            name = client_id
+            client_id = client_id
         )
         # enque this request ID to client queue
         queue.enqueue(

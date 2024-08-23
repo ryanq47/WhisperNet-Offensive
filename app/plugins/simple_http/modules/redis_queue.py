@@ -18,7 +18,7 @@ class RedisQueue:
             client_id: ID of client. This feild is used to create the entry for redis. 
                 # note, should auto add if queue already exists
         """
-        self.client_id = client_id
+        self.client_id = f"FormJQueue:{client_id}"
 
     def enqueue(self, item):
         """Add an item to the queue."""
