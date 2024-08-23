@@ -6,7 +6,9 @@ import json
 from redis_om import get_redis_connection, HashModel
 from modules.utils import api_response
 from plugins.simple_http.modules.redis_queue import RedisQueue
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from modules.audit import Audit
+
 
 logger = log(__name__)
 app = Instance().app
@@ -74,6 +76,14 @@ def simple_http_queue_command(client_id):
             item=rid
         )
 
+        # Audit command
+        user_identity = get_jwt_identity()
+        dict_data.setdefault('audit', {})  # Ensure 'audit' key exists in dict_data
+        dict_data['audit']['user_identity'] = user_identity  # Add user identity to the log
+
+        a = Audit()
+        a.log_action(dict_data)
+
         return api_response(
             status = 200,
             message="Command queued successfully"
@@ -85,8 +95,6 @@ def simple_http_queue_command(client_id):
         logger.error(f"An error occurred: {e}")
         logger.error(traceback.format_exc())  # This will print the full stack trace
         return api_response(message="Internal server error", status=500)
-
-
 
 # Optional route example
 @app.route("/get/<client_id>", methods=["GET"])
