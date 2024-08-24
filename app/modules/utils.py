@@ -54,7 +54,7 @@ def plugin_loader():
 
 
 def api_response(
-    message: str = "success",
+    message: str = "",
     data: dict = None,
     error: str = None,
     data_items: list = None,

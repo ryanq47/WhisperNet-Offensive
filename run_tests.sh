@@ -16,6 +16,9 @@ rm ./whispernet.log
 #echo "Starting Redis"
 #redis-server --loadmodule /home/ryan/librejson.so &
 
+echo "Clearing redis"
+redis-cli FLUSHALL
+
 # Start the server in the background
 echo "Starting Server..."
 python3 ./app/whispernet.py &

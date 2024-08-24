@@ -43,7 +43,9 @@ def test_simple_http_get():
     response = send_request_and_print(url)
 
     assert response.status_code == 200
-    assert response.json() == {"client_id": client_id}
+    #assert response.json() == {"client_id": client_id}
+    assert response.json()["data"]["Powershell"]
+
 
 def test_simple_http_post():
     console.print(Panel("POST /post/<client_id>", title="Test Case", expand=False))
@@ -198,9 +200,9 @@ if __name__ == "__main__":
     results = {}
 
     test_cases = [
-        ("GET /get/<client_id>", test_simple_http_get),
         ("POST /post/<client_id>", test_simple_http_post),
         ("POST /command/<client_id>", test_simple_http_queue_command),
+        ("GET /get/<client_id>", test_simple_http_get), # run AFTER command is queued
         ("POST /command/<client_id> with Invalid JWT", test_invalid_jwt_token),
         ("POST /post/<client_id> with Missing Fields", test_missing_required_fields),
         ("POST /post/<client_id> with Invalid Data Types", test_invalid_data_types),

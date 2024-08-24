@@ -39,4 +39,10 @@ class FormJModel(JsonModel):
         database = redis  # The Redis connection
         #global_key_prefix = "FormJ"
 
+# Define a model for a queue item
+class FormJQueue(HashModel):
+    client_id: str
+    rid: str
 
+    class Meta:
+        database = redis

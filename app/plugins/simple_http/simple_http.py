@@ -3,12 +3,12 @@ from modules.instances import Instance
 from modules.log import log
 from plugins.simple_http.modules.redis_models import FormJModel
 import json
-from redis_om import get_redis_connection, HashModel
+from redis_om import get_redis_connection, HashModel, NotFoundError
 from modules.utils import api_response
 from plugins.simple_http.modules.redis_queue import RedisQueue
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from modules.audit import Audit
-
+import traceback
 
 logger = log(__name__)
 app = Instance().app
@@ -99,11 +99,57 @@ def simple_http_queue_command(client_id):
 # Optional route example
 @app.route("/get/<client_id>", methods=["GET"])
 def simple_http_get(client_id):
-    return jsonify({"client_id": f"{client_id}"})
+    #return jsonify({"client_id": f"{client_id}"})
 
-    # for queue, create a key with a queue, named the name of the client id?
+    try:
+        # this will check for non alphanum and - chars.
+        rq = RedisQueue(
+            client_id = client_id
+        )
 
-    # then pop command from queue
+        # find queue with that client id
+        # pop command 
+        rid_of_command = rq.dequeue()
+
+        if not rid_of_command:
+            logger.warning(f"Queue empty for rid: {client_id}")
+            return api_response(
+                status=404, # sending a 404 cuz the item doesn't exist
+                message = "Queue empty or does not exist"
+            )
+
+        # look up command rid basedon popped command
+        # get json from redis
+        command = FormJModel.get(rid_of_command)
+
+        # convert reults to dict, then pull specifically the "data" field, which contains the 
+        # sync keys.
+        command_dict = dict(command).get("data")
+
+        # need a bit of thinking here, do we send back the SAME rid? or just a new one
+        # For now just leaving it.
+
+        # send back to client
+        return api_response(
+            data=command_dict
+        )
+
+    # dooo I keep raising errors up the stack?
+    except NotFoundError:
+        # Handle the case where the command is not found
+        logger.error(f"No command found with RID: {rid_of_command}")
+        return api_response(status=404)
+        
+    except ValueError as e:
+        logger.error(e)
+        return api_response(status=400)
+        
+    except Exception as e:
+        # Print the complete traceback
+        traceback.print_exc()  # This will print the full traceback to stderr
+        logger.error(traceback.format_exc())  # Log the traceback as a string
+        return api_response(status=500)
+
 
 
 # for storing responses
@@ -185,3 +231,8 @@ def simple_http_post(client_id):
         logger.error(f"An error occurred: {e}")
         logger.error(traceback.format_exc())  # This will print the full stack trace
         return api_response(message="Internal server error", status=500)
+
+
+def sanitize_input(value):
+    # Allow only alphanumeric characters, underscores, and hyphens
+    return re.match(r'^[\w-]+$', value) is not None
