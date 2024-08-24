@@ -39,7 +39,17 @@ class FormJModel(JsonModel):
         database = redis  # The Redis connection
         #global_key_prefix = "FormJ"
 
+    @classmethod
+    def set_prefix(cls, prefix: str):
+        """
+        Set a dynamic prefix for the model.
+        
+        can either be request or response in this case
+        """
+        cls.Meta.global_key_prefix = prefix
+
 # Define a model for a queue item
+# I don't think this is needed anymore
 class FormJQueue(HashModel):
     client_id: str
     rid: str

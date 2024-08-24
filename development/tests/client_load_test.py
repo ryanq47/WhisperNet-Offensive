@@ -90,14 +90,14 @@ def load_test(num_clients):
     }
 
     def client_worker(client):
-        # Send requests to all endpoints
+        # Send requests in the specified order: command -> get -> post
+        command_status, command_time = client.command()
         get_status, get_time = client.get()
         post_status, post_time = client.post()
-        command_status, command_time = client.command()
         return {
+            "command": (command_status, command_time),
             "get": (get_status, get_time),
-            "post": (post_status, post_time),
-            "command": (command_status, command_time)
+            "post": (post_status, post_time)
         }
 
     clients = [Client(str(uuid.uuid4())) for _ in range(num_clients)]
@@ -128,7 +128,7 @@ def load_test(num_clients):
     return response_stats
 
 if __name__ == "__main__":
-    num_clients = 100  # Adjust the number of clients for load testing
+    num_clients = 1000  # Adjust the number of clients for load testing
     console.print(Panel(Text("Load Testing with Multiple Clients", style="bold magenta"), expand=False))
 
     response_stats = load_test(num_clients)

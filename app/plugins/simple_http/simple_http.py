@@ -24,6 +24,9 @@ class Info:
 @jwt_required()
 def simple_http_queue_command(client_id):
     try:
+        # set prefix
+        FormJModel.set_prefix("request")
+
         # get data from req
         dict_data = request.get_json()
         if dict_data is None:
@@ -83,6 +86,10 @@ def simple_http_get(client_id):
     #return jsonify({"client_id": f"{client_id}"})
 
     try:
+        # set prefix to request, to make sure that we are only
+        # getting keys with the request prefix
+        FormJModel.set_prefix("request")
+
         # this will check for non alphanum and - chars.
         rq = RedisQueue(
             client_id = client_id
@@ -91,6 +98,9 @@ def simple_http_get(client_id):
         # find queue with that client id
         # pop command 
         rid_of_command = rq.dequeue()
+
+        logger.debug("Popping next in queue")
+        logger.debug(rid_of_command)
 
         if not rid_of_command:
             logger.warning(f"Queue empty for rid: {client_id}")
@@ -101,18 +111,21 @@ def simple_http_get(client_id):
 
         # look up command rid basedon popped command
         # get json from redis
+        # do I need to set prefix here?
+        # testing shows that it's fine and returns the correct messag
         command = FormJModel.get(rid_of_command)
+        
 
-        # convert reults to dict, then pull specifically the "data" field, which contains the 
-        # sync keys.
-        command_dict = dict(command).get("data")
+        # Convert from redis key to dict, then use formj for validation N stuff
+        command_dict = FormJ(dict(command)).parse()
 
-        # need a bit of thinking here, do we send back the SAME rid? or just a new one
+        # need a bit of thinking here, do we send back the SAME rid? or just a new one.
+        # mainly trying to track responses
         # For now just leaving it.
 
         # send back to client
         return api_response(
-            data=command_dict
+            data=command_dict.data
         )
 
     # dooo I keep raising errors up the stack?
@@ -137,6 +150,8 @@ def simple_http_get(client_id):
 @app.route("/post/<client_id>", methods=["POST"])
 def simple_http_post(client_id):
     try:
+        FormJModel.set_prefix("response")
+
         dict_data = request.get_json()
         if dict_data is None:
             return api_response(message="No data in request", status=400)
@@ -173,7 +188,3 @@ def simple_http_post(client_id):
         #logger.error(traceback.format_exc())  # This will print the full stack trace
         return api_response(message="Internal server error", status=500)
 
-
-def sanitize_input(value):
-    # Allow only alphanumeric characters, underscores, and hyphens
-    return re.match(r'^[\w-]+$', value) is not None
