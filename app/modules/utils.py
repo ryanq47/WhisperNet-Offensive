@@ -56,7 +56,6 @@ def plugin_loader():
 def api_response(
     message: str = "",
     data: dict = None,
-    error: str = None,
     data_items: list = None,
     status: int = 200,
     **kwargs,
@@ -82,7 +81,6 @@ def api_response(
             "timestamp": generate_timestamp(),  # Current timestamp
             "status": status,  # not needed, but nice to have
             "data": data if data else {},
-            "error": error if error else {},
             "message": str(message),
         }
 

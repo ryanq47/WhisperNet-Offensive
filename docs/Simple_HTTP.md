@@ -3,27 +3,23 @@
 A simple HTTP C2 protocol. Designed to be stupid simple, no tricks, etc, just straight up HTTP. More of a testbed for the rest of the framework. Uses FormJ to communicate
 
 
-## TODO:
-[ ] Validate all endpoints
-
-[X] Protect queue command endpoint
-
-[ ] logging EVERYWHERE. Actionlogger?
-
 ## Endpoints
 
-#### `get/{clientname}`
+#### `get/<client-id>`
 
 Gets the next command for the client.
 
-#### `post/{clientname}`
+#### `post/<client-id>`
 
 For clients to post the results of the command back to.
 
-#### `command/{clientname}`
+Takes formJ message.
+
+#### `command/<client-id>`
 
 Queue a command to the client. 
 
+Takes a formJ message with appropriate sync keys for commands.
 
 ## Backend
 Client commands + Queue held in Redis.
@@ -33,12 +29,17 @@ NO threatmodeling/Client modeling w neo4j yet. That will come later
 ## Comms:
 
 Beacon Style:
-1. Client reaches out to `get/{clientname}`
+
+0. First/Any time - A command is queued for a client at `command/<client-id>`
+
+1. Client reaches out to `get/<client-id>`
     - Server gives payload/command
 2. Client runs command/actions
     - Client sleeps for specified time
-3. Client posts command back to `post/{clientname}`
-jump to step 1
+3. Client posts command back to `post/<client-id>`
+    - jump to step 1
+
+
 
 ## Redis setup
 Details related to the redis setup in the simple_http plugin
