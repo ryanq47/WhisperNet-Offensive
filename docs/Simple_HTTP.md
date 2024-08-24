@@ -134,21 +134,27 @@ Then, when a command is requested, it does alookup with the RID that was popped 
 The data field for the Command keys in redis do not validate the type(s) of sync keys in said field. TLDR: Any json dict can go into the data field. 
 
 ## StressTest Notes:
-- Biggest failure point is the FileRotateHandler, especially when trying to switch files.
-- Command is pretty slow on response times too
+
+- [X] Command is pretty slow on response times too
+    - fixed, bug with Audit. switched to singleton, which reduced it greatly. Probably was making a new logger each time it was called
+
+- [ ] Failing get commands abuot 33% of the time. My guess is that the command is being sent, then being requested too quickly/not in redis in time?
+
+    - It was the test. it was sending requests out of order, so as such, some queue's didn't have anything in them. Good news: this edgecase has been handled.
 
 Output from a test: 
 ```
 ┏━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Endpoint ┃ Status  ┃   Count   ┃ Avg. Response Time (ms) ┃
 ┡━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ get      │ Success │ 948/1000  │          9.88           │
-│ get      │ Failure │  52/1000  │                         │
-│ post     │ Success │ 1000/1000 │          7.01           │
+│ get      │ Success │ 712/1000  │          15.87          │
+│ get      │ Failure │ 288/1000  │                         │
+│ post     │ Success │ 1000/1000 │          10.60          │
 │ post     │ Failure │  0/1000   │                         │
-│ command  │ Success │ 797/1000  │         384.49          │
-│ command  │ Failure │ 203/1000  │                         │
+│ command  │ Success │ 1000/1000 │          14.32          │
+│ command  │ Failure │  0/1000   │                         │
 └──────────┴─────────┴───────────┴─────────────────────────┘
+
 
 
 ```

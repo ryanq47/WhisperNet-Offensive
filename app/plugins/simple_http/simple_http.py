@@ -145,7 +145,6 @@ def simple_http_get(client_id):
         return api_response(status=500)
 
 
-
 # for storing responses
 @app.route("/post/<client_id>", methods=["POST"])
 def simple_http_post(client_id):
