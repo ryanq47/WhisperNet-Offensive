@@ -1,19 +1,22 @@
+'''
+Form J implementation. 
+'''
+
 import munch
 import json
 from modules.log import log
-from sync_powershell import FormJPowershell
+#from sync_powershell import FormJPowershell
 
 logger = log(__name__)
 
 
 # list of sync_key handlers
-handlers = {"Powershell": FormJPowershell}  # self.handle_client_name,
+#handlers = {"Powershell": FormJPowershell}  # self.handle_client_name,
 
 
 class FormJ:
     def __init__(self, data: dict | str):
         # validate data is a dict based on input.
-
         # Check if the data is a JSON string
         if isinstance(data, str):
             try:
@@ -35,6 +38,31 @@ class FormJ:
             raise TypeError(
                 f"Unsupported data type: {type(data)}. Expected str or dict."
             )
+
+
+        # validate actual contents
+        required_keys = ["rid", "data", "message", "status", "timestamp"]
+        for key in required_keys:
+            if key not in self.data:
+                logger.error(f"Missing required field: {key}")
+                raise KeyError(f"Missing required field: {key}")
+
+        # Addtl validation for input data types
+        if not isinstance(self.data.get("rid"), str):
+            logger.error("Invalid type for 'rid'")
+            raise TypeError("The 'rid' field must be a string.")
+
+        if not isinstance(self.data.get("status"), int):
+            logger.error("Invalid type for 'status'")
+            raise TypeError("The 'status' field must be an int.")
+
+        if not isinstance(self.data.get("timestamp"), int):
+            logger.error("Invalid type for 'timestamp'")
+            raise TypeError("The 'timestamp' field must be an int.")
+
+        if not isinstance(self.data.get("data"), dict):
+            logger.error("Invalid type for 'data'")
+            raise TypeError("The 'data' field must be an dict.")
 
         self.handlers = {
             #'listenerHTTP': ListenerHttpSync #self.handle_client_name,
