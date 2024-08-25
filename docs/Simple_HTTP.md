@@ -21,6 +21,30 @@ Queue a command to the client.
 
 Takes a formJ message with appropriate sync keys for commands.
 
+Example:
+```
+{
+    "rid": "12345-56789-09187",
+    "message": "somemessage",
+    "timestamp": 1234567890,
+    "status": 200,
+    "data": {
+        "Powershell": [
+            {
+                "executable": "ps.exe",
+                "command": "net user /domain add bob",
+                "id": 1234
+            },
+            {
+                "executable": "ps.exe",
+                "command": "net group /add Domain Admins Bob",
+                "id": 1235
+            }
+        ]
+    }
+}
+```
+
 ## Backend
 Client commands + Queue held in Redis.
 
@@ -42,18 +66,12 @@ Beacon Style:
     - Client sleeps for specified time
 
 3. Client posts command back to `post/<client-id>`
-    - also with SAME rid. 
-        - need to find way to not overwrite already existing key?
-        - a "request" prefix, and a "response" prefix?
-            `request:plugins.simple_http.modules.redis_models.FormJModel:12345-56789-09187`
-            `response:plugins.simple_http.modules.redis_models.FormJModel:12345-56789-09187`
-            - Dynamically setting this with a classmethod in redis_models.FormJModel. Only do this if the function is saving to redis
-
+    - also with SAME rid.
     - jump to step 1
 
 #### Request Vs Response
 
-Request ID's are used consistenlty through ..., basically, when a command is queued, it has a rid. That RID is reused when sending to the client, and the client sends it's response back with that same RID. This is all for easyish tracking purposes. 
+Request ID's are used to track messages, basically, when a command is queued, it has a rid. That RID is reused when sending to the client, and the client sends it's response back with that same RID. This is all for easyish tracking purposes. 
 
 In order to differentiate these keys in redis, a `request` or `response` prefix is added to each key. 
 
@@ -85,15 +103,14 @@ This may change going forward, but for now works.
 #### Other Ideas/EdgeCase thoughts:
 
 Sleep/Error behavior: 
-    Failed response: Sleep?
+    - Failed response: Sleep?
+    - Error on server side: Send sleep?
 
-    Error on server side: Send sleep?
-
-Tracking REsponses:
-    Keep the same RID between request/response? how else to track the response
+Tracking Responses:
+    - Keep the same RID between request/response? how else to track the response
 
 Big responses:
- - If exceed the size or whatever, and need to chunk... do that on the HTTP side, not on the redis side. TLDR: get the whole msg, then write to redis
+    - If exceed the size or whatever, and need to chunk... do that on the HTTP side, not on the redis side. TLDR: get the whole msg, then write to redis
 
 
 ## Redis setup
@@ -138,23 +155,21 @@ The data field for the Command keys in redis do not validate the type(s) of sync
 - [X] Command is pretty slow on response times too
     - fixed, bug with Audit. switched to singleton, which reduced it greatly. Probably was making a new logger each time it was called
 
-- [ ] Failing get commands abuot 33% of the time. My guess is that the command is being sent, then being requested too quickly/not in redis in time?
+- [X] Failing get commands abuot 33% of the time. My guess is that the command is being sent, then being requested too quickly/not in redis in time?
 
     - It was the test. it was sending requests out of order, so as such, some queue's didn't have anything in them. Good news: this edgecase has been handled.
 
 Output from a test: 
 ```
-┏━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Endpoint ┃ Status  ┃   Count   ┃ Avg. Response Time (ms) ┃
-┡━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ get      │ Success │ 712/1000  │          15.87          │
-│ get      │ Failure │ 288/1000  │                         │
-│ post     │ Success │ 1000/1000 │          10.60          │
-│ post     │ Failure │  0/1000   │                         │
-│ command  │ Success │ 1000/1000 │          14.32          │
-│ command  │ Failure │  0/1000   │                         │
-└──────────┴─────────┴───────────┴─────────────────────────┘
-
-
-
+             Response Summary for 100 Clients             
+┏━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Endpoint ┃ Status  ┃  Count  ┃ Avg. Response Time (ms) ┃
+┡━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ get      │ Success │ 100/100 │          3.25           │
+│ get      │ Failure │  0/100  │                         │
+│ post     │ Success │ 100/100 │          3.00           │
+│ post     │ Failure │  0/100  │                         │
+│ command  │ Success │ 100/100 │          3.64           │
+│ command  │ Failure │  0/100  │                         │
+└──────────┴─────────┴─────────┴─────────────────────────┘
 ```
