@@ -180,3 +180,4 @@ cython_debug/
 
 yq
 yq_linux_amd64
+*.rdb
