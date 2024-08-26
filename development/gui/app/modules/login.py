@@ -60,15 +60,26 @@ def login_page():
             # Login button to submit credentials
             ui.button('Login', on_click=lambda: login(username_input.value, password_input.value))
 
+'''
 def login_required(page_func):
     """Decorator to ensure user is logged in before accessing the page."""
-    def wrapper():
+    def wrapper(*args, **kwargs):
         if 'logged_in' in session_store and session_store['logged_in']:
-            return page_func()  # Call the original page function
+            return page_func(*args, **kwargs)  # Pass any arguments to the page function
         else:
             ui.notify('You must log in to access this page.', type='warning')
             ui.open('/login')
     return wrapper
+'''
+
+def check_login():
+    """Function to ensure user is logged in before accessing the page."""
+    if 'logged_in' in session_store and session_store['logged_in']:
+        return True
+    else:
+        ui.notify('You must log in to access this page.', type='warning')
+        ui.open('/login')
+        return False
 
 def main_page():
     """Main page that requires login."""
@@ -92,7 +103,7 @@ async def login(username, password):
             
             # not redirectiong, maybe add session? need to check if that's needed
             if response.status_code == 200:
-                Config().set_token(response.json().get('data',{}).get('token'))
+                Config().set_token(response.json().get('data',{}).get('access_token'))
                 session_store['logged_in'] = True
                 logger.info(f"User {username} logged in")
                 ui.open('/clients')  # Navigate to the clients page after successful login

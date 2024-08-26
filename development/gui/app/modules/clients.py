@@ -1,11 +1,17 @@
 from nicegui import ui
 from app.modules.ui_elements import create_header
-from app.modules.login import login_required
+from app.modules.login import check_login
+import requests
+from app.modules.config import Config
+import logging
+
+logger = logging.getLogger(__name__)
+
 ## Todo:
 
-# - [  ] make this stretch the whole screen
-# - [ ] get real data/make request
-# - [  ] style match
+# - [x] make this stretch the whole screen
+# - [x] get real data/make request
+# - [x] style match
 
 # Define some fake data for the AG Grid
 fake_data = [
@@ -18,11 +24,15 @@ fake_data = [
 
 # Create the NiceGUI page
 @ui.page('/clients')
-@login_required
 def clients():
+    if not check_login():
+        return
+
     create_header()  # Add the header to the page
 
     ui.markdown("## AG Grid with Fake Data")
+
+    client_data = get_client_data()
 
     # Enhanced AG Grid setup
     ui.aggrid(
@@ -41,5 +51,37 @@ def clients():
             'pagination': True,        # Enable pagination
             'paginationPageSize': 10,  # Set the number of rows per page
             'rowSelection': 'single',  # Enable single row selection
-        }, html_columns=[2] # makingonly 2nd row html rendered
+        }, html_columns=[2] # making only 2nd row html rendered
     )
+
+
+def get_client_data() -> dict:
+    """
+    Function to retrieve client data from server
+    """
+    try:
+        url = Config().get_url() / "clients"
+        token = Config().get_token()
+
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        # Send a synchronous GET request
+        response = requests.get(url, headers=headers)  # Ensure headers are included in the request
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # Retrieve client data from JSON response
+            client_data = data.get("data", {})
+            #print(client_data)
+            return client_data
+        else:
+            logger.warning(f"Received a {response.status_code} status code when requesting {url}")
+            #logger.debug(response.text)
+            return {}  # Handle failed response here by returning an empty dictionary
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        raise e

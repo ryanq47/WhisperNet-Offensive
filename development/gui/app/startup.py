@@ -3,25 +3,31 @@ from nicegui import ui
 from app.modules.command_console import CommandConsole
 from app.modules.home import homepage
 from app.modules.clients import clients
-from app.modules.login import login_required
+from app.modules.login import check_login
 import app.modules.login
 
 def startup() -> None:
     @ui.page('/')
-    @login_required
     def index():
+        if not check_login():
+            return
+
         homepage()
 
     @ui.page('/home')
-    @login_required
     def home():
+        if not check_login():
+            return
+
         homepage()
         # make this do the same as /
 
 ## Want to move these somewhere else? if possible
 @ui.page('/command/{client_id}')
-@login_required
 def command_console(client_id: str):
+    if not check_login():
+        return
+
     c = CommandConsole(client_id)
     # need to add a check in CommandConsole for if the client exists or not
 
