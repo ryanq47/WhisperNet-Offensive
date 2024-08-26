@@ -1,6 +1,9 @@
 from nicegui import ui
 import requests
 import httpx
+from app.modules.log import log
+
+logger = log(__name__)
 
 from yarl import URL
 
@@ -11,7 +14,7 @@ class CommandConsole:
         #self.base_url - set this up in a config or something
         #self.command_endpoint = Config().base_url / client_type / client-id
         
-
+        logger.debug(f"Creating new CommandConsole for {client_id}")
         # Set up the main layout for the console
         with ui.column().classes('h-screen w-full bg-gray-900 text-white'):
             
