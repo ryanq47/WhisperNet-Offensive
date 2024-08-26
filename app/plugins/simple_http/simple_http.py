@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from modules.audit import Audit
 import traceback
 from modules.form_j import FormJ
+from modules.redis_models import Client
+import time
 
 logger = log(__name__)
 app = Instance().app
@@ -119,9 +121,9 @@ def simple_http_get(client_id):
         # Convert from redis key to dict, then use formj for validation N stuff
         command_dict = FormJ(dict(command)).parse()
 
-        # need a bit of thinking here, do we send back the SAME rid? or just a new one.
-        # mainly trying to track responses
-        # For now just leaving it.
+        # adding client to redis
+        client = Client(type="simple-http", client_id=client_id, checkin=int(time.time()))
+        client.save()
 
         # send back to client
         return api_response(
@@ -168,6 +170,10 @@ def simple_http_post(client_id):
 
         # write to redis
         formj_message.save()
+
+       # adding client to redis
+        client = Client(type="simple-http", client_id=client_id, checkin=int(time.time()))
+        client.save()
 
         return api_response(
             status = 200,
