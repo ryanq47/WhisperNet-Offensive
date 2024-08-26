@@ -6,7 +6,7 @@ __pycache__/
 *$py.class
 
 # C extensions
-*.so
+#*.so # actually allowing these, need for librejson.so
 
 # Distribution / packaging
 .Python
@@ -181,3 +181,4 @@ cython_debug/
 yq
 yq_linux_amd64
 *.rdb
+

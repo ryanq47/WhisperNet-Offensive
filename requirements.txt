@@ -9,3 +9,4 @@ pyyaml
 munch
 gunicorn
 python-dotenv
+redis-om
