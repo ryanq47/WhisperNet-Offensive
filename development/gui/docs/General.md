@@ -14,7 +14,8 @@
     - Other?
 
 - [ ] Clients list (need to do some server work for that one)
-
+    /clients exists now, just need to set it up client side and parse that data now
+- [ ] Include JWT in requests
 
 
 ## Structure
