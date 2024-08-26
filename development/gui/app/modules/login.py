@@ -6,7 +6,7 @@ import re
 
 logger = log(__name__)
 
-# Store session data - toss this in a singleton maybe?
+# Store session data - toss this in the config singleton maybe?
 session_store = {}
 
 @ui.page('/login')
@@ -80,6 +80,7 @@ def main_page():
             ui.open('/login')
 
     except Exception as e:
+        ui.notify("An unkown error occured - check logs")
         logger.error(e)
         raise e
 
@@ -99,6 +100,7 @@ async def login(username, password):
                 ui.notify('Invalid credentials', type='negative')
 
     except Exception as e:
+        ui.notify("An unkown error occured - check logs")
         logger.error(e)
         #ui.notify("An unkown error occured")
         raise e

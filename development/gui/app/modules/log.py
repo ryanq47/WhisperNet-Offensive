@@ -55,7 +55,7 @@ class log(logging.Logger):
         self.addHandler(console)
 
         # setup file handler to ALSO write to the file
-        file_handler = logging.FileHandler("whispernet.log", mode="w")
+        file_handler = logging.FileHandler("whispernet_gui.log", mode="w")
         # other options: RotatingFileHandler, rotates based on file size.
         # This is a PITA with current setup, as it has issues when mutliple loggers are open/writing to same file & errors out.
         file_handler.setLevel(logging.DEBUG)

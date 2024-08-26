@@ -1,39 +1,85 @@
 from nicegui import ui
-import requests
-import httpx
+
 from app.modules.log import log
+from app.modules.ui_elements import create_header
 
 logger = log(__name__)
-
-from yarl import URL
 
 class CommandConsole:
     def __init__(self, client_id):
         self.client_id = client_id
         self.command_outputs = []
-        #self.base_url - set this up in a config or something
-        #self.command_endpoint = Config().base_url / client_type / client-id
-        
+
         logger.debug(f"Creating new CommandConsole for {client_id}")
-        # Set up the main layout for the console
-        with ui.column().classes('h-screen w-full bg-gray-900 text-white'):
-            
-            # Scrollable output area
-            with ui.column().classes('flex-1 p-4 space-y-4 overflow-y-auto') as self.output_area:
-                pass  # This container will hold command outputs
 
-            # Fixed command input area at the bottom
-            with ui.row().classes('w-full bg-gray-800 p-2 fixed bottom-0 items-center'):
-                ui.label("C:\\>").classes('text-white')
-                self.command_input = ui.input(placeholder='Enter command here...').classes('w-full bg-gray-900 text-white')
+        #create_header()
+        # Main container with a height of 100vh to prevent scrolling
+        #with ui.column().classes('w-full h-full bg-gray-900 text-white').style('overflow: hidden;'):
+        # need to set height to 96, as 100 is for some reason too big & creates a scroll bar
+        with ui.column().classes('w-full bg-gray-700 text-white').style('height: 96vh; overflow: hidden;'):
 
-                # Run button tied to command execution
-                self.run_button = ui.button('Run', on_click=lambda: self.execute_command(self.command_input.value))
-                self.run_button.classes('bg-blue-500 text-white ml-2')
+            # Header or navbar area at the top
+            with ui.row().classes('w-full bg-gray-800 p-2 items-center justify-between'):
+                ui.label(f'Command Console - Client ID: {self.client_id}').classes('text-lg text-white')
+                ui.label('Status: Connected').classes('text-sm text-green-400')
+                
+                # Button to navigate back to the /clients page
+                ui.button('Back to Clients', on_click=lambda: ui.open('/clients')).classes(
+                    'bg-blue-500 text-white px-4 py-1 rounded-sm'
+                )
 
-                # Attach Enter key to run button
-                self.command_input.on('keydown.enter', lambda _: self.execute_command(self.command_input.value))
+            # Scrollable output area for displaying command outputs
+            self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-y-auto').style(
+                'max-height: calc(100vh - 50px);'  # Dynamic height to prevent overall window scrolling
+            )
 
+            # Footer area remains at the bottom
+            with ui.row().classes('w-full bg-gray-800 p-2 items-center'):
+                self.command_input = ui.input(placeholder='Enter command...').classes(
+                    'flex-grow bg-gray-700 text-white px-2 py-1 rounded-sm'
+                ).style('min-width: 0;').props('autofocus')  # Allow input to shrink properly
+                
+                self.run_button = ui.button('Run', on_click=self.on_run_click).classes(
+                    'bg-blue-500 text-white ml-2 px-4 py-1 rounded-sm'
+                )
+                
+                self.command_input.on('keydown.enter', lambda _: self.on_run_click())
+
+    def on_run_click(self):
+        """Handles the run button click or Enter key press to execute command."""
+        command = self.command_input.value.strip()
+        if command:
+            self.command_input.value = ''  # Clear the input field - needs to go first
+            self.execute_command(command)
+
+    def execute_command(self, command):
+        """Executes the given command and displays the output."""
+        # Placeholder for actual command execution logic
+        output = f"Placeholder - Executed command: {command}"
+        # parse command into formJ
+
+        # async send to correct endpoint to queue message
+
+        # async check response url until there's a message back
+
+
+        # display output back
+        self.command_outputs.append(output)
+        self.display_output(output)
+
+    def display_output(self, output):
+        """Displays the output in the output area and scrolls to the latest message."""
+        # Append output to the output area
+        with self.output_area:
+            ui.label(output).classes('text-sm text-white').style('white-space: pre-wrap;')
+        self.scroll_to_bottom()
+
+    def scroll_to_bottom(self):
+        """Scrolls the output area to the bottom to show the latest message."""
+        self.output_area.run_method('scrollTo', {'top': self.output_area.element['scrollHeight']})
+
+
+''' Exmaple async
     async def execute_command(self, command: str):
         if command.strip():
             async with httpx.AsyncClient() as client:  # Create an async client context
@@ -54,10 +100,6 @@ class CommandConsole:
             self.command_input.value = ''  # Clear the input after execution
 
 
-    def update_output_display(self):
-        self.output_area.clear()
-        with self.output_area:
-            for output in self.command_outputs:
-                # Convert any client ID in output to a clickable link
-                ui.markdown(f"[View client {self.client_id}](http://localhost:8080/client/{self.client_id})\n\n```\n{output}\n```")
-        #self.output_area.scroll_to()  # Scroll to the bottom to show the most recent message
+
+
+'''

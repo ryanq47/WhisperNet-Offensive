@@ -20,6 +20,7 @@ def startup() -> None:
 
 ## Want to move these somewhere else? if possible
 @ui.page('/command/{client_id}')
+@login_required
 def command_console(client_id: str):
     c = CommandConsole(client_id)
     # need to add a check in CommandConsole for if the client exists or not
