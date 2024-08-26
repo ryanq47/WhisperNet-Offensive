@@ -3,13 +3,17 @@ from nicegui import ui
 from app.modules.command_console import CommandConsole
 from app.modules.home import homepage
 from app.modules.clients import clients
+from app.modules.login import login_required
+import app.modules.login
 
 def startup() -> None:
     @ui.page('/')
+    @login_required
     def index():
         homepage()
 
     @ui.page('/home')
+    @login_required
     def home():
         homepage()
         # make this do the same as /

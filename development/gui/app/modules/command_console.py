@@ -1,10 +1,16 @@
 from nicegui import ui
 import requests
+import httpx
+
+from yarl import URL
 
 class CommandConsole:
     def __init__(self, client_id):
         self.client_id = client_id
         self.command_outputs = []
+        #self.base_url - set this up in a config or something
+        #self.command_endpoint = Config().base_url / client_type / client-id
+        
 
         # Set up the main layout for the console
         with ui.column().classes('h-screen w-full bg-gray-900 text-white'):
@@ -25,19 +31,25 @@ class CommandConsole:
                 # Attach Enter key to run button
                 self.command_input.on('keydown.enter', lambda _: self.execute_command(self.command_input.value))
 
-    def execute_command(self, command: str):
+    async def execute_command(self, command: str):
         if command.strip():
-            # Mock API request (replace with your actual API call)
-            response = requests.get(f'https://google.com')  # Replace with your actual API
+            async with httpx.AsyncClient() as client:  # Create an async client context
+                try:
+                    # Perform the asynchronous GET request
+                    response = await client.get('https://google.com')  # Replace with your actual API
 
-            if response.status_code == 200:
-                output = response.text
-            else:
-                output = f"Error: {response.status_code} - {response.reason}"
+                    if response.status_code == 200:
+                        output = response.text
+                    else:
+                        output = f"Error: {response.status_code} - {response.reason_phrase}"
+
+                except httpx.RequestError as e:
+                    output = f"Request error: {e}"
 
             self.command_outputs.append(output)  # Add new output to the end
             self.update_output_display()
             self.command_input.value = ''  # Clear the input after execution
+
 
     def update_output_display(self):
         self.output_area.clear()

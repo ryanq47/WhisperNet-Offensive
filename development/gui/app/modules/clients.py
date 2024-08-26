@@ -1,5 +1,6 @@
 from nicegui import ui
-
+from app.modules.ui_elements import create_header
+from app.modules.login import login_required
 ## Todo:
 
 # - [  ] make this stretch the whole screen
@@ -12,12 +13,15 @@ fake_data = [
     {"name": "Bob", "age": 30, "country": "Canada"},
     {"name": "Charlie", "age": 35, "country": "UK"},
     {"name": "David", "age": 40, "country": "Australia"},
-    {"name": "Eva", "age": 45, "country": "Germany"},
+    {"name": "Eva", "age": 45, "country": "<a href='https://facebook.com'>https://facebook.com</a>"},
 ]
 
 # Create the NiceGUI page
 @ui.page('/clients')
+@login_required
 def clients():
+    create_header()  # Add the header to the page
+
     ui.markdown("## AG Grid with Fake Data")
 
     # Enhanced AG Grid setup
@@ -37,5 +41,5 @@ def clients():
             'pagination': True,        # Enable pagination
             'paginationPageSize': 10,  # Set the number of rows per page
             'rowSelection': 'single',  # Enable single row selection
-        }
+        }, html_columns=[2] # makingonly 2nd row html rendered
     )
