@@ -74,11 +74,18 @@ def login_required(page_func):
 
 def check_login():
     """Function to ensure user is logged in before accessing the page."""
-    if 'logged_in' in session_store and session_store['logged_in']:
-        return True
-    else:
-        ui.notify('You must log in to access this page.', type='warning')
-        ui.open('/login')
+    try:
+        if 'logged_in' in session_store and session_store['logged_in']:
+            return True
+        else:
+            ui.notify('You must log in to access this page.', type='warning')
+            ui.open('/login')
+            return False
+
+    except Exception as e:
+        # would be bad if this failed. Maybe return false
+        logger.error(e)
+        #raise e
         return False
 
 def main_page():

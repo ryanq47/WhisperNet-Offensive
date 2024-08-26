@@ -47,59 +47,53 @@ class CommandConsole:
 
     def on_run_click(self):
         """Handles the run button click or Enter key press to execute command."""
-        command = self.command_input.value.strip()
-        if command:
-            self.command_input.value = ''  # Clear the input field - needs to go first
-            self.execute_command(command)
+        try:
+            command = self.command_input.value.strip()
+            if command:
+                self.command_input.value = ''  # Clear the input field - needs to go first
+                self.execute_command(command)
+
+        except Exception as e:
+            logger.error(e)
+            raise e
 
     def execute_command(self, command):
         """Executes the given command and displays the output."""
-        # Placeholder for actual command execution logic
-        output = f"Placeholder - Executed command: {command}"
-        # parse command into formJ
+    
+        try:
+            # Placeholder for actual command execution logic
+            output = f"Placeholder - Executed command: {command}"
+            # parse command into formJ
 
-        # async send to correct endpoint to queue message
+            # async send to correct endpoint to queue message
 
-        # async check response url until there's a message back
+            # async check response url until there's a message back
 
 
-        # display output back
-        self.command_outputs.append(output)
-        self.display_output(output)
+            # display output back
+            self.command_outputs.append(output)
+            self.display_output(output)
+        except Exception as e:
+            logger.error(e)
+            raise e
 
     def display_output(self, output):
         """Displays the output in the output area and scrolls to the latest message."""
-        # Append output to the output area
-        with self.output_area:
-            ui.label(output).classes('text-sm text-white').style('white-space: pre-wrap;')
-        self.scroll_to_bottom()
+        try:
+            # Append output to the output area
+            with self.output_area:
+                ui.label(output).classes('text-sm text-white').style('white-space: pre-wrap;')
+            self.scroll_to_bottom()
+
+        except Exception as e:
+            logger.error(e)
+            raise e
 
     def scroll_to_bottom(self):
         """Scrolls the output area to the bottom to show the latest message."""
-        self.output_area.run_method('scrollTo', {'top': self.output_area.element['scrollHeight']})
+        try:
+            self.output_area.run_method('scrollTo', {'top': self.output_area.element['scrollHeight']})
 
-
-''' Exmaple async
-    async def execute_command(self, command: str):
-        if command.strip():
-            async with httpx.AsyncClient() as client:  # Create an async client context
-                try:
-                    # Perform the asynchronous GET request
-                    response = await client.get('https://google.com')  # Replace with your actual API
-
-                    if response.status_code == 200:
-                        output = response.text
-                    else:
-                        output = f"Error: {response.status_code} - {response.reason_phrase}"
-
-                except httpx.RequestError as e:
-                    output = f"Request error: {e}"
-
-            self.command_outputs.append(output)  # Add new output to the end
-            self.update_output_display()
-            self.command_input.value = ''  # Clear the input after execution
-
-
-
-
-'''
+        except Exception as e:
+            logger.error(e)
+            raise e

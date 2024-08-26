@@ -19,9 +19,9 @@
 
 - [ ] CLenaup/robustify
     - [ ] consitent names to align w server (token needs to be access_token)
-    - [ ] getters for the config setup.
-    - [ ] Error handling for the config setup
-    - [ ] Try except EVERYWHERE possible with proper logging
+    - [X] getters for the config setup.
+    - [X] Error handling for the config setup
+    - [X] Try except EVERYWHERE possible with proper logging
 
 - [ ] Nice to haves:
     - [ ] Dropdown/list of previously connected servers on login
