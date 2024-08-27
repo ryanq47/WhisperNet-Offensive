@@ -27,6 +27,11 @@
     - [ ] Dropdown/list of previously connected servers on login
 
 
+- [ ] command_console
+    - [ ] Serverside get response endpoint working, /response/<client-id>
+        this is fucking broken for some reason. cannot find the correct id/key for wahtever reason, despite it existing. wtf
+    - [ ] tech docs for how this exactly works
+
 ## Structure
 
 Each module can be a class or a set of fucntions, whatever works best. 

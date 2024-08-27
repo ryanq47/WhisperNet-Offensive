@@ -44,6 +44,12 @@ Example:
     }
 }
 ```
+#### `response/<request-id>`
+
+For lookign up specific request ID responses.
+
+Pass in a request-id, and it'll pass back a formJ message with the response from the client if it exsits
+
 
 ## Backend
 Client commands + Queue held in Redis.

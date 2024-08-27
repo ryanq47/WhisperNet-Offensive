@@ -31,8 +31,8 @@ class Client:
         status_code, response_time, response_json = self._send_request(url, method="get")
         
         # If the request is successful, update the rid
-        if status_code == 200 and response_json:
-            self.rid = response_json.get("rid")  # Store the received rid
+        #if status_code == 200 and response_json:
+            #self.rid = response_json.get("rid")  # Store the received rid
 
         print(f"Sending to {url} with RID: {str(self.rid)}")
 
@@ -62,6 +62,35 @@ class Client:
         print(f"Sending to {url} with RID: {str(self.rid)}")
         return self._send_request(url, method="post", json_data=dict_data)
 
+    # gets called first as it's "posting" the command
+    def command(self):
+        
+        url = f"{BASE_URL}/command/{self.client_id}"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {os.environ['jwt_token']}",
+        }
+
+        self.rid = str(uuid.uuid4())
+        
+        dict_data = {
+            "rid": str(self.rid),
+            "message": "test_message",
+            "timestamp": 1234567890,
+            "status": 200,
+            "data": {
+                "Powershell": [
+                    {
+                        "executable": "ps.exe",
+                        "command": "net user /domain add test_user",
+                        "id": 1234,
+                    }
+                ]
+            },
+        }
+        print(f"Sending to {url} with RID: {str(self.rid)}")
+        return self._send_request(url, method="post", json_data=dict_data, headers=headers)
+
     def _send_request(self, url, method="get", json_data=None, headers=None):
         try:
             start_time = time.time()
@@ -76,14 +105,18 @@ class Client:
 def load_test(num_clients, check_in_interval):
     response_stats = {
         "get": {"success": 0, "failure": 0, "times": []},
-        "post": {"success": 0, "failure": 0, "times": []}
+        "post": {"success": 0, "failure": 0, "times": []},
+        "command": {"success": 0, "failure": 0, "times": []}
     }
 
     clients = [Client(str(uuid.uuid4())) for _ in range(num_clients)]
 
     while True:
         for client in clients:
-            # Send requests in the specified order: get -> post
+            # Send requests in the specified order: command -> get -> post
+            command_status, command_time, _ = client.command()
+            update_stats(response_stats, "command", command_status, command_time)
+
             get_status, get_time = client.get()
             update_stats(response_stats, "get", get_status, get_time)
 
