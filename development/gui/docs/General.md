@@ -33,6 +33,7 @@
     - [ ] tech docs for how this exactly works
     - [!] CLEAN UP THE DAMN COMMAND_CONSOLE. << PRIORITY
         - all old print commands + extra logging in there too, and in simple_http.py
+        - nuke not needed dumb test
     - [ ] get output to screen working
 
 ## Structure
