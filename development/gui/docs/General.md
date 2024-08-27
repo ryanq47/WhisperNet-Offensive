@@ -31,7 +31,7 @@
     - [X] Serverside get response endpoint working, /response/<client-id>
         this is fucking broken for some reason. cannot find the correct id/key for wahtever reason, despite it existing. wtf
     - [ ] tech docs for how this exactly works
-    - [!] CLEAN UP THE DAMN COMMAND_CONSOLE. << PRIORITY
+    - [!] CLEAN UP THE DAMN COMMAND_CONSOLE/refactor it. << PRIORITY
         - all old print commands + extra logging in there too, and in simple_http.py
         - nuke not needed dumb test
     - [ ] get output to screen working

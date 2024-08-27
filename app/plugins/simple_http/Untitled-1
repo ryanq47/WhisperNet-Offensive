@@ -40,3 +40,7 @@ This checks for a key such as:
 for whatever reason (might be the test), only the requests are showing up in redis when I do keys *:<rid>
 
 okay holy fuck it's just the test I think. I manualy renamed the response key to the correct name, and it worked. somethings up where they key is not gettting named properly/using it again when sending back. 
+
+fixed. no idea wahat it was
+
+## 

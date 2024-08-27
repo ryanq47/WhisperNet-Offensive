@@ -60,7 +60,7 @@ class CommandConsole:
             command = self.command_input.value.strip()
             if command:
                 self.command_input.value = ''  # Clear the input field - needs to go first
-                self.execute_command(command)
+                self.execute_command(command)  # then execute the command
 
         except Exception as e:
             logger.error(e)
@@ -71,79 +71,97 @@ class CommandConsole:
         
         try:
             # Placeholder for actual command execution logic
-            output = f"Placeholder - Executed command: {command}"
+            output = f"> {command}"
             
+            ##
+            ##Refine me - intergrate into a command parser of some sorts for creawting the keys
+            ##
+
             # Split command into parts
-            command_head = command.split()[0]
-            command_tail = ' '.join(command.split()[1:])
+            command_head = command.split()[0] # first part, which is the action
+            command_tail = ' '.join(command.split()[1:]) # second part, args. 
             
+            # based on command_head, create key.
             # Placeholder for real logic based on input
             powershell_key = PowershellSync(command=command_head).create()
             
-            # Generate keys with command_head
+            # if no key, ui.notify("Bad action") or soemtihgn
+
+            # Generate formJ message, with sync keys
             form_j_message = FormJ.generate(data=powershell_key)
+
+            ## / End refine me
+
+            # get RID from that message
             rid = form_j_message.get("rid")
 
             if rid is None:
-                ui.notify("rid is None - Bad")
+                ui.notify("RID is none - this is bad, cannot track message")
 
+            # construct URL to post command to
             post_url = Config().get_url() / "command" / self.client_id
-            print(f"posting command to: {post_url}")
-            
+            logger.debug(f"Posting command to {post_url}")
+
             # Send to correct endpoint to queue message
-            token = Config().get_token()
-            headers = {'Authorization': f'Bearer {token}'}
+            headers = {'Authorization': f'Bearer {Config().get_token()}'}
             
+            # send to server and handle response
             response = requests.post(post_url, json=form_j_message, headers=headers)
+            
             if response.status_code != 200:
                 logger.error(f"Got {response.status_code} from server.")
                 raise requests.HTTPError(
                     f"Got {response.status_code} from server: {response.text}"
                 )
             
-            response_url = Config().get_url() / "response" / rid
-            print(f"RID: {rid}")
-            
+            # if 200, start waiting for response            
             # Start the timer for this specific response check
-            self.timers[rid] = ui.timer(interval=2, callback=lambda: self.check_response(response_url, rid))
+            self.timers[rid] = ui.timer(interval=2, callback=lambda: self.check_response(rid))
             
-            # Display output back
+            # Display command that is run out to screen
             self.command_outputs.append(output)
             self.display_output(output)
         
         except Exception as e:
             logger.error(f"Error executing command: {e}")
 
-    # need sep fucnc for timer
-    def check_response(self, endpoint_url, rid):
+    # need sep fucnc for timer to work properly
+    def check_response(self, rid):
         """Checks for a response from the endpoint."""
-        print(f"CHECKING FOR RESPONSE AT {endpoint_url}")
         try:
+            # moved response url into this func
+            response_url = Config().get_url() / "response" / rid
+            logger.debug(f"checking for response at {response_url}")
+
             headers = {'Authorization': f'Bearer {Config().get_token()}'}
 
-            response = requests.get(endpoint_url, headers=headers)
+            response = requests.get(response_url, headers=headers)
             if response.status_code == 200:
                 response_data = response.json()
-                ui.notify(response_data)
-                self.display_output(response_data['data'])
-                
+                # convert message to formj
+                form_j_message = FormJ(response_data).parse()
+
+                #self.display_output(response_data['data'])
+                # need to stringify it
+                # for now, just displaying the rid
+                self.display_output(str(form_j_message.rid))
+
                 # Stop the timer as we've received a valid response
                 if rid in self.timers:
                     self.timers[rid].cancel()
                     del self.timers[rid]
                 
-                return False  # Stop checking further
-
             if response.status_code == 401:
                 logger.info("Server says missing creds, status code: 401")
                 ui.notify("Server says missing creds, status code: 401")
             else:
                 logger.info(f"Waiting for response... Status: {response.status_code}")
                 ui.notify("waiting on valid response...")
+
         except requests.RequestException as e:
+            ui.notify("Error occured - Check Logs")
             logger.error(f"Error checking response: {e}")
         
-        return True  # Continue the timer to keep checking
     def display_output(self, output):
         """Displays the output in the output area and scrolls to the latest message."""
         try:
@@ -156,6 +174,7 @@ class CommandConsole:
             logger.error(e)
             raise e
 
+    # ALSO BROKEN
     def scroll_to_bottom(self):
         """Scrolls the output area to the bottom to show the latest message. - not working"""
         try:
