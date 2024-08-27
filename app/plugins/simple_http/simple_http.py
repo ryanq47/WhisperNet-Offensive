@@ -33,7 +33,7 @@ class Info:
 
 # for queuing commands. Should be protected endpoint
 @app.route("/command/<client_id>", methods=["POST"])
-#@jwt_required()
+@jwt_required()
 def simple_http_queue_command(client_id):
     try:
         # set prefix
@@ -95,7 +95,7 @@ def simple_http_queue_command(client_id):
 
 
 @app.route("/response/<response_id>", methods=["GET"])
-#@jwt_required()
+@jwt_required()
 def simple_http_get_response(response_id):
     # okay, for whatever reason, the redis-om model FormJModel is not working with this, it spits a key not found error, so I'm doing it manually.
     try:
@@ -160,18 +160,11 @@ def simple_http_get(client_id):
             # switchign to a nothing command
             return api_response()
 
-            #return api_response(
-            #    status=202, # sending a 204 no content
-            #    message = "Queue empty or does not exist"
-            #)
-
         # look up command rid basedon popped command
         # get json from redis
-        # do I need to set prefix here?
-        # testing shows that it's fine and returns the correct messag
+
         command = FormJModel.get(rid_of_command)
         
-
         # Convert from redis key to dict, then use formj for validation N stuff
         command_dict = FormJ(dict(command)).parse()
 
@@ -179,10 +172,7 @@ def simple_http_get(client_id):
         client = Client(type="simple-http", client_id=client_id, checkin=int(time.time()))
         client.save()
 
-        # send back to client
-        # DIPSHIT you forgot to set the RID coming out of the server as this
-
-        print(f"Return RID: {rid_of_command}")
+        # send back to client - WITH rid
         return api_response(
             data=command_dict.data,
             rid=rid_of_command
@@ -200,9 +190,8 @@ def simple_http_get(client_id):
         return api_response(status=400)
         
     except Exception as e:
-        # Print the complete traceback
-        traceback.print_exc()  # This will print the full traceback to stderr
-        logger.error(traceback.format_exc())  # Log the traceback as a string
+
+        logger.error(e)
         return api_response(status=500)
 
 
@@ -227,8 +216,6 @@ def simple_http_post(client_id):
             timestamp=fj.timestamp,
         )
         #logger.debug(f"POST: RID: {fj.rid}")
-
-        print(f"CREATING RESPONSE KEY WITH RID: {fj.rid}")
 
         # write to redis
         formj_message.save()

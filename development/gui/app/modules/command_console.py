@@ -16,10 +16,6 @@ class CommandConsole:
 
         logger.debug(f"Creating new CommandConsole for {client_id}")
 
-        #create_header()
-        # Main container with a height of 100vh to prevent scrolling
-        #with ui.column().classes('w-full h-full bg-gray-900 text-white').style('overflow: hidden;'):
-        # need to set height to 96, as 100 is for some reason too big & creates a scroll bar
         try:
             with ui.column().classes('w-full bg-gray-700 text-white').style('height: 96vh; overflow: hidden;'):
 
@@ -118,6 +114,7 @@ class CommandConsole:
         except Exception as e:
             logger.error(f"Error executing command: {e}")
 
+    # need sep fucnc for timer
     def check_response(self, endpoint_url, rid):
         """Checks for a response from the endpoint."""
         print(f"CHECKING FOR RESPONSE AT {endpoint_url}")
