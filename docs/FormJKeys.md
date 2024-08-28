@@ -32,6 +32,27 @@ Attributes:
 }
 
 
+## command
+Runs a command with something such as os.system or subprocess
+
+Attributes:
+
+`command`: Command to run
+
+{
+  "data": {
+    "command": [
+      {
+        "command": "whoami"
+      },
+    ],
+  },
+  "message": "",
+  "rid": "b2bae39a-e395-4c71-afc7-8dfb16bb387d",
+  "status": 200,
+  "timestamp": 1724730258
+}
+
 
 
 

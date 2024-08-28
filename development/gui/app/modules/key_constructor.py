@@ -1,4 +1,4 @@
-from app.modules.form_j import PowershellSync
+from app.modules.form_j import PowershellSync, CommandSync
 
 # Add:
 # Logging
@@ -8,6 +8,7 @@ class CommandParser:
     def __init__(self):
         self.class_mapping = {
             "powershell": PowershellSync,
+            "command": CommandSync
             #"net": NetCommandSync,
             #"bash": BashSync,
             # Add more mappings as needed
@@ -39,6 +40,16 @@ class CommandParser:
         """
         return head.capitalize() if head in self.class_mapping else None
 
+    def help(self):
+        # Return "a"
+        help_list = []
+        help_list.append("HELP Menu:\n")
+        # Assuming self.class_mapping is a dictionary or a method returning a dictionary
+        for key, _class in self.class_mapping.items():  # or self.class_mapping().items() if class_mapping is a method
+            help_list.append(f"{_class.help()}\n")
+        
+        help_menu = ''.join(help_list)
+        return help_menu  # Return the constructed help menu
 
 # Example usage
 parser = CommandParser()

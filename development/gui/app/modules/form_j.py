@@ -224,3 +224,42 @@ class PowershellSync:
             }
         }
         return struct
+
+    @staticmethod
+    def help():
+        help_msg = "powershell: runs powershell on the host"
+        return help_msg
+
+class CommandSync:
+    """
+    A class to represent a PowerShell key structure, with the ability to create
+    a basic command structure and generate sync keys for JSON data fields.
+    """
+
+    def __init__(self, command: str = "") -> None:
+        """
+        Initialize the PowershellKey class with a command.
+
+        Args:
+            command (str): The PowerShell command to be executed.
+        """
+        self.command = command
+
+    def create(self) -> dict[str, str]:
+        """
+        Creates a basic PowerShell command structure.
+
+        Returns:
+            dict[str, str]: A dictionary containing the PowerShell command structure.
+        """
+        struct = {
+            "command": {
+                "command": self.command
+            }
+        }
+        return struct
+
+    @staticmethod
+    def help():
+        help_msg = "command: runs a command on the host"
+        return help_msg

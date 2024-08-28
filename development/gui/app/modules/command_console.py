@@ -74,7 +74,14 @@ class CommandConsole:
             # Placeholder for actual command execution logic
             output = f"> {command}"
 
-            constructed_key = CommandParser().parse_command(command)
+            c = CommandParser()
+
+            if "help" in command:
+                # add help menu to each key, then iterate over and get help string/menu?
+                # toss as a method in CommandParser, such as CommandParser.help()
+                self.display_output(c.help())
+
+            constructed_key = c.parse_command(command)
             # Generate formJ message, with sync keys
             form_j_message = FormJ.generate(data=constructed_key)
 
@@ -126,17 +133,9 @@ class CommandConsole:
                 response_data = response.json()
                 # convert message to formj
                 form_j_message = FormJ(response_data).parse()
-
-                #self.display_output(response_data['data'])
-                # need to stringify it
-                # for now, just displaying the rid
-                # ideally, this would be a blob key
-                #self.display_output(str(form_j_message.rid))
                 
                 # need to validate that this exists, if not, send whole message to screen
                 # other prob, if multiple blob keys? maybe iter and put on screen
-
-                # currently only grabbing first item, as blob is a list
                 for i in range(0,len(form_j_message.data.blob)):
                     #print(str(form_j_message))
                     self.display_output(str(form_j_message.data.blob[i].data))
