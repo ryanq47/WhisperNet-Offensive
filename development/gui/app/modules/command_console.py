@@ -130,7 +130,16 @@ class CommandConsole:
                 #self.display_output(response_data['data'])
                 # need to stringify it
                 # for now, just displaying the rid
-                self.display_output(str(form_j_message.rid))
+                # ideally, this would be a blob key
+                #self.display_output(str(form_j_message.rid))
+                
+                # need to validate that this exists, if not, send whole message to screen
+                # other prob, if multiple blob keys? maybe iter and put on screen
+
+                # currently only grabbing first item, as blob is a list
+                for i in range(0,len(form_j_message.data.blob)):
+                    #print(str(form_j_message))
+                    self.display_output(str(form_j_message.data.blob[i].data))
 
                 # Stop the timer as we've received a valid response
                 if rid in self.timers:

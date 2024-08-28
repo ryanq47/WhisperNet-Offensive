@@ -65,11 +65,11 @@ while True:
         "timestamp": 1234567890,
         "status": 200,
         "data": {
-            "Powershell": [
+            "blob": [
                 {
-                    "executable": "ps.exe",
-                    "command": "net user /domain add test_user",
-                    "id": 1234,
+                    "encoding": "text",
+                    "data": "aaaaaaaahhhhh",
+                    "size": "1234"
                 }
             ]
         },
