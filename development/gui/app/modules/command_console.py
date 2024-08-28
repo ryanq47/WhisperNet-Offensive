@@ -5,6 +5,7 @@ from app.modules.ui_elements import create_header
 from app.modules.form_j import FormJ, PowershellSync
 from app.modules.config import Config
 import requests
+from app.modules.key_constructor import CommandParser
 
 logger = log(__name__)
 
@@ -72,25 +73,10 @@ class CommandConsole:
         try:
             # Placeholder for actual command execution logic
             output = f"> {command}"
-            
-            ##
-            ##Refine me - intergrate into a command parser of some sorts for creawting the keys
-            ##
 
-            # Split command into parts
-            command_head = command.split()[0] # first part, which is the action
-            command_tail = ' '.join(command.split()[1:]) # second part, args. 
-            
-            # based on command_head, create key.
-            # Placeholder for real logic based on input
-            powershell_key = PowershellSync(command=command_head).create()
-            
-            # if no key, ui.notify("Bad action") or soemtihgn
-
+            constructed_key = CommandParser().parse_command(command)
             # Generate formJ message, with sync keys
-            form_j_message = FormJ.generate(data=powershell_key)
-
-            ## / End refine me
+            form_j_message = FormJ.generate(data=constructed_key)
 
             # get RID from that message
             rid = form_j_message.get("rid")
