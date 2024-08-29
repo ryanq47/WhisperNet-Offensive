@@ -65,7 +65,7 @@ def login_page():
             )
 
             # Login button to submit credentials
-            ui.button('Login', on_click=lambda: login(username_input.value, password_input.value))
+            ui.button('Login', on_click=lambda: login(username_input.value, password_input.value), color=Config().get_button_color())
 
 @ui.page('/logout')
 def logout_page():

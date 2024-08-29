@@ -3,6 +3,8 @@ from app.modules.log import log
 
 logger = log(__name__)
 
+# not using a yaml file at the moment, this works fine. 
+
 # Config singleton
 class Config:
     _instance = None
@@ -16,6 +18,9 @@ class Config:
             cls._instance.password = ''
             cls._instance.current_token = None
             cls._instance.active_sessions = []
+            cls._instance.button_color = "#013A63"
+            cls._instance.background_color = "#EDEDED"
+
         return cls._instance
 
     def set_url(self, url: str):
@@ -90,3 +95,17 @@ class Config:
         except Exception as e:
             logger.error(f"Error getting active sessions: {e}")
             return []
+
+
+    def get_button_color(self) -> str:
+        try:
+            return self.button_color
+        except Exception as e:
+            logger.error(f"Error getting active sessions: {e}")
+            return [] 
+    def get_background_color(self) -> str:
+        try:
+            return self.background_color
+        except Exception as e:
+            logger.error(f"Error getting active sessions: {e}")
+            return [] 

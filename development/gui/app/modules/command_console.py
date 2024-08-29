@@ -10,6 +10,8 @@ from app.modules.login import token_refresh
 
 logger = log(__name__)
 
+# setup ping func for server conn?
+
 class CommandConsole:
     def __init__(self, client_id):
         self.client_id = client_id
@@ -27,12 +29,14 @@ class CommandConsole:
                     ui.label('Status: Connected').classes('text-sm text-green-400')
                     
                     # Button to navigate back to the /clients page
-                    ui.button('Back to Clients', on_click=lambda: ui.open('/clients')).classes(
+                    ui.button('Back to Clients', on_click=lambda: ui.open('/clients'), color=Config().get_button_color()).classes(
                         'bg-blue-500 text-white px-4 py-1 rounded-sm'
                     )
 
                 # Scrollable output area for displaying command outputs
-                self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-y-auto').style(
+                #self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-y-auto').style(
+                self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-hidden').style(
+
                     'max-height: calc(100vh - 50px);'  # Dynamic height to prevent overall window scrolling
                 )
 
@@ -42,7 +46,7 @@ class CommandConsole:
                         'flex-grow bg-gray-700 text-white px-2 py-1 rounded-sm'
                     ).style('min-width: 0;').props('autofocus')  # Allow input to shrink properly
                     
-                    self.run_button = ui.button('Run', on_click=self.on_run_click).classes(
+                    self.run_button = ui.button('Run', on_click=self.on_run_click, color=Config().get_button_color()).classes(
                         'bg-blue-500 text-white ml-2 px-4 py-1 rounded-sm'
                     )
                     

@@ -1,17 +1,18 @@
 from nicegui import ui
+from app.modules.config import Config
 
 # Creates a navbar
 def create_header():
     with ui.header() as header:
-        with ui.row().classes('w-full justify-between'):  # Full width and space between elements
+        with ui.row().classes('w-full justify-between').style("background-color:"):  # Full width and space between elements
             # Left-aligned items
             with ui.row():
                 ui.label('WhisperNet-Offensive').classes('text-h6')
-                ui.button('Home', on_click=lambda: ui.open('/home'))
-                ui.button('Clients', on_click=lambda: ui.open('/clients'))
+                ui.button('Home', on_click=lambda: ui.open('/home'), color=Config().get_button_color())
+                ui.button('Clients', on_click=lambda: ui.open('/clients'), color=Config().get_button_color())
             
             # Right-aligned item
-            ui.button('Log Out', on_click=lambda: ui.open('/logout'))
+            ui.button('Log Out', on_click=lambda: ui.open('/logout'), color=Config().get_button_color())
 
 
 """

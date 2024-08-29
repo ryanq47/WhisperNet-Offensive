@@ -49,6 +49,11 @@
     - [ ] move key constructor to api as well if needed.
     - [ ] logging key constructor
 
+- Left off doing cleanup + making it pretty
+ 
+    - [ ] need a universal color scheme
+        - [ ] grey buttons to match anything?
+
 ## Structure
 
 Each module can be a class or a set of fucntions, whatever works best. 
