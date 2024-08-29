@@ -14,6 +14,7 @@ Attributes:
 
 `command`: Command to run
 
+```
 {
   "data": {
     "Powershell": [
@@ -30,7 +31,7 @@ Attributes:
   "status": 200,
   "timestamp": 1724730258
 }
-
+```
 
 ## command
 Runs a command with something such as os.system or subprocess
@@ -39,6 +40,7 @@ Attributes:
 
 `command`: Command to run
 
+```
 {
   "data": {
     "command": [
@@ -52,8 +54,31 @@ Attributes:
   "status": 200,
   "timestamp": 1724730258
 }
+```
 
+## sleep
+Tells client to set new sleep time for X seconds
 
+Attributes:
+
+`sleep`: Command to run
+
+```
+{
+  "data": {
+    "sleep": [
+      {
+        "time": "10"
+      },
+    ],
+  },
+  "message": "",
+  "rid": "b2bae39a-e395-4c71-afc7-8dfb16bb387d",
+  "status": 200,
+  "timestamp": 1724730258
+}
+
+```
 
 
 # Utility/data transfer

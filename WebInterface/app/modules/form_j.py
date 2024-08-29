@@ -195,6 +195,7 @@ def generate_timestamp() -> int:
     """
     return int(time.time())
 
+# Sync Key Declarations
 
 class PowershellSync:
     """
@@ -227,7 +228,7 @@ class PowershellSync:
 
     @staticmethod
     def help():
-        help_msg = "powershell: runs powershell on the host"
+        help_msg = "powershell: runs powershell on the host. \n\tEx: powershell get-aduser bob"
         return help_msg
 
 class CommandSync:
@@ -238,7 +239,7 @@ class CommandSync:
 
     def __init__(self, command: str = "") -> None:
         """
-        Initialize the PowershellKey class with a command.
+        Initialize the CommandSync class with a command.
 
         Args:
             command (str): The PowerShell command to be executed.
@@ -261,5 +262,38 @@ class CommandSync:
 
     @staticmethod
     def help():
-        help_msg = "command: runs a command on the host"
+        help_msg = "command: runs a command on the host, \n\tEx: command whoami /all"
+        return help_msg
+
+class SleepSync:
+    """
+    A sleep key
+    """
+
+    def __init__(self, time: str = "") -> None:
+        """
+        Initialize the PowershellKey class with a command.
+
+        Args:
+            time (str): How long to set sleep time for
+        """
+        self.time = time
+
+    def create(self) -> dict[str, str]:
+        """
+        Creates a basic SleepSync key structure.
+
+        Returns:
+            dict[str, str]: A dictionary containing the SleepSync key
+        """
+        struct = {
+            "sleep": {
+                "time": self.time
+            }
+        }
+        return struct
+
+    @staticmethod
+    def help():
+        help_msg = "sleep: sets sleep time on the host.\n\tEx: sleep 60"
         return help_msg

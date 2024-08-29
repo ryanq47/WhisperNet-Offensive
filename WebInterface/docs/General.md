@@ -56,7 +56,8 @@
 
     - [ ] Mock client rev shell wokrs. Just clean up everything around it. no more adding till
     that's done + merged
-        - [ ] all 3 keys need to work/be constucted proerpyl
+        - [X] all 3 keys need to work/be constucted proerpyl
+            - something to think abuot, making some of the keys NOT list based, as it doesn;t make a ton of sense for somethgn like sleep.
         - [ ]  Audit log needs to wrok (server side)
         - [ ] Get rid of color switch on login
         - [ ] aggrid auto sort by latest client?
