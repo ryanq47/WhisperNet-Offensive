@@ -56,6 +56,10 @@
 
     - [ ] Mock client rev shell wokrs. Just clean up everything around it. no more adding till
     that's done + merged
+        - [ ] all 3 keys need to work/be constucted proerpyl
+        - [ ]  Audit log needs to wrok (server side)
+        - [ ] Get rid of color switch on login
+        - [ ] aggrid auto sort by latest client?
 
 ## Structure
 
