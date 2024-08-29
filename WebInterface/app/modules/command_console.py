@@ -84,6 +84,7 @@ class CommandConsole:
 
             c = CommandParser()
 
+            # should probably toss these 2 in the Commandparser class
             if "help" in command:
                 # add help menu to each key, then iterate over and get help string/menu?
                 # toss as a method in CommandParser, such as CommandParser.help()

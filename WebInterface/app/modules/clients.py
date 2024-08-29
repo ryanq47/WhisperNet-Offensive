@@ -21,9 +21,9 @@ def clients():
         client_data = transform_client_data(raw_client_data)
 
         # problem: Vh 100 is bigger than the page, prolly cause margin, but disabling margin doenst work
+        create_header()  # Add the header to the page
 
         with ui.column().classes('h-auto w-full'): # add border to show border
-            create_header()  # Add the header to the page
 
             # The grid container itself with defined height and full width
             grid = ui.aggrid(
