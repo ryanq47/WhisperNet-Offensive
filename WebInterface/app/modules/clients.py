@@ -85,7 +85,6 @@ def clients():
         raise e
 
 
-
 def get_client_data() -> dict:
     """
     Function to retrieve client data from server.

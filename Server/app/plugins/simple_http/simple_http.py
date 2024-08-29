@@ -68,12 +68,12 @@ def simple_http_queue_command(client_id):
         )
 
         # Audit command
-        #user_identity = get_jwt_identity()
-        #dict_data.setdefault('audit', {})  # Ensure 'audit' key exists in dict_data
-        #dict_data['audit']['user_identity'] = user_identity  # Add user identity to the log
+        user_identity = get_jwt_identity()
+        dict_data.setdefault('audit', {})  # Ensure 'audit' key exists in dict_data
+        dict_data['audit']['user_identity'] = user_identity  # Add user identity to the log
 
-        #a = Audit()
-        #a.audit(dict_data)
+        a = Audit()
+        a.audit(dict_data)
 
         return api_response(
             status = 200,

@@ -1,8 +1,11 @@
 from app.modules.form_j import PowershellSync, CommandSync
+from app.modules.log import logger
 
-# Add:
-# Logging
-# 
+logger = log(__name__)
+
+# specifically for automatically constructing FormJ messages with SyncKeys
+# not in form_j, as this has things specifically for the GUI, such as the help method
+# if that ever gets moved, this may get moved as well
 
 class CommandParser:
     def __init__(self):
@@ -17,6 +20,7 @@ class CommandParser:
     def parse_command(self, command_str):
         parts = command_str.split(maxsplit=1)
         if len(parts) < 2:
+            logger.warning(f"Command submitted with seemingly only one part: {command_str}")
             raise ValueError("Command must have at least a head and an argument.")
 
         head = parts[0].lower()
@@ -41,16 +45,12 @@ class CommandParser:
         return head.capitalize() if head in self.class_mapping else None
 
     def help(self):
-        # Return "a"
+        """Construct a help menu"""
+
         help_list = []
         help_list.append("HELP Menu:\n")
-        # Assuming self.class_mapping is a dictionary or a method returning a dictionary
-        for key, _class in self.class_mapping.items():  # or self.class_mapping().items() if class_mapping is a method
+        for key, _class in self.class_mapping.items():  
             help_list.append(f"{_class.help()}\n")
         
         help_menu = ''.join(help_list)
-        return help_menu  # Return the constructed help menu
-
-# Example usage
-parser = CommandParser()
-print(parser.parse_command("powershell whoami"))
+        return help_menu 

@@ -7,7 +7,7 @@ from app.modules.ui_elements import add_particles_background
 
 logger = log(__name__)
 
-# Store session data - toss this in the config singleton maybe?
+# Store session data 
 session_store = {}
 
 @ui.page('/login')
@@ -16,7 +16,7 @@ def login_page():
     A basic login page with centered elements.
     """
     def is_valid_url(url):
-        # Regular expression for validating a URL
+        # Regular expression for validating a URL for quick user feedback
         regex = re.compile(
             r'^(https?|ftp)://'  # Protocol: http, https, or ftp
             r'(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}|'  # Domain name (e.g., example.com)
@@ -35,14 +35,11 @@ def login_page():
         else:
             ui.notify('Invalid URL. Please enter a valid server URL.', type='negative')
 
-    #ui.html('<div id="particles-js" style="position: absolute; width: 100%; height: 100%;"></div>')
-    #create_particles()
+    # add in particles
     add_particles_background()
 
     # Use a column layout inside a card to center all the elements in the middle of the screen
     with ui.column().classes('justify-center items-center max-w-screen max-h-screen overflow-hidden'):
-
-
         with ui.card().classes('p-8 fixed-center'):
             # Title centered
             ui.markdown('## Whispernet-Offensive Login').classes('text-center mb-4')
@@ -76,18 +73,6 @@ def logout_page():
     session_store['logged_in'] = False
     Config().set_token("")
     ui.open('/login')
-
-'''
-def login_required(page_func):
-    """Decorator to ensure user is logged in before accessing the page."""
-    def wrapper(*args, **kwargs):
-        if 'logged_in' in session_store and session_store['logged_in']:
-            return page_func(*args, **kwargs)  # Pass any arguments to the page function
-        else:
-            ui.notify('You must log in to access this page.', type='warning')
-            ui.open('/login')
-    return wrapper
-'''
 
 def check_login():
     """Function to ensure user is logged in before accessing the page."""
@@ -148,6 +133,7 @@ async def login(username, password):
 async def token_refresh():
     """re-login and get new token"""
     try:
+        logger.info("Attempting to refresh token")
         username, password = Config().get_credentials()
 
         async with httpx.AsyncClient() as client:
@@ -160,12 +146,10 @@ async def token_refresh():
                 logger.info(f"User {username} logged in")
                 logger.debug("Token refreshed")
                 ui.notify("Token refreshed")
-                #ui.open('/clients')  # Navigate to the clients page after successful login
             else:
                 ui.notify('Invalid credentials', type='negative')
 
     except Exception as e:
         ui.notify("An unkown error occured - check logs")
         logger.error(e)
-        #ui.notify("An unkown error occured")
         raise e
