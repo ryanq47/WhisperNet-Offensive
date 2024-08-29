@@ -127,6 +127,8 @@ class CommandConsole:
     def check_response(self, rid):
         """Checks for a response from the endpoint."""
         try:
+            #self.scroll_to_bottom()
+
             # moved response url into this func
             response_url = Config().get_url() / "response" / rid
             logger.debug(f"checking for response at {response_url}")
@@ -170,7 +172,7 @@ class CommandConsole:
             # Append output to the output area
             with self.output_area:
                 ui.label(output).classes('text-sm text-white').style('white-space: pre-wrap;')
-            #self.scroll_to_bottom()
+            self.scroll_to_bottom()
 
         except Exception as e:
             logger.error(e)
@@ -180,8 +182,9 @@ class CommandConsole:
     def scroll_to_bottom(self):
         """Scrolls the output area to the bottom to show the latest message. - not working"""
         try:
-            pass
+            #pass
             #self.output_area.run_method('scrollTo', {'top': self.output_area.element['scrollHeight']})
+            self.output_area.scroll_to(percent=1)
 
         except Exception as e:
             logger.error(e)

@@ -54,6 +54,9 @@
     - [ ] need a universal color scheme
         - [ ] grey buttons to match anything?
 
+    - [ ] Mock client rev shell wokrs. Just clean up everything around it. no more adding till
+    that's done + merged
+
 ## Structure
 
 Each module can be a class or a set of fucntions, whatever works best. 
