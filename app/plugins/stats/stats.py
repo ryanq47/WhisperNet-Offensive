@@ -47,3 +47,13 @@ def clients():
         return api_response(
             status=500
         )
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    """
+        A super simple, basic upcheck ping endpoint
+
+        could also throw a jwt req'd, and use it to check if a token has expired.
+            Or... use a diff endopint and check like every 1 sec instead of constatly
+    """
+    return "pong", 200

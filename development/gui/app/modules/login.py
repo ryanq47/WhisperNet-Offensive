@@ -3,6 +3,7 @@ import httpx  # For making HTTP requests
 from app.modules.config import Config
 from app.modules.log import log
 import re
+from app.modules.ui_elements import add_particles_background
 
 logger = log(__name__)
 
@@ -34,9 +35,15 @@ def login_page():
         else:
             ui.notify('Invalid URL. Please enter a valid server URL.', type='negative')
 
+    #ui.html('<div id="particles-js" style="position: absolute; width: 100%; height: 100%;"></div>')
+    #create_particles()
+    add_particles_background()
+
     # Use a column layout inside a card to center all the elements in the middle of the screen
-    with ui.column().classes('justify-center items-center h-screen w-screen'):
-        with ui.card().classes('p-8'):
+    with ui.column().classes('justify-center items-center max-w-screen max-h-screen overflow-hidden'):
+
+
+        with ui.card().classes('p-8 fixed-center'):
             # Title centered
             ui.markdown('## Whispernet-Offensive Login').classes('text-center mb-4')
 
@@ -59,6 +66,16 @@ def login_page():
 
             # Login button to submit credentials
             ui.button('Login', on_click=lambda: login(username_input.value, password_input.value))
+
+@ui.page('/logout')
+def logout_page():
+    """
+        Logout
+    """
+
+    session_store['logged_in'] = False
+    Config().set_token("")
+    ui.open('/login')
 
 '''
 def login_required(page_func):
@@ -105,6 +122,7 @@ def main_page():
 async def login(username, password):
     """Authenticate user via API and set session."""
     try:
+
         async with httpx.AsyncClient() as client:
             response = await client.post(str(Config().url / 'login'), json={'username': username, 'password': password})
             
@@ -113,7 +131,36 @@ async def login(username, password):
                 Config().set_token(response.json().get('data',{}).get('access_token'))
                 session_store['logged_in'] = True
                 logger.info(f"User {username} logged in")
-                ui.open('/clients')  # Navigate to the clients page after successful login
+                Config().set_credentials(
+                    username=username,
+                    password=password
+                )
+                ui.open('/home')  # Navigate to the clients page after successful login
+            else:
+                ui.notify('Invalid credentials', type='negative')
+
+    except Exception as e:
+        ui.notify("An unkown error occured - check logs")
+        logger.error(e)
+        #ui.notify("An unkown error occured")
+        raise e
+
+async def token_refresh():
+    """re-login and get new token"""
+    try:
+        username, password = Config().get_credentials()
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(str(Config().url / 'login'), json={'username': username, 'password': password})
+            
+            # not redirectiong, maybe add session? need to check if that's needed
+            if response.status_code == 200:
+                Config().set_token(response.json().get('data',{}).get('access_token'))
+                session_store['logged_in'] = True
+                logger.info(f"User {username} logged in")
+                logger.debug("Token refreshed")
+                ui.notify("Token refreshed")
+                #ui.open('/clients')  # Navigate to the clients page after successful login
             else:
                 ui.notify('Invalid credentials', type='negative')
 

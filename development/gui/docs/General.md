@@ -35,6 +35,14 @@
         - all old print commands + extra logging in there too, and in simple_http.py
         - nuke not needed dumb test
     - [X] get output to screen working
+    - [ ] Accurate connection menu/if connected
+        - server status/connection/ping 
+
+- [ ] 401 error
+    - [X]basically, if 401, use creds, re-login
+        function done, haven't run itno the bug since tho. weird. its there if needed
+    Add logout button too
+
 
 - [ ] formj
     - [ ] Docs on key constructor/whole process

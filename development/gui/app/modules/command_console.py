@@ -6,6 +6,7 @@ from app.modules.form_j import FormJ, PowershellSync
 from app.modules.config import Config
 import requests
 from app.modules.key_constructor import CommandParser
+from app.modules.login import token_refresh
 
 logger = log(__name__)
 
@@ -148,6 +149,9 @@ class CommandConsole:
             if response.status_code == 401:
                 logger.info("Server says missing creds, status code: 401")
                 ui.notify("Server says missing creds, status code: 401")
+                #token_refresh()
+                #self.check_response(*args, **kwargs)
+
             else:
                 logger.info(f"Waiting for response... Status: {response.status_code}")
                 ui.notify("waiting on valid response...")

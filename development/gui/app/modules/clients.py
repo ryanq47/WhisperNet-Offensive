@@ -4,6 +4,7 @@ from app.modules.login import check_login
 import requests
 from app.modules.config import Config
 import logging
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -13,66 +14,67 @@ def clients():
         if not check_login():
             return
 
-        create_header()  # Add the header to the page
 
         ui.markdown("# Clients")
-
-        # Initial load of data into the grid
-        #fetch_and_update_grid_data()
-        # 
+        
         raw_client_data = get_client_data()
         client_data = transform_client_data(raw_client_data)
-        
 
-        # Initialize the grid with empty data and unique row IDs based on client_id
-        grid = ui.aggrid(
-            {
-                'columnDefs': [
-                    {"headerName": "Client-ID", "field": "client_id", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True, 'checkboxSelection': True},
-                    {"headerName": "Type", "field": "type", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True},
-                    {"headerName": "Checkin", "field": "checkin", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True},
-                    {"headerName": "CLI", "field": "url"},
-                ],
-                'rowData': client_data,  # Start with empty data
-                'defaultColDef': {
-                    'sortable': True,
-                    'filter': True,
-                    'resizable': True,
-                    'flex': 1,
+        # problem: Vh 100 is bigger than the page, prolly cause margin, but disabling margin doenst work
+
+        with ui.column().classes('h-auto w-full border'):
+            create_header()  # Add the header to the page
+
+            # The grid container itself with defined height and full width
+            grid = ui.aggrid(
+                {
+                    'columnDefs': [
+                        {"headerName": "Client-ID", "field": "client_id", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True, 'checkboxSelection': True},
+                        {"headerName": "Type", "field": "type", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True},
+                        {"headerName": "Checkin (UTC)", "field": "checkin", "sortable": True, "filter": "agTextColumnFilter", 'floatingFilter': True},
+                        {"headerName": "CLI", "field": "url"},
+                    ],
+                    'rowData': client_data,  # Use your actual client data here
+                    'defaultColDef': {
+                        'sortable': True,
+                        'filter': True,
+                        'resizable': True,
+                        'flex': 1,
+                    },
+                    'pagination': True,
+                    'paginationPageSize': 10,
+                    'rowSelection': 'single',
+                    ':getRowId': '(params) => params.data.client_id',  # Use client_id as the unique row ID
+                    #'autoHeight':True
+                    
                 },
-                'pagination': True,
-                'paginationPageSize': 10,
-                'rowSelection': 'single',
-                ':getRowId': '(params) => params.data.client_id',  # Use client_id as the unique row ID
-            },
-            html_columns=[3]  # Making only the 3rd column HTML rendered
-        ).classes('max-h-80')  # Adjust height as needed
+                html_columns=[3],  # Making only the 3rd column HTML rendered
+                #theme="quartz-dark"
+            )
+            
+            #grid.classes('w-full max-w-full') # Adjust the grid classes for full height and width
+            # LEAVE! allows it to grow. 
+            grid.classes('flex-grow') #w-full h-full')#.style('width: 100%; height: 95vh')
+            ui.markdown("This is being stupid and not wanting to scale")
 
+            #ui.space()
         def fetch_and_update_grid_data():
             """Fetches new data and updates specific cells without causing a full refresh."""
             try:
                 raw_client_data = get_client_data()
                 client_data = transform_client_data(raw_client_data)
 
-                # Debugging: Print or log the fetched and transformed data
-                #logger.debug(f"Fetched client data: {client_data}")
-
-                # Update grid rows based on fetched client data
+                # Update checkin time
                 for data in client_data:
-                    client_id = data['client_id']
-                    # Update cells using the run_row_method for specific clients
-                    #update_client_data(client_id, 'checkin', data['checkin'])
-                    #update_client_data(client_id, 'type', data['type'])
-                    # You can update other fields similarly as needed
-                    # run the setDataValue on the row
-                    grid.run_row_method(client_id, 'setDataValue', 'checkin', data['checkin'])
-                    print(f"updating {client_id} checkin")
+                    utc_checkin = datetime.fromtimestamp(int(data['checkin']), timezone.utc)
+                    formatted_checkin = utc_checkin.astimezone().strftime('%Y-%m-%d %H:%M:%S')
 
+                    client_id = data['client_id']
+                    grid.run_row_method(client_id, 'setDataValue', 'checkin', formatted_checkin)
 
             except Exception as e:
                 logger.error(e)
                 ui.notify("Failed to update client data")
-
 
         # Set a timer to update the grid data every second
         ui.timer(1.0, fetch_and_update_grid_data)
@@ -81,6 +83,8 @@ def clients():
         logger.error(e)
         ui.notify("An unknown error occurred - Check the logs")
         raise e
+
+
 
 def get_client_data() -> dict:
     """

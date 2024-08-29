@@ -9,7 +9,11 @@ logger = log(__name__)
 logger.debug("Initializing Config")
 Config()
 
+app.add_static_files('/static', 'static')
+
 logger.debug("Starting app")
 app.on_startup(startup)
+
+
 
 ui.run(dark=True)

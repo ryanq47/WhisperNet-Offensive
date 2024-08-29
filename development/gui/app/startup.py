@@ -1,10 +1,14 @@
-from nicegui import ui
+from nicegui import ui, app
 # need to import things up here (or do a plugin loader) to make sure routes are loaded
 from app.modules.command_console import CommandConsole
 from app.modules.home import homepage
 from app.modules.clients import clients
 from app.modules.login import check_login
 import app.modules.login
+import app.modules.static
+
+
+
 
 def startup() -> None:
     @ui.page('/')
