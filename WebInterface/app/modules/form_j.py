@@ -295,5 +295,5 @@ class SleepSync:
 
     @staticmethod
     def help():
-        help_msg = "sleep: sets sleep time on the host.\n\tEx: sleep 60"
+        help_msg = "sleep [NOT IMPLEMENTED]: sets sleep time on the host.\n\tEx: sleep 60"
         return help_msg

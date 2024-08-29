@@ -22,7 +22,7 @@ def clients():
 
         # problem: Vh 100 is bigger than the page, prolly cause margin, but disabling margin doenst work
 
-        with ui.column().classes('h-auto w-full border'):
+        with ui.column().classes('h-auto w-full'): # add border to show border
             create_header()  # Add the header to the page
 
             # The grid container itself with defined height and full width
@@ -55,7 +55,7 @@ def clients():
             #grid.classes('w-full max-w-full') # Adjust the grid classes for full height and width
             # LEAVE! allows it to grow. 
             grid.classes('flex-grow') #w-full h-full')#.style('width: 100%; height: 95vh')
-            ui.markdown("This is being stupid and not wanting to scale")
+            ui.chat_message("This AgGrid is being frustrating... and does not want to scale properly, or have colored themes apply to it")
 
             #ui.space()
         def fetch_and_update_grid_data():
@@ -98,7 +98,7 @@ def get_client_data() -> dict:
         }
 
         logger.debug("Getting clients from server")
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, verify=Config().get_verify_certs())
 
         if response.status_code == 200:
             data = response.json()

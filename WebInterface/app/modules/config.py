@@ -20,6 +20,7 @@ class Config:
             cls._instance.active_sessions = []
             cls._instance.button_color = "#013A63"
             cls._instance.background_color = "#EDEDED"
+            cls._instance.verify_certs = False
 
         return cls._instance
 
@@ -108,4 +109,11 @@ class Config:
             return self.background_color
         except Exception as e:
             logger.error(f"Error getting active sessions: {e}")
+            return [] 
+
+    def get_verify_certs(self) -> str:
+        try:
+            return self.verify_certs
+        except Exception as e:
+            logger.error(f"Error getting verify_certs: {e}")
             return [] 

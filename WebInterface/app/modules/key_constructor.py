@@ -1,5 +1,5 @@
 from app.modules.form_j import PowershellSync, CommandSync
-from app.modules.log import logger
+from app.modules.log import log
 
 logger = log(__name__)
 

@@ -17,6 +17,7 @@ class CommandConsole:
         self.client_id = client_id
         self.command_outputs = []
         self.timers = {}  # Dictionary to store timers for each response check
+        self.cmd_mode = False
 
         logger.debug(f"Creating new CommandConsole for {client_id}")
 
@@ -33,10 +34,12 @@ class CommandConsole:
                         'bg-blue-500 text-white px-4 py-1 rounded-sm'
                     )
 
+                    # cmd mode
+                    checkbox = ui.checkbox('CMD Mode', on_change=lambda: self.set_checkbox_state(checkbox.value))
+
                 # Scrollable output area for displaying command outputs
                 #self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-y-auto').style(
                 self.output_area = ui.scroll_area().classes('flex-grow p-4 space-y-4 overflow-hidden').style(
-
                     'max-height: calc(100vh - 50px);'  # Dynamic height to prevent overall window scrolling
                 )
 
@@ -86,6 +89,9 @@ class CommandConsole:
                 # toss as a method in CommandParser, such as CommandParser.help()
                 self.display_output(c.help())
 
+            if self.cmd_mode:
+                command = f"command {command}"
+
             constructed_key = c.parse_command(command)
             # Generate formJ message, with sync keys
             form_j_message = FormJ.generate(data=constructed_key)
@@ -104,7 +110,7 @@ class CommandConsole:
             headers = {'Authorization': f'Bearer {Config().get_token()}'}
             
             # send to server and handle response
-            response = requests.post(post_url, json=form_j_message, headers=headers)
+            response = requests.post(post_url, json=form_j_message, headers=headers, verify=Config().get_verify_certs())
             
             if response.status_code != 200:
                 logger.error(f"Got {response.status_code} from server.")
@@ -123,6 +129,15 @@ class CommandConsole:
         except Exception as e:
             logger.error(f"Error executing command: {e}")
 
+    def set_checkbox_state(self, value: bool):
+        self.cmd_mode = value
+
+        if value:
+            ui.notify("CMD mode enabled, every entry will be prefixed with 'command' - so it's basically a real shell")
+
+        if not value:
+            ui.notify("CMD mode disabled")
+
     # need sep fucnc for timer to work properly
     def check_response(self, rid):
         """Checks for a response from the endpoint."""
@@ -135,7 +150,7 @@ class CommandConsole:
 
             headers = {'Authorization': f'Bearer {Config().get_token()}'}
 
-            response = requests.get(response_url, headers=headers)
+            response = requests.get(response_url, headers=headers, verify=Config().get_verify_certs())
             if response.status_code == 200:
                 response_data = response.json()
                 # convert message to formj

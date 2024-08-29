@@ -108,7 +108,8 @@ async def login(username, password):
     """Authenticate user via API and set session."""
     try:
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=Config().get_verify_certs()) as client:
+            ui.notify("SSL Verification off... AKA allowing self signed certificates")
             response = await client.post(str(Config().url / 'login'), json={'username': username, 'password': password})
             
             # not redirectiong, maybe add session? need to check if that's needed
