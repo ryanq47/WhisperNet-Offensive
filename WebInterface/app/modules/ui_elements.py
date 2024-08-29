@@ -38,35 +38,6 @@ def add_particles_background():
         // Load particles.js with your existing configuration
         particlesJS.load('particles-js', '/static/particlesjs-config.json', function() {
             console.log('particles.js loaded - callback');
-
-            // Function to switch colors to red every minute
-            function switchToRedEveryMinute() {
-                setInterval(function() {
-                    // Change color to red
-                    window.pJSDom[0].pJS.particles.color.value = '#ff0000';
-                    window.pJSDom[0].pJS.particles.line_linked.color_rgb_line = hexToRgb('#ff0000');
-
-                    // Update particle colors without resetting positions
-                    for (var i = 0; i < window.pJSDom[0].pJS.particles.array.length; i++) {
-                        window.pJSDom[0].pJS.particles.array[i].color.value = { r: 255, g: 0, b: 0 }; // Red
-                        window.pJSDom[0].pJS.particles.array[i].color.rgb = { r: 255, g: 0, b: 0 };
-                        window.pJSDom[0].pJS.particles.array[i].color.rgb_old = { r: 255, g: 0, b: 0 };
-                    }
-
-                }, 60000);  // Change color every 60000 milliseconds (1 minute)
-            }
-
-            // Helper function to convert hex to RGB
-            function hexToRgb(hex) {
-                const bigint = parseInt(hex.slice(1), 16);
-                const r = (bigint >> 16) & 255;
-                const g = (bigint >> 8) & 255;
-                const b = bigint & 255;
-                return {r: r, g: g, b: b};
-            }
-
-            // Start color switch interval
-            switchToRedEveryMinute();
         });
     </script>
     ''')
