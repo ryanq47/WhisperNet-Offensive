@@ -89,9 +89,10 @@ def api_response(
             for key, value in data_items:
                 response["data"][key] = value
 
+        # this is a stupid line, not in comlpiance iwth api standard
         # Remove data key if it has no useful content
-        if not response["data"]:
-            del response["data"]
+        #if not response["data"]:
+        #    del response["data"]
 
         # Add any additional keyword arguments, excluding None values
         response.update({k: v for k, v in kwargs.items() if v is not None})
