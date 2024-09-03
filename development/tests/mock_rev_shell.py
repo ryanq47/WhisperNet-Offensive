@@ -34,7 +34,7 @@ while True:
     if "sleep" in data:
         sleep_time = data["sleep"]
     else:
-        sleep_time = 1  # Default sleep time if no sleep command is provided
+        sleep_time = 5  # Default sleep time if no sleep command is provided
 
     # Prepare data to post back to the server
     dict_data_response = {
