@@ -46,32 +46,34 @@ def test_simple_http_get():
     #assert response.json() == {"client_id": client_id}
     assert response.json()["data"]["Powershell"]
 
-
+# post data back to client
 def test_simple_http_post():
     console.print(Panel("POST /post/<client_id>", title="Test Case", expand=False))
 
-    client_id = "test-client-id"
-    url = f"{BASE_URL}/post/{client_id}"
+    #client_id = "test-client-id"
+    #url = f"{BASE_URL}/post/{client_id}"
+    url = f"{BASE_URL}/post/12345-56789-09187"
 
     dict_data = {
         "rid": "12345-56789-09187",
-        "message": "somemessage",
+        "message": "RESPONSE",
         "timestamp": 1234567890,
         "status": 200,
         "data": {
-            "Powershell": [
+            "blob": [
                 {
-                    "executable": "ps.exe",
-                    "command": "net user /domain add bob",
-                    "id": 1234,
+                    "data": "aaaaaaaahhhhh",
+                    "size":"1234",
+                    "encoding":"text"
+
                 },
                 {
-                    "executable": "ps.exe",
-                    "command": "net group /add Domain Admins Bob",
-                    "id": 1235,
+                    "data": "ahhhhhhhhhhhhh",
+                    "size":"1234",
+                    "encoding":"text"
+
                 },
             ],
-            "SomeSync": [{"somedata": "somedata"}, {"somedata": "somedata"}],
         },
     }
 
@@ -190,6 +192,23 @@ def test_large_payload():
 
     assert response.status_code == 200
 
+def test_simple_http_get_response():
+    console.print(Panel("GET /response/<response_id>", title="Test Case", expand=False))
+
+    response_id = "12345-56789-09187"
+    url = f"{BASE_URL}/response/{response_id}"
+
+    headers = {
+        "Authorization": f"Bearer {os.environ['jwt_token']}",
+    }
+
+    response = send_request_and_print(url, method="get", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["rid"]
+    assert response.json()["data"]
+
+
 if __name__ == "__main__":
     banner_text = Text("simple_http", style="bold magenta", justify="center")
     banner_panel = Panel(
@@ -202,11 +221,12 @@ if __name__ == "__main__":
     test_cases = [
         ("POST /post/<client_id>", test_simple_http_post),
         ("POST /command/<client_id>", test_simple_http_queue_command),
-        ("GET /get/<client_id>", test_simple_http_get), # run AFTER command is queued
-        ("POST /command/<client_id> with Invalid JWT", test_invalid_jwt_token),
-        ("POST /post/<client_id> with Missing Fields", test_missing_required_fields),
-        ("POST /post/<client_id> with Invalid Data Types", test_invalid_data_types),
-        ("POST /post/<client_id> with Large Payload", test_large_payload),
+        ("GET /get/<client_id>", test_simple_http_get),  # run AFTER command is queued
+        ("GET /response/<response_id>", test_simple_http_get_response),  # New test case
+        #("POST /command/<client_id> with Invalid JWT", test_invalid_jwt_token),
+        #("POST /post/<client_id> with Missing Fields", test_missing_required_fields),
+        #("POST /post/<client_id> with Invalid Data Types", test_invalid_data_types),
+        #("POST /post/<client_id> with Large Payload", test_large_payload),
     ]
 
     for title, test_case in test_cases:

@@ -1,19 +1,31 @@
+import json
+import time
+import traceback
+
 from flask import jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from redis_om import get_redis_connection, HashModel, NotFoundError
+from redis.commands.json.path import Path
+
 from modules.instances import Instance
 from modules.log import log
-from plugins.simple_http.modules.redis_models import FormJModel
-import json
-from redis_om import get_redis_connection, HashModel, NotFoundError
 from modules.utils import api_response
-from plugins.simple_http.modules.redis_queue import RedisQueue
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from modules.audit import Audit
-import traceback
 from modules.form_j import FormJ
+from modules.redis_models import Client
+from modules.config import Config
+from plugins.simple_http.modules.redis_models import FormJModel
+from plugins.simple_http.modules.redis_queue import RedisQueue
+
 
 logger = log(__name__)
 app = Instance().app
 
+redis = get_redis_connection(  # switch to config values
+    host=Config().config.redis.bind.ip,
+    port=Config().config.redis.bind.port,
+    decode_responses=True,  # Ensures that strings are not returned as bytes
+)
 
 class Info:
     name = "simple_http"
@@ -42,6 +54,7 @@ def simple_http_queue_command(client_id):
             status=fj.status,
             timestamp=fj.timestamp,
         )
+        logger.debug(f"COMMAND: RID: {fj.rid}")
         # save to redis
         formj_message.save()
 
@@ -80,7 +93,44 @@ def simple_http_queue_command(client_id):
         #logger.error(traceback.format_exc())  # This will print the full stack trace
         return api_response(message="Internal server error", status=500)
 
-# Optional route example
+
+@app.route("/response/<response_id>", methods=["GET"])
+@jwt_required()
+def simple_http_get_response(response_id):
+    # okay, for whatever reason, the redis-om model FormJModel is not working with this, it spits a key not found error, so I'm doing it manually.
+    try:
+        key = f"response:plugins.simple_http.modules.redis_models.FormJModel:{response_id}"
+
+        # grab the entire json object stored at the given key in Redis
+        response_redis = redis.json().get(key, Path.root_path())
+
+        # for some reason this is not getting the item/not finding it
+        if response_redis == None:
+            # Handle the case where the response does not exist
+            return api_response(
+                status=404,
+                message="Response not found"
+           )
+
+        # Pull data out - up to debate for whether to send the whole message in data, or just pull the data out
+        rid = response_redis.get("rid")
+        data = response_redis.get("data")
+
+        # Send back to requester
+        return api_response(
+            rid=rid,
+            data=data
+        )
+
+    except Exception as e:
+        # Log the exception with traceback
+        #logger.error(traceback.format_exc())
+        logger.error(e)
+        return api_response(
+            status=500,
+            message="Internal server error"
+        )
+
 @app.route("/get/<client_id>", methods=["GET"])
 def simple_http_get(client_id):
     #return jsonify({"client_id": f"{client_id}"})
@@ -102,31 +152,32 @@ def simple_http_get(client_id):
         logger.debug("Popping next in queue")
         logger.debug(rid_of_command)
 
+    
+        # this may be the same bug as b4. 
         if not rid_of_command:
-            logger.warning(f"Queue empty for rid: {client_id}")
-            return api_response(
-                status=202, # sending a 204 no content
-                message = "Queue empty or does not exist"
-            )
+            logger.warning(f"Queue empty for client: {client_id}")
+            
+            # switchign to a nothing command
+            return api_response()
 
         # look up command rid basedon popped command
         # get json from redis
-        # do I need to set prefix here?
-        # testing shows that it's fine and returns the correct messag
+
         command = FormJModel.get(rid_of_command)
         
-
         # Convert from redis key to dict, then use formj for validation N stuff
         command_dict = FormJ(dict(command)).parse()
 
-        # need a bit of thinking here, do we send back the SAME rid? or just a new one.
-        # mainly trying to track responses
-        # For now just leaving it.
+        # adding/updating client in redis
+        client = Client(type="simple-http", client_id=client_id, checkin=int(time.time()))
+        client.save()
 
-        # send back to client
+        # send back to client - WITH rid
         return api_response(
-            data=command_dict.data
+            data=command_dict.data,
+            rid=rid_of_command
         )
+        
 
     # dooo I keep raising errors up the stack?
     except NotFoundError:
@@ -139,9 +190,8 @@ def simple_http_get(client_id):
         return api_response(status=400)
         
     except Exception as e:
-        # Print the complete traceback
-        traceback.print_exc()  # This will print the full traceback to stderr
-        logger.error(traceback.format_exc())  # Log the traceback as a string
+
+        logger.error(e)
         return api_response(status=500)
 
 
@@ -165,9 +215,14 @@ def simple_http_post(client_id):
             status=fj.status,
             timestamp=fj.timestamp,
         )
+        #logger.debug(f"POST: RID: {fj.rid}")
 
         # write to redis
         formj_message.save()
+
+       # adding client to redis
+        client = Client(type="simple-http", client_id=client_id, checkin=int(time.time()))
+        client.save()
 
         return api_response(
             status = 200,

@@ -35,9 +35,11 @@ sleep 2
 echo "Running tests..."
 python3 development/tests/user_auth.py
 python3 development/tests/simple_http.py
+python3 development/tests/stats.py
 
 #python3 development/tests/client_load_test.py
-python3 development/tests/sequential_client_load_test.py
+#python3 development/tests/sequential_client_load_test.py
+python3 development/tests/looping_clients.py
 
 #keep alive
 sleep 1000000000 

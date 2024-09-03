@@ -1,0 +1,46 @@
+
+
+chain
+
+
+
+
+user -> request to /command/<client_id>. request has RID
+
+/command/<client_id> takes this message. It turns into formJ message
+It then saves this message in a FormJModel, with the RID as the index. 
+
+This key looks like:
+`request:plugins.simple_http.modules.redis_models.FormJModel:217189c2-955c-4474-962d-d1fed3867e4d`
+
+Then that client has a message queued for it, with that RID, so it can be looked up later. 
+
+Next, the client reaches out to /get/<client_id>. This is to get the command that is queued for it. 
+
+This searches redis for a key like this;
+`request:plugins.simple_http.modules.redis_models.FormJModel:217189c2-955c-4474-962d-d1fed3867e4d`
+
+This sends back the contents of this key. 
+
+the client does stuff with that command
+
+It then posts to `/post/<client_id>` with the results of said command
+This again turns the message into a formj object, and saves as a response key with the RID as the key:
+
+`response:plugins.simple_http.modules.redis_models.FormJModel:217189c2-955c-4474-962d-d1fed3867e4d`
+a 200 is returned saying its stored correctly. 
+
+
+
+NOW, the user has been checking `/response/<response_id>` the whole time looking for the response.
+
+This checks for a key such as:
+`response:plugins.simple_http.modules.redis_models.FormJModel:217189c2-955c-4474-962d-d1fed3867e4d`, using the original response id it generated when sending the command. Ideally, this contains the response form the client .
+
+for whatever reason (might be the test), only the requests are showing up in redis when I do keys *:<rid>
+
+okay holy fuck it's just the test I think. I manualy renamed the response key to the correct name, and it worked. somethings up where they key is not gettting named properly/using it again when sending back. 
+
+fixed. no idea wahat it was
+
+## 
