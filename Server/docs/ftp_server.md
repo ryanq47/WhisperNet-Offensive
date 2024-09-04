@@ -4,7 +4,14 @@ An FTP server plugin
 
 ## Usage
 
+## TODO:
 
+- [ ] Perms on user creation
+- [ ] SSL/TLS + Creation
+- [ ] add to stats plugin for loaded plugins 
+
+after...
+- [ ] FTP client on rust agent
 
 ## Endpoints:
 

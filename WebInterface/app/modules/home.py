@@ -21,7 +21,7 @@ def homepage():
                 
                 # manually define these to add unique content, etc
                 with ui.card().classes('w-full h-full p-4'):  # Full width and height within its grid column
-                    ui.markdown(f"### SOME SERVICE {i}")
+                    ui.markdown(f"### SOME PLUGIN {i}")
                     ui.markdown("FTP SERVER STATUS: ")
                     ui.markdown("FTP SERVER IP: ")
                     ui.markdown("FTP SERVER PORT: ")

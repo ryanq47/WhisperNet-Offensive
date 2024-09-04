@@ -57,3 +57,16 @@ def ping():
             Or... use a diff endopint and check like every 1 sec instead of constatly
     """
     return "pong", 200
+
+@app.route('/plugins', methods=['GET'])
+def plugins():
+    '''returns json of plugins that are currently up/serving something'''
+
+    # get list/dicts of plugins that are up 
+        # create this list or something, store.... somewhere. Maybe redis?
+
+    # format into formj
+
+    # send back
+
+
