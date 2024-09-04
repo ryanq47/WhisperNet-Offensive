@@ -14,6 +14,18 @@ config = load_yaml.load_yaml()
 
 BASE_URL = f"http://{config.server.ip}:{config.server.port}"
 
+# Load environment variables
+with open('.env', 'r') as f:
+    for line in f:
+        key, value = line.strip().split('=')
+        os.environ[key] = value
+
+# Set headers globally
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {os.environ['jwt_token']}",
+}
+
 def send_request_and_print(url, method="get", json_data=None, headers=None):
     """
     Helper function to send requests and print the response using rich console.
@@ -36,8 +48,8 @@ def test_ftp_start_server():
     """
     console.print(Panel("GET /ftp/start", title="Test Case", expand=False))
     url = f"{BASE_URL}/ftp/start"
-    response = send_request_and_print(url)
-    assert response.status_code == 200 #or response.status_code == 400
+    response = send_request_and_print(url, headers=headers)
+    assert response.status_code == 200 or response.status_code == 400
     assert "message" in response.json()
 
 def test_ftp_stop_server():
@@ -46,8 +58,8 @@ def test_ftp_stop_server():
     """
     console.print(Panel("GET /ftp/stop", title="Test Case", expand=False))
     url = f"{BASE_URL}/ftp/stop"
-    response = send_request_and_print(url)
-    assert response.status_code == 200 #or response.status_code == 400
+    response = send_request_and_print(url, headers=headers)
+    assert response.status_code == 200 or response.status_code == 400
     assert "message" in response.json()
 
 def test_ftp_new_user():
@@ -56,15 +68,12 @@ def test_ftp_new_user():
     """
     console.print(Panel("POST /ftp/new-user", title="Test Case", expand=False))
     url = f"{BASE_URL}/ftp/new-user"
-    headers = {
-        "Content-Type": "application/json",
-    }
     dict_data = {
         "username": "newuser",
         "password": "newpassword"
     }
     response = send_request_and_print(url, method="post", json_data=dict_data, headers=headers)
-    assert response.status_code == 200 #or response.status_code == 400
+    assert response.status_code == 200 or response.status_code == 400
     assert "message" in response.json() or "error" in response.json()
 
 if __name__ == "__main__":
@@ -79,8 +88,8 @@ if __name__ == "__main__":
     test_cases = [
         ("GET /ftp/start", test_ftp_start_server),
         ("GET /ftp/stop", test_ftp_stop_server),
-        ("GET /ftp/start", test_ftp_start_server), # start server again for new user lol
-        ("GET /ftp/new-user", test_ftp_new_user),
+        ("GET /ftp/start", test_ftp_start_server), # start server again for new user
+        ("POST /ftp/new-user", test_ftp_new_user),
     ]
 
     for title, test_case in test_cases:

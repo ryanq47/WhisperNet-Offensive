@@ -3,7 +3,6 @@ from modules.instances import Instance
 from modules.log import log
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from plugins.ftp_server.modules.ftp import LeFTPServer
-from modules.instances import Instance
 from threading import Thread
 from modules.utils import api_response
 from modules.config import Config
@@ -16,43 +15,37 @@ class Info:
     author = "ryanq.47"
 
 '''
+### Current FTP Flow Idea
 
-### Current ftp flow idea
+Multiple users. 
 
-multiple users. 
-
-create a user per assesment, etc or whatever. this creates a dedicated directory for them, then to export on client, just do:
+Create a user per assessment, etc., or whatever is needed. This creates a dedicated directory for them, then to export on client, just do:
 `ftp upload filewhatever user pass`
 
-this will require a user/pass input, or it could just be anonymous uploads? who knows
+This will require a user/pass input, or it could just be anonymous uploads. Who knows?
 
-intentially seperate from creds to log into server, as these accounts are meant to be used as oneoff's or sometihng. 
-
-
+Intentionally separate from creds to log into server, as these accounts are meant to be used as one-offs or something.
 '''
 
-# assign FTP server to instance
-# actually prob, need to do a check if ftp server exists. 
-
-# Optional route example
+# Route to test FTP server setup
 @app.route('/ftp', methods=['GET'])
 def ftp_home():
-    return jsonify({"somekey": "somevalue"})
+    return jsonify({"status": "FTP server route is active"})
 
-#@jwt_required
+# Route to start the FTP server
 @app.route('/ftp/start', methods=['GET'])
+@jwt_required()  # Uncomment this if JWT protection is needed
 def ftp_start_server():
+    instance = Instance()
     try:
-        instance = Instance()
-
+        # Configuration values
         ip = Config().config.server.ftp.bind.ip
         port = Config().config.server.ftp.bind.port
         anonymous_user = Config().config.server.ftp.users.anonymous
         banner = Config().config.server.ftp.misc.banner
 
-        # Check if the FTP server has been set or if it is not running
+        # Check if the FTP server is not set or not running
         if instance.ftp_server is None or not instance.ftp_server.running:
-            # Initialize and start the FTP server
             instance.ftp_server = LeFTPServer(ip=ip, port=port, banner=banner)
             instance.ftp_server.start_server()
 
@@ -60,86 +53,51 @@ def ftp_start_server():
                 logger.info("Adding anonymous FTP user with write-only access")
                 instance.ftp_server.add_anonymous_user()
             
-            return api_response(
-                status=200,
-                message=f"FTP server started"
-            )
-
+            return api_response(status=200, message="FTP server started successfully")
         else:
-            return api_response(
-                status=400,
-                message=f"FTP server is already running"
-            )
-        
+            return api_response(status=400, message="FTP server is already running")
+
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Error starting FTP server: {e}")
+        return api_response(status=500, message="Internal server error")
 
-        return api_response(
-            status=500
-        )
-
+# Route to stop the FTP server
 @app.route('/ftp/stop', methods=['GET'])
+@jwt_required()  # Uncomment this if JWT protection is needed
 def ftp_stop_server():
+    instance = Instance()
     try:
-        instance = Instance()
-
         if instance.ftp_server is None or not instance.ftp_server.running:
-            return api_response(
-                status=400,
-                message=f"FTP server is not running"
-            )
+            return api_response(status=400, message="FTP server is not running")
 
         instance.ftp_server.stop_server()
-        return api_response(
-            status=200,
-            message=f"FTP server stopped successfully"
-        )    
-    
+        return api_response(status=200, message="FTP server stopped successfully")
+
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Error stopping FTP server: {e}")
+        return api_response(status=500, message="Internal server error")
 
-        return api_response(
-            status=500
-        )    
-
+# Route to add a new FTP user
 @app.route('/ftp/new-user', methods=['POST'])
-#@jwt_required()
+@jwt_required()  # Uncomment this if JWT protection is needed
 def ftp_new_user():
     instance = Instance()
-    # Get JSON data from request
     data = request.get_json()
 
-    # Retrieve username and password from JSON data
+    # Validate input data
     username = data.get("username")
     password = data.get("password")
 
     if not username or not password:
-        return api_response(
-            status=400,
-            message=f"`username` and `password` are required"
-        )    
+        return api_response(status=400, message="`username` and `password` are required")
 
     try:
-        #ftp_server = instance.ftp_server
         if instance.ftp_server is None or not instance.ftp_server.running:
-            return api_response(
-                status=400,
-                message=f"FTP server is not running"
-            )        
-            
-        else:
-            instance.ftp_server.add_user(
-                username = username,
-                password = password
-            )
+            return api_response(status=400, message="FTP server is not running")
 
-            return api_response(
-                status=200,
-                message=f"User added: {username}"
-            )
+        instance.ftp_server.add_user(username=username, password=password)
+        return api_response(status=200, message=f"User added: {username}")
 
     except Exception as e:
-        logger.error(e)
-        return api_response(
-            status=500
-        )
+        logger.error(f"Error adding new FTP user: {e}")
+        return api_response(status=500, message="Internal server error")
