@@ -60,7 +60,7 @@ def ping():
     """
     return "pong", 200
 
-@app.route('/plugins', methods=['GET'])
+@app.route('/services', methods=['GET'])
 def plugins():
     '''returns json of plugins that are currently up/serving something'''
 
@@ -77,7 +77,7 @@ def plugins():
             service_data = redis.json().get(key)
                 # Append the fetched data to the list in the dictionary
             active_services["ActiveServices"].append(service_data)
-            
+
         if cursor == 0:
             break
 
