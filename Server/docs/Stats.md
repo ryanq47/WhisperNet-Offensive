@@ -3,6 +3,30 @@
 A stats plugin
 
 
+## /plugins:
+Holds current plugin data/active services, this is (or will be) used to display info about the server on the web client. 
+
+```
+{
+  "data": {
+    "ActiveServices": [
+      {
+        "info": "FTP Server",
+        "ip": "0.0.0.0",
+        "pk": "01J6ZNCMBSXESS1VY5ZZJJKQ18",
+        "port": 21,
+        "sid": "f704b7fb-0c1f-4491-b46d-b3b9795e0245",
+        "timestamp": "1725491990"
+      }
+    ]
+  },
+  "message": "",
+  "rid": "24bab96f-770a-486c-8be1-aedc918c22cf",
+  "status": 200,
+  "timestamp": 1725491992
+}
+```
+
 ## /clients
 Sends out a FormJ message containing all the clients currently on the server.
 

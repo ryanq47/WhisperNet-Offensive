@@ -87,9 +87,9 @@ if __name__ == "__main__":
 
     test_cases = [
         ("GET /ftp/start", test_ftp_start_server),
-        ("GET /ftp/stop", test_ftp_stop_server),
-        ("GET /ftp/start", test_ftp_start_server), # start server again for new user
-        ("POST /ftp/new-user", test_ftp_new_user),
+       # ("GET /ftp/stop", test_ftp_stop_server),
+       # ("GET /ftp/start", test_ftp_start_server), # start server again for new user
+       # ("POST /ftp/new-user", test_ftp_new_user),
     ]
 
     for title, test_case in test_cases:

@@ -7,6 +7,8 @@ from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer as PyFTPServer
 from modules.config import Config
 from modules.log import log
+from modules.redis_models import ActiveService
+import time
 
 # Configure the logger for pyftpdlib
 def configure_ftp_logging():
@@ -32,10 +34,12 @@ ftp_logger = configure_ftp_logging()
 logger = log(__name__)
 
 class LeFTPServer:
-    def __init__(self, ip, port, banner=""):
+    def __init__(self, ip, port, sid, banner=""):
         self.ip = ip
         self.port = port
         self.running = False
+
+        self.sid = str(sid)
 
         # Set up the root directory
         self.root_directory = (Config().launch_path / "ftp").resolve()
@@ -53,12 +57,15 @@ class LeFTPServer:
         self.server = PyFTPServer((self.ip, self.port), self.handler)
         self.server_thread = None
 
+        
+
     def add_anonymous_user(self):
         try:
             ftp_logger.info("Adding anonymous FTP user with write-only access")
             self.authorizer.add_anonymous(str(self.root_directory), perm="w")
         except Exception as e:
             ftp_logger.error(f"Failed to add anonymous user: {e}")
+            raise e
 
     def add_user(self, username: str, password: str):
         try:
@@ -66,6 +73,7 @@ class LeFTPServer:
             self.authorizer.add_user(username, password, str(self.root_directory), perm="elradfmw")
         except Exception as e:
             ftp_logger.error(f"Failed to add user {username}: {e}")
+            raise e
 
     def start_server(self):
         if not self.running:
@@ -74,8 +82,21 @@ class LeFTPServer:
                 self.server_thread = Thread(target=self.server.serve_forever, daemon=True)
                 self.server_thread.start()
                 self.running = True
+                
+                # add ftp serv to redis
+                logger.debug("Adding service key to redis")
+                ftp_serv = ActiveService(
+                    sid = self.sid,
+                    port = self.port,
+                    ip = self.ip,
+                    info = "FTP Server",
+                    timestamp = str(int(time.time()))
+                )
+
+                ftp_serv.save()   
             except Exception as e:
                 ftp_logger.error(f"Failed to start server: {e}")
+                raise e
 
     def stop_server(self):
         if self.running:
@@ -83,8 +104,19 @@ class LeFTPServer:
                 ftp_logger.info(f"Stopping FTP server on {self.ip}:{self.port}")
                 self.server.close_all()
                 self.running = False
+                
+                ftp_serv = ActiveService.get(self.sid)                
+                if ftp_serv:
+                    ftp_serv.delete()
+                    logger.info("Service key removed from Redis using ORM")
+                else:
+                    logger.warning("No matching service key found in Redis to remove")
+                    
+
+
             except Exception as e:
                 ftp_logger.error(f"Failed to stop server: {e}")
+                raise e
 
 if __name__ == "__main__":
     ftp_server = LeFTPServer('0.0.0.0', 21)

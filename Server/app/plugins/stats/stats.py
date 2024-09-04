@@ -7,6 +7,8 @@ from modules.utils import api_response
 from modules.config import Config
 from redis_om import get_redis_connection
 from flask_jwt_extended import jwt_required
+from modules.redis_models import ActiveService
+
 logger = log(__name__)
 app = Instance().app
 
@@ -62,11 +64,26 @@ def ping():
 def plugins():
     '''returns json of plugins that are currently up/serving something'''
 
-    # get list/dicts of plugins that are up 
-        # create this list or something, store.... somewhere. Maybe redis?
+    prefix = "service:*"
+    # Initialize the dictionary to store results
+    active_services = {"ActiveServices": []}
+
+    # Using SCAN to find all keys that match the prefix
+    cursor = 0
+    while True:
+        cursor, keys = redis.scan(cursor=cursor, match=prefix)
+        for key in keys:
+            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
+            service_data = redis.json().get(key)
+                # Append the fetched data to the list in the dictionary
+            active_services["ActiveServices"].append(service_data)
+            
+        if cursor == 0:
+            break
 
     # format into formj
-
     # send back
-
+    return api_response(
+        data=active_services
+    )
 

@@ -6,6 +6,7 @@ from plugins.ftp_server.modules.ftp import LeFTPServer
 from threading import Thread
 from modules.utils import api_response
 from modules.config import Config
+import uuid
 
 logger = log(__name__)
 app = Instance().app
@@ -43,16 +44,18 @@ def ftp_start_server():
         port = Config().config.server.ftp.bind.port
         anonymous_user = Config().config.server.ftp.users.anonymous
         banner = Config().config.server.ftp.misc.banner
+        sid = uuid.uuid4()
 
         # Check if the FTP server is not set or not running
         if instance.ftp_server is None or not instance.ftp_server.running:
-            instance.ftp_server = LeFTPServer(ip=ip, port=port, banner=banner)
+            instance.ftp_server = LeFTPServer(ip=ip, port=port, banner=banner, sid=sid)
             instance.ftp_server.start_server()
 
             if anonymous_user:
                 logger.info("Adding anonymous FTP user with write-only access")
                 instance.ftp_server.add_anonymous_user()
-            
+        
+
             return api_response(status=200, message="FTP server started successfully")
         else:
             return api_response(status=400, message="FTP server is already running")

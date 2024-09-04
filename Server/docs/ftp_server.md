@@ -5,13 +5,31 @@ An FTP server plugin
 ## Usage
 
 ## TODO:
+- [X] add to stats plugin for loaded plugins 
+    [X] use ActiveService template
+    [ ] jwt it
+    [ ] web client setup of this
 
 - [ ] Perms on user creation
 - [ ] SSL/TLS + Creation
-- [ ] add to stats plugin for loaded plugins 
 
 after...
 - [ ] FTP client on rust agent
+
+## Redis Keys:
+
+On start, a service key is added to the redis db. 
+
+This key contains the following: (Note, key model can be found at `modules.redis_models`)
+
+`sid`: UUID4, the service ID
+`port`: port the service is on
+`ip`: ip/dns name service is on
+`info`: info about the service
+`timestamp`: Timestamp of when the service started
+
+On stop, this key is deleted
+
 
 ## Endpoints:
 
