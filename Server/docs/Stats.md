@@ -3,7 +3,7 @@
 A stats plugin
 
 
-## /plugins:
+## /services:
 Holds current plugin data/active services, this is (or will be) used to display info about the server on the web client. 
 
 ```
