@@ -33,6 +33,21 @@ server:
       max_file_backups: !!int 10   # how many files to keep after rollover
       file_name: !!str "audit.log"
 
+  ftp:
+    bind:
+      ip: !!str "0.0.0.0"
+      port: !!int 21
+
+    users:
+      anonymous: !!bool False # Allow anonymous user
+
+    misc:
+      banner: !!str "Whispernet-FTP Server" # banner for FTP if you decide you want this.
+      # by default, it displays the pyftpd lib, so set to "" if you don't want that
+
+    #config:
+    #  root_dir: !!str "ftp" # use relative path for putting it in server root, or an absolute path for anywhere on box
+
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference

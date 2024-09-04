@@ -79,14 +79,18 @@ class Config:
 
         config_file: path to config file, absolute, or relative.  str or pathlib obj
         """
-        if type(config_file) == pathlib.Path:
-            # if a pathlib is passed in, convert path to str
-            config_file = str(config_file)
+        try:
+            if type(config_file) == pathlib.Path:
+                # if a pathlib is passed in, convert path to str
+                config_file = str(config_file)
 
-        logger.info(f"Loading config '{config_file}'")
-        # yaml loader
-        with open(config_file, "r") as f:
-            self.config = munch.munchify(yaml.safe_load(f))
+            logger.info(f"Loading config '{config_file}'")
+            # yaml loader
+            with open(config_file, "r") as f:
+                self.config = munch.munchify(yaml.safe_load(f))
+        except Exception as e:
+            print(e)
+            exit("Cannot load config file")
 
     def load_env(self, env_file: str | pathlib.Path):
         """

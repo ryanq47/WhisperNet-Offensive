@@ -94,7 +94,7 @@ def simple_http_queue_command(client_id):
         return api_response(message="Internal server error", status=500)
 
 
-@app.route("/response/<response_id>", methods=["GET"])
+@app.route("/response/<response_id>", methods=["GET"], endpoint='simple_http_get_response')
 @jwt_required()
 def simple_http_get_response(response_id):
     # okay, for whatever reason, the redis-om model FormJModel is not working with this, it spits a key not found error, so I'm doing it manually.
