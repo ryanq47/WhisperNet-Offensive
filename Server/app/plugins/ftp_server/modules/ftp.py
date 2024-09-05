@@ -89,8 +89,9 @@ class LeFTPServer:
                     sid = self.sid,
                     port = self.port,
                     ip = self.ip,
-                    info = "FTP Server",
-                    timestamp = str(int(time.time()))
+                    info = "FTP Server DESC Placeholder", # can add to self.init if needed
+                    timestamp = str(int(time.time())),
+                    name="FTP Server"
                 )
 
                 ftp_serv.save()   

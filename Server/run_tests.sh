@@ -29,7 +29,7 @@ SERVER_PID=$!
 echo "Server started with PID $SERVER_PID"
 
 # Allow some time for the server to start
-sleep 2
+sleep 5
 
 # Run the tests
 echo "Running tests..."

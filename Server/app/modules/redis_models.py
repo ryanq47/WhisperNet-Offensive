@@ -41,6 +41,7 @@ class ActiveService(JsonModel):
     ip: str # ip/hostname, what it listends on
     info: str # info of waht the server is
     timestamp: str # time server is started?
+    name: str # name of service
 
     class Meta:
         database = redis  # The Redis connection

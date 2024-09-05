@@ -13,17 +13,18 @@ Holds current plugin data/active services, this is (or will be) used to display 
       {
         "info": "FTP Server",
         "ip": "0.0.0.0",
-        "pk": "01J6ZNCMBSXESS1VY5ZZJJKQ18",
+        "name": "FTP Server",
+        "pk": "01J722MDA2QAP48MSKFBR66A8P",
         "port": 21,
-        "sid": "f704b7fb-0c1f-4491-b46d-b3b9795e0245",
-        "timestamp": "1725491990"
+        "sid": "18cf528d-fff4-41f5-859a-a7991bfa18c6",
+        "timestamp": "1725572986"
       }
     ]
   },
   "message": "",
-  "rid": "24bab96f-770a-486c-8be1-aedc918c22cf",
+  "rid": "9f620b26-c048-45b9-a7b4-a178d2fd10fa",
   "status": 200,
-  "timestamp": 1725491992
+  "timestamp": 1725572987
 }
 ```
 
