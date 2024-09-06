@@ -6,7 +6,7 @@ from app.modules.clients import clients
 from app.modules.login import check_login
 import app.modules.login
 import app.modules.static
-
+import app.modules.plugins
 
 
 

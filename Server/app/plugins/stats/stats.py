@@ -24,7 +24,7 @@ redis = get_redis_connection(  # switch to config values
 
 
 # hackily using redis instead of redis-om because of a weird index error
-@app.route('/clients', methods=['GET'])
+@app.route('/stats/clients', methods=['GET'])
 @jwt_required()
 def clients():
     try:
@@ -51,6 +51,7 @@ def clients():
         )
 
 @app.route('/ping', methods=['GET'])
+@jwt_required
 def ping():
     """
         A super simple, basic upcheck ping endpoint
@@ -60,13 +61,13 @@ def ping():
     """
     return "pong", 200
 
-@app.route('/services', methods=['GET'])
-def plugins():
+@app.route('/stats/services', methods=['GET'])
+def services():
     '''returns json of plugins that are currently up/serving something'''
 
     prefix = "service:*"
     # Initialize the dictionary to store results
-    active_services = {"ActiveServices": []}
+    active_services = {"active_services": []}
 
     # Using SCAN to find all keys that match the prefix
     cursor = 0
@@ -76,7 +77,7 @@ def plugins():
             # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
             service_data = redis.json().get(key)
                 # Append the fetched data to the list in the dictionary
-            active_services["ActiveServices"].append(service_data)
+            active_services["active_services"].append(service_data)
 
         if cursor == 0:
             break
@@ -85,5 +86,32 @@ def plugins():
     # send back
     return api_response(
         data=active_services
+    )
+
+@app.route('/stats/plugins', methods=['GET'])
+def plugins():
+    '''returns json of plugins that are currently up/serving something'''
+
+    prefix = "plugins:*"
+    # Initialize the dictionary to store results
+    plugins_dict = {"plugins": []}
+
+    # Using SCAN to find all keys that match the prefix
+    cursor = 0
+    while True:
+        cursor, keys = redis.scan(cursor=cursor, match=prefix)
+        for key in keys:
+            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
+            plugin_data = redis.json().get(key)
+                # Append the fetched data to the list in the dictionary
+            plugins_dict["plugins"].append(plugin_data)
+
+        if cursor == 0:
+            break
+
+    # format into formj
+    # send back
+    return api_response(
+        data=plugins_dict
     )
 

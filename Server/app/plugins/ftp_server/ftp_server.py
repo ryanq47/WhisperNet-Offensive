@@ -7,7 +7,7 @@ from threading import Thread
 from modules.utils import api_response
 from modules.config import Config
 import uuid
-
+from modules.redis_models import Plugin
 logger = log(__name__)
 app = Instance().app
 
@@ -29,9 +29,20 @@ Intentionally separate from creds to log into server, as these accounts are mean
 '''
 
 # Route to test FTP server setup
-@app.route('/ftp', methods=['GET'])
-def ftp_home():
-    return jsonify({"status": "FTP server route is active"})
+#@app.route('/ftp', methods=['GET'])
+#def ftp_home():
+#    return jsonify({"status": "FTP server route is active"})
+
+## Add to redis and register plugin
+try:
+    p = Plugin(
+        name=Info.name,
+        start = "/ftp/start",
+        stop = "/ftp/stop"
+    )
+    p.save()
+except Exception as e:
+    logger.error(e)
 
 # Route to start the FTP server
 @app.route('/ftp/start', methods=['GET'])

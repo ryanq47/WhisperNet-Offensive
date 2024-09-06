@@ -7,8 +7,10 @@ An FTP server plugin
 ## TODO:
 - [X] add to stats plugin for loaded plugins 
     [X] use ActiveService template
-    [ ] jwt it
-    [ ] web client setup of this
+    [X] jwt it
+    [X] web client setup of this
+    [ ] Web clinet endpoint for plugins, 
+        and if they have start/stop capabilites, buttons for that
 
 - [ ] Perms on user creation
 - [ ] SSL/TLS + Creation

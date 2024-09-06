@@ -46,3 +46,16 @@ class ActiveService(JsonModel):
     class Meta:
         database = redis  # The Redis connection
         global_key_prefix = "service"
+
+class Plugin(JsonModel):
+    name: str = Field(index=True, primary_key=True) # name of plugin, make primary key so it doesnt repeat
+
+
+    # optional fields for if the service has a start/stop componenet
+    start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
+    stop: str = Field(default="") # stop field, same as above but for stopping  
+
+    class Meta:
+        database = redis  # The Redis connection
+        global_key_prefix = "plugin"
+
