@@ -43,7 +43,7 @@ python3 ../development/tests/ftp_test.py
 #python3 development/tests/looping_clients.py
 
 #keep alive
-sleep 1000000000 
+#sleep 1000000000 
 
 # Kill the server after the tests
 echo "Killing server with PID $SERVER_PID"

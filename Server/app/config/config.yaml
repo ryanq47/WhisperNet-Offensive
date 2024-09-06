@@ -2,10 +2,12 @@ server:
   name: !!str "name"
 
   tls:
+    # These 2 are used only by start.sh
     # These do not need to exist, however, if they don't, start.sh will create them with the below options
     tls_key_file: !!str ./server.key
     tls_crt_file: !!str ./server.crt
 
+    # these are used by everything else
     # common name for tls cert
     tls_cn: !!str "some.domain"
     # org name for tls cert
@@ -43,8 +45,8 @@ server:
 
     tls:
       enabled: True # enable TLS
-      tls_key_file: !!str ./server.key #key & crt files, by default will use the already generated certs
-      tls_crt_file: !!str ./server.crt
+      tls_key_file: !!str modules/plugins/ftp_server/ftp_key.pem #key & crt files, by default will use the already generated certs
+      tls_crt_file: !!str modules/plugins/ftp_server/ftp_cert.pem
 
     misc:
       banner: !!str "Whispernet-FTP Server" # banner for FTP if you decide you want this.

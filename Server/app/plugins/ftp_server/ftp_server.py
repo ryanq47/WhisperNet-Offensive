@@ -8,6 +8,8 @@ from modules.utils import api_response
 from modules.config import Config
 import uuid
 from modules.redis_models import Plugin
+from modules.tls import generate_pem
+
 logger = log(__name__)
 app = Instance().app
 
@@ -45,6 +47,29 @@ try:
     p.save()
 except Exception as e:
     logger.error(e)
+
+# Check for TLS certificate and key
+cert_file = Config().launch_path / Config().config.server.ftp.tls.tls_crt_file
+key_file  = Config().launch_path / Config().config.server.ftp.tls.tls_key_file
+#path is correct, not writing tho?
+#/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/app/modules/plugins/ftp_server/ftp_cert.pem
+
+# Validate if files exist
+if not cert_file.exists() or not key_file.exists():
+    logger.warning("FTP TLS certificate or key file not found.")
+
+    # If either the certificate or key file is missing, trigger PEM generation.
+    # (You'll handle the generate_pem function call with correct paths and filenames)
+    logger.info(f"Generating new FTP TLS certificate: {cert_file}")
+    logger.info(f"Generating new FTP TLS key: {key_file}")
+
+    # Assuming generate_pem requires paths as inputs, you could call it like this:
+    key_path = key_file.parent # parent path
+    key_name = key_file.stem # file w/o extenion
+    cert_path = cert_file.parent
+    cert_name = cert_file.stem
+    generate_pem(key_path, key_name, cert_path, cert_name)
+
 
 # Route to start the FTP server
 @app.route('/ftp/start', methods=['GET'])

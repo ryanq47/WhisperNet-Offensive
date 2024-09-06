@@ -14,6 +14,7 @@ An FTP server plugin
 
 - [ ] SSL/TLS + Creation
     - it wants .pem - sooo find a way to handle that/create those certs automatically? Could do a bash script that creates certs for each plugin that needs it, pulls from config file for options? who knows. Also may need a certs directory, orjust store them int eh plugin dorectory ( <<this is prolly easiest)
+    or do it in code numnutz
 
 - [ ] Perms on user creation?
 - [ ] Mini web cleanup + notifications for things
