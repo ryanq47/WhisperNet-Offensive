@@ -92,7 +92,7 @@ def services():
 def plugins():
     '''returns json of plugins that are currently up/serving something'''
 
-    prefix = "plugins:*"
+    prefix = "plugin:*"
     # Initialize the dictionary to store results
     plugins_dict = {"plugins": []}
 

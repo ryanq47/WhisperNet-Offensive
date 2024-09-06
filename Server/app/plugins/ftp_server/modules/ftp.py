@@ -3,7 +3,7 @@ import logging
 from threading import Thread
 from pathlib import Path
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
 from pyftpdlib.servers import FTPServer as PyFTPServer
 from modules.config import Config
 from modules.log import log
@@ -48,7 +48,15 @@ class LeFTPServer:
         self.authorizer = DummyAuthorizer()
 
         # Set up the handler
-        self.handler = FTPHandler
+        if Config().config.server.ftp.tls.enabled:
+            logger.info("FTP TLS is on")
+            self.handler = TLS_FTPHandler
+            self.handler.certfile = Config().config.server.ftp.tls.tls_key_file
+            self.handler.keyfile = Config().config.server.ftp.tls.tls_crt_file
+
+        else:
+            self.handler = FTPHandler
+
         self.handler.authorizer = self.authorizer
         if banner:
             self.handler.banner = banner
@@ -108,7 +116,7 @@ class LeFTPServer:
                 
                 ftp_serv = ActiveService.get(self.sid)                
                 if ftp_serv:
-                    ftp_serv.delete()
+                    ftp_serv.delete(self.sid)
                     logger.info("Service key removed from Redis using ORM")
                 else:
                     logger.warning("No matching service key found in Redis to remove")

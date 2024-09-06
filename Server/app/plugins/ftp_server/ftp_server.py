@@ -14,6 +14,7 @@ app = Instance().app
 class Info:
     name = "ftp_server"
     author = "ryanq.47"
+    info = "An FTP Server"
 
 '''
 ### Current FTP Flow Idea
@@ -37,8 +38,9 @@ Intentionally separate from creds to log into server, as these accounts are mean
 try:
     p = Plugin(
         name=Info.name,
-        start = "/ftp/start",
-        stop = "/ftp/stop"
+        start = "ftp/start",
+        stop = "ftp/stop",
+        info = Info.info
     )
     p.save()
 except Exception as e:

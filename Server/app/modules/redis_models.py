@@ -54,6 +54,7 @@ class Plugin(JsonModel):
     # optional fields for if the service has a start/stop componenet
     start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
     stop: str = Field(default="") # stop field, same as above but for stopping  
+    info: str = Field(default="No info provided")
 
     class Meta:
         database = redis  # The Redis connection

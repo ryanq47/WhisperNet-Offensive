@@ -9,11 +9,15 @@ An FTP server plugin
     [X] use ActiveService template
     [X] jwt it
     [X] web client setup of this
-    [ ] Web clinet endpoint for plugins, 
+    [X] Web clinet endpoint for plugins, 
         and if they have start/stop capabilites, buttons for that
 
-- [ ] Perms on user creation
 - [ ] SSL/TLS + Creation
+    - it wants .pem - sooo find a way to handle that/create those certs automatically? Could do a bash script that creates certs for each plugin that needs it, pulls from config file for options? who knows. Also may need a certs directory, orjust store them int eh plugin dorectory ( <<this is prolly easiest)
+
+- [ ] Perms on user creation?
+- [ ] Mini web cleanup + notifications for things
+
 
 after...
 - [ ] FTP client on rust agent

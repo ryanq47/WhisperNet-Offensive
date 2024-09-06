@@ -41,6 +41,11 @@ server:
     users:
       anonymous: !!bool False # Allow anonymous user
 
+    tls:
+      enabled: True # enable TLS
+      tls_key_file: !!str ./server.key #key & crt files, by default will use the already generated certs
+      tls_crt_file: !!str ./server.crt
+
     misc:
       banner: !!str "Whispernet-FTP Server" # banner for FTP if you decide you want this.
       # by default, it displays the pyftpd lib, so set to "" if you don't want that
