@@ -45,8 +45,8 @@ server:
 
     tls:
       enabled: True # enable TLS
-      tls_key_file: !!str modules/plugins/ftp_server/ftp_key.pem #key & crt files, by default will use the already generated certs
-      tls_crt_file: !!str modules/plugins/ftp_server/ftp_cert.pem
+      tls_key_file: !!str plugins/ftp_server/ftp_key.pem #key & crt files, by default will use the already generated certs
+      tls_crt_file: !!str plugins/ftp_server/ftp_cert.pem
 
     misc:
       banner: !!str "Whispernet-FTP Server" # banner for FTP if you decide you want this.

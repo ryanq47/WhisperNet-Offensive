@@ -99,7 +99,10 @@ def ftp_start_server():
             return api_response(status=400, message="FTP server is already running")
 
     except Exception as e:
+        import traceback
         logger.error(f"Error starting FTP server: {e}")
+        print(traceback.format_exc())  # Log the full traceback
+
         return api_response(status=500, message="Internal server error")
 
 # Route to stop the FTP server

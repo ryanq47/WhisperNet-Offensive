@@ -50,9 +50,27 @@ class LeFTPServer:
         # Set up the handler
         if Config().config.server.ftp.tls.enabled:
             logger.info("FTP TLS is on")
+
+            certfile = Config().launch_path / Config().config.server.ftp.tls.tls_crt_file
+            keyfile = Config().launch_path / Config().config.server.ftp.tls.tls_key_file
+            logger.info(f"Looking for keyfile at: {str(keyfile)}")
+            logger.info(f"Looking for certfile at: {str(certfile)}")
+
+            # Check if the certfile and keyfile exist
+            if not certfile.exists():
+                logger.warning(f"TLS certificate file {certfile} not found.")
+                ftp_logger.warning(f"TLS certificate file {certfile} not found.")
+                raise FileNotFoundError(f"TLS certificate file {certfile} not found.")
+            
+            if not keyfile.exists():
+                logger.warning(f"TLS key file {keyfile} not found.")
+                ftp_logger.warning(f"TLS key file {keyfile} not found.")
+                raise FileNotFoundError(f"TLS key file {keyfile} not found.")
+
+            # Set up the TLS handler
             self.handler = TLS_FTPHandler
-            self.handler.certfile = Config().config.server.ftp.tls.tls_key_file
-            self.handler.keyfile = Config().config.server.ftp.tls.tls_crt_file
+            self.handler.certfile = str(certfile)  # Cast to string for compatibility
+            self.handler.keyfile = str(keyfile)
 
         else:
             self.handler = FTPHandler
