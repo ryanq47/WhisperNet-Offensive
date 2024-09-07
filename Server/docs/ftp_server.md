@@ -2,6 +2,13 @@
 
 An FTP server plugin
 
+## Features:
+
+- TLS
+    - Automated cert generation
+- Anonymous User
+- Authenticated Users
+
 ## Usage
 
 ## TODO:
@@ -12,16 +19,29 @@ An FTP server plugin
     [X] Web clinet endpoint for plugins, 
         and if they have start/stop capabilites, buttons for that
 
-- [ ] SSL/TLS + Creation
+- [X] SSL/TLS + Creation
     - it wants .pem - sooo find a way to handle that/create those certs automatically? Could do a bash script that creates certs for each plugin that needs it, pulls from config file for options? who knows. Also may need a certs directory, orjust store them int eh plugin dorectory ( <<this is prolly easiest)
     or do it in code numnutz
+
+    done in code. auto done if not presetn, all settings in config.yaml
 
 - [ ] Perms on user creation?
 - [ ] Mini web cleanup + notifications for things
 
+- [ ] Rearrange/finish filling out this doc
 
 after...
 - [ ] FTP client on rust agent
+
+## TLS:
+
+TLS is offered via PyFTPLib's `TLS_FTPHandler`.
+
+
+#### Certs:
+You can generate your own certs if you'd like, but if not, the plugin will generate them for you. It pulls values from config.yaml, in the `server.tls` keys.
+
+The generated files (`ftp_key.pem`, `ftp_cert.pem`) are then stored at the `plugins/ftp_server/X` directory
 
 ## Redis Keys:
 
