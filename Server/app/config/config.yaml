@@ -41,7 +41,12 @@ server:
       port: !!int 21
 
     users:
-      anonymous: !!bool False # Allow anonymous user
+      anonymous: 
+        enabled: !!bool False # Allow anonymous user
+        permissions: !!str "w" # permissions for anonymous user
+
+      standard:
+        permissions: !!str "elradfmw" # Permissions for standard user
 
     tls:
       enabled: True # enable TLS

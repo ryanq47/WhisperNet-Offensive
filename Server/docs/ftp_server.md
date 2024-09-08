@@ -25,8 +25,7 @@ An FTP server plugin
 
     done in code. auto done if not presetn, all settings in config.yaml
 
-- [ ] Perms on user creation?
-- [ ] Mini web cleanup + notifications for things
+- [X] Perms on user creation?
 
 - [ ] Rearrange/finish filling out this doc
 
@@ -41,7 +40,7 @@ TLS is offered via PyFTPLib's `TLS_FTPHandler`.
 #### Certs:
 You can generate your own certs if you'd like, but if not, the plugin will generate them for you. It pulls values from config.yaml, in the `server.tls` keys.
 
-The generated files (`ftp_key.pem`, `ftp_cert.pem`) are then stored at the `plugins/ftp_server/X` directory
+The generated files (`ftp_key.pem`,   `ftp_cert.pem`) are then stored at the `plugins/ftp_server/X` directory
 
 ## Redis Keys:
 

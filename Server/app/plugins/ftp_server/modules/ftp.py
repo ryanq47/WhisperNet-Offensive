@@ -87,16 +87,18 @@ class LeFTPServer:
 
     def add_anonymous_user(self):
         try:
-            ftp_logger.info("Adding anonymous FTP user with write-only access")
-            self.authorizer.add_anonymous(str(self.root_directory), perm="w")
+            perms = Config().config.server.ftp.users.anonymous.permissions
+            ftp_logger.info(f"Adding Anonymous FTP user with {perms} permissions")
+            self.authorizer.add_anonymous(str(self.root_directory), perm=perms)
         except Exception as e:
             ftp_logger.error(f"Failed to add anonymous user: {e}")
             raise e
 
     def add_user(self, username: str, password: str):
         try:
-            ftp_logger.info(f"Adding FTP user: {username}")
-            self.authorizer.add_user(username, password, str(self.root_directory), perm="elradfmw")
+            perms = Config().config.server.ftp.users.standard.permissions
+            ftp_logger.info(f"Adding FTP user: {username} with {perms} permissions")
+            self.authorizer.add_user(username, password, str(self.root_directory), perm=perms)
         except Exception as e:
             ftp_logger.error(f"Failed to add user {username}: {e}")
             raise e

@@ -80,7 +80,7 @@ def ftp_start_server():
         # Configuration values
         ip = Config().config.server.ftp.bind.ip
         port = Config().config.server.ftp.bind.port
-        anonymous_user = Config().config.server.ftp.users.anonymous
+        anonymous_user = Config().config.server.ftp.users.anonymous.enabled
         banner = Config().config.server.ftp.misc.banner
         sid = uuid.uuid4()
 
