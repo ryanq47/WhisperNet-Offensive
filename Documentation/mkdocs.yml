@@ -1,1 +1,44 @@
 site_name: My Docs
+
+theme:
+  name: material
+  language: en
+  favicon: assets/favicon.png
+  
+  # Enable only the basic features for navigation and styling
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate  # Integrated table of contents within sidebar
+    
+  palette:
+    # Custom color palette for your documentation site
+    - scheme: default
+      primary: 'indigo'
+      accent: 'cyan'
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+
+    - scheme: slate  # Dark mode palette
+      primary: 'light-blue'
+      accent: 'orange'
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to light mode
+
+  font:
+    text: 'Roboto'
+    code: 'Fira Code'
+
+# Optional: External assets like custom CSS/JS
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - assets/custom.js
+
+# Basic Markdown extensions that come with MkDocs Material
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc
