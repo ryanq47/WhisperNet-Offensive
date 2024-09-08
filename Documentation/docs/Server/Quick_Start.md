@@ -27,5 +27,5 @@ DEFAULT_PASSWORD="password" # Please Change
 
 
 
-4. Make `start.sh` executable, and execute it, everything should start up!
+4. Make `start.sh` executable, and execute it, everything should start up! Next, check out `<put_a_link_to_webint_quickstart>`
 

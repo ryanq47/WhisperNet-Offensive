@@ -1,6 +1,6 @@
 # Redis Models
 
-REdis models available to the entire program, not just plugin specific
+Redis models available to the entire program, not just plugin specific
 
 
 ## Client model
