@@ -1,4 +1,4 @@
-# Whispernet Server Web Interface
+# Web Interface + Quickstart
 
 This is the main interface for interacting with the Whispernet Server. All actions can be performed here, making it your primary point of interaction.
 
@@ -36,3 +36,6 @@ This is the main interface for interacting with the Whispernet Server. All actio
             --port PORT  Set the port number (default: 8080)
 
 4. Access the Web Interface via the IP address or wait for the page to open automatically.
+
+
+![type:video](https://www.youtube.com/embed/LXb3EKWsInQ)

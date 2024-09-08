@@ -31,6 +31,9 @@ theme:
     text: 'Roboto'
     code: 'Fira Code'
 
+plugins:
+    - mkdocs-video
+
 # Optional: External assets like custom CSS/JS
 extra_css:
   - stylesheets/extra.css

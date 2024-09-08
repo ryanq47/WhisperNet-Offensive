@@ -1,38 +1,42 @@
-# CommandConsole
+# Command Console
 
-Command console is a universal command interface. 
+Command console is the universal command interface for interacting with a client. Some inspiration is borrowed from CrowdStrike's RTR console, so if you've ever used that, this should feel farmiliar.
+
+## Usage:
+
+![type:video](https://www.youtube.com/embed/LXb3EKWsInQ)
 
 
 ## Technical
-it's just an API client basically
-
-spawns at `/command/<client-name>`
-
-Stateless, aka a new class instance is spawned each time you open it, and as such, you don't get any command history if you refresh the page. (Command history *is* stored server side in the audit logs). Maybe in the future there will be a log endpoint on the web client
-
-## What happens when you hit run
-When hitting run, a few things happens
-
-1. Parsing 
-
-    The entered command is parsed
-
-    1a. If the command is `help`, a help menu is returned. The help menu is constructed from the "help" method in the FormJ keys, *NOT* from the server. Why this matters: Some commands may be listed in the help menu, they may not be supported by the client. Yes this is a flaw, but it works fine for now.
+The "console" is simply a page that makes API calls to the server, and presents the results to mimic the appearance of a real TTY.
 
 
+### What happens when you open the console:
+Each console is initiated at `/command/<client-id>`, where `client-id` represents the client's UUID.
 
-2. Form J Message 
+Each console instance is stateless, meaning a new class instance is created every time you open it. As a result, command history is lost upon refreshing the page. However, the command history is stored server-side in audit logs. In the future, there may be a log endpoint available on the web client for retrieving command history.
 
-    From that parsing, a Sync Key is created. That key then gets loaded into a FormJ message (in the `data` field). That FormJ message is then sent to the sever to be queued for the client. ex: `http://server/command/<client-id>`
 
-3. Getting response 
+### What happens when you hit the `run` button
 
-    Right after sending, a timer is created, that checks the "response" url of the command sent(ex: `http://server/response/<rid>`) every second until a valid respnose is received. 
-    Upon a successful message retrieveal, the timer is deleted, and as such, the no more requests are made to that url. 
+When you press "run," several steps take place:
 
-4. Display response
+1. **Parsing the Command**  
+   The entered command is parsed.
 
-    THe response is in a FormJ format. Responses also contain the `blob` key, which is just for transfering blobs of data. the `data` field from each blob entry is then displayed on screen in the console.
+    - Note:  If the command is `help`, a help menu is returned. This menu is constructed from the "help" method within the FormJ keys, *not* from the server.  
+   Why this matters: Some commands may appear in the help menu but may not be supported by the client. This is a flaw, but it works fine for now.
+
+2. **Creating a FormJ Message**  
+   From the parsed command, a Sync Key is created. That key is then loaded into a FormJ message (in the `data` field). The FormJ message is sent to the server and queued for the client.  
+   Example: `http://server/command/<client-id>`
+
+3. **Receiving the Response**  
+   Immediately after sending the message, a timer is initiated. This timer checks the "response" URL of the command (e.g., `http://server/response/<rid>`) every second until a valid response is received. Once the message is successfully retrieved, the timer is canceled, stopping further requests to that URL.
+
+4. **Displaying the Response**  
+   The response is in FormJ format. Responses contain a `blob` key, used to transfer blobs of data. The `data` field from each blob entry is displayed on the screen in the console.
+
 
 Example response from server:
 ```
