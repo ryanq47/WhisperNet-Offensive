@@ -1,17 +1,27 @@
 # Redis Models
 
-Redis models available to the entire program, not just plugin specific
+`redis_om` is the ORM used to interact with redis. Below are the models available to the entire program.
 
+Each plugin can have its own Redis models definition file, keeping data schemas isolated and easy to manage, ensuring flexibility and reducing conflicts across plugins.
+
+## Importing these modules
+
+`from modules.redis_models import ...`
 
 ## Client model
-THe client model is meant to be a standard way to store lightdetails on a client, such as checkin times, and type. 
+THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
 Basically, when a client checks in, either a key is created, or updated, based on it's ID with the follwoing information:
 
-`client_id`: ID of the client
+```
+class Client(HashModel):
+    client_id: str = Field(index=True, primary_key=True)  # ID of the client (UUID4)
+    type: str = Field(index=True)                         # Client type, such as `simple_http`. 
+    checkin: int = Field(index=True)                      # last checkin time, in unix time
 
-`type`: Client type, such as `simple_http`. 
-
-`checkin`: last checkin time, in unix time
+    class Meta:
+        database = redis
+        global_key_prefix = "client"                      # Prefix for keys
+```
 
 ```
 127.0.0.1:6379> hgetall client:modules.redis_models.Client:d94670d6-bc49-4ed7-8f26-fd8470e77fa2
@@ -48,4 +58,45 @@ Together, all these keys make up the contents of the `/clients` endpoint, which 
   "timestamp": 1724653653
 }
 
+```
+
+
+## Active Service Model
+
+The active service model is used to store the current active services on the server. It's primarily used by the stats plugin to allow the WebClient to view the current active Services
+
+```
+class ActiveService(JsonModel):
+    # need to determine a prefix + a diff between each instance?
+    # service:somestuff:<service_uuid>?
+
+    sid: str = Field(index=True, primary_key=True)  # sid: service id, UUID4
+    port: int                                       # Port of service
+    ip: str                                         # ip/hostname, what it listends on
+    info: str                                       # info of waht the server is
+    timestamp: str                                  # time server is started
+    name: str                                       # name of service
+
+    class Meta:
+        database = redis                            # The Redis connection
+        global_key_prefix = "service"               # Prefix of key
+```
+
+## Plugin Model
+
+The plugin model is used to store the currently loaded plugins on the server. It's also used primarily by the stats plugin to allow the WebClient to interact with/view/control the current plugins.
+
+```
+class Plugin(JsonModel):
+    name: str = Field(index=True, primary_key=True) # name of plugin, make primary key so it doesnt repeat
+
+
+    # optional fields for if the service has a start/stop componenet
+    start: str = Field(default="")                  # start field, holds endpoint to start service, ex /ftp/start
+    stop: str = Field(default="")                   # stop field, same as above but for stopping  
+    info: str = Field(default="No info provided")   # Info field for the plugin
+
+    class Meta:
+        database = redis                            # The Redis connection
+        global_key_prefix = "plugin"                # Prefix of key
 ```

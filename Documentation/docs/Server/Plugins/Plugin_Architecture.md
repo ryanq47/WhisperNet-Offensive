@@ -59,7 +59,7 @@ def plugin_route():
 
 ### Alternative Response Method
 
-Instead of using `jsonify`, you can utilize the `api_response` function from `modules.utils` to format responses in the standard WhisperNet format:
+Instead of using `jsonify`, you can utilize the `api_response` function from `modules.utils` to format responses in the standard FormJ format:
 
 ```json
 {
