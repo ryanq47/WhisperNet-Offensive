@@ -1,18 +1,26 @@
-## Todo:
-
-- [X] Config values in file rollover,e tc
-- [X] rename log_action to audit
-- [X] Build out these docs
-
-# Audit
+# Audit Logging
 
 Whispernet offers robust(ish) audit logging for all the actions happening on clients. This is seperate from the main log, which contains application based logs. 
 
-The audit log is meant to leave an audit trail for if/when you need to check back on what you've been running on hosts. 
+The audit log is meant to leave an audit trail for if/when you need to check back on what you've been running on hosts. These logs are located at the root directory of the server
+
+```
+.
+├── app
+├── audit.log     << Here
+├── audit.log.1   << Rollover log file
+├── install.sh
+├── prep_for_release.sh
+├── README.md
+├── requirements.txt
+├── run_tests.sh
+└── whispernet.log
+
+```
 
 ## Usage
 
-Usage is fairly simple
+Adding the Audit Logger to your plugin is fairly simple
 
 Minimum Example:
 ```
@@ -39,9 +47,11 @@ a.audit(dict_data)
 ## Config Values
 There's a few config values that go with the audit log as well.
 
-`max_file_size`: The max file size for each log, in bytes
-`max_file_backups`: The amount of log files that can exist. This is handled via the `RotatingFileHandler` class of the `logging` module.
-`file_name`: Name of the audit log file.
+- `max_file_size`: The max file size for each log, in bytes
+
+- `max_file_backups`: The amount of log files that can exist. This is handled via the `RotatingFileHandler` class of the `logging` module.
+
+- `file_name`: Name of the audit log file.
 
 ```
 server:
@@ -51,5 +61,5 @@ server:
     log:
       max_file_size: !!int 1000000 # in Bytes
       max_file_backups: !!int 10   # how many files to keep after rollover
-      file_name: !!str "audit.log"
+      file_name: !!str "audit.log" # Name of audit log file
 ```
