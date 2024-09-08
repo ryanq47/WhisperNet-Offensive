@@ -1,4 +1,4 @@
-from redis_om import get_redis_connection, Field, HashModel
+from redis_om import get_redis_connection, Field, HashModel, JsonModel
 
 redis = get_redis_connection(  # switch to config values
     host="localhost",
@@ -31,3 +31,32 @@ class Client(HashModel):
 
 # Create the index explicitly after defining the model
 #Client.create_index()
+
+class ActiveService(JsonModel):
+    # need to determine a prefix + a diff between each instance?
+    # service:somestuff:<service_uuid>?
+
+    sid: str = Field(index=True, primary_key=True) # sid: server id
+    port: int
+    ip: str # ip/hostname, what it listends on
+    info: str # info of waht the server is
+    timestamp: str # time server is started?
+    name: str # name of service
+
+    class Meta:
+        database = redis  # The Redis connection
+        global_key_prefix = "service"
+
+class Plugin(JsonModel):
+    name: str = Field(index=True, primary_key=True) # name of plugin, make primary key so it doesnt repeat
+
+
+    # optional fields for if the service has a start/stop componenet
+    start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
+    stop: str = Field(default="") # stop field, same as above but for stopping  
+    info: str = Field(default="No info provided")
+
+    class Meta:
+        database = redis  # The Redis connection
+        global_key_prefix = "plugin"
+

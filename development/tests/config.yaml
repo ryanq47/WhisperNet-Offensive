@@ -1,4 +1,4 @@
 server:
   # IP / PORT the server is on/can be accessed at. does not set these values for the server itself.
-  ip: 0.0.0.0
+  ip: 127.0.0.1
   port: 8081

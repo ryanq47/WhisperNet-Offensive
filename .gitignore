@@ -182,3 +182,5 @@ yq
 yq_linux_amd64
 *.rdb
 
+Server/testfile.txt
+Server/app/ftp/test.txt

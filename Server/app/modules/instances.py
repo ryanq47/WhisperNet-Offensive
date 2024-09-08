@@ -9,6 +9,7 @@ import flask
 from flask_sqlalchemy import SQLAlchemy
 from modules.log import log
 from typing import Optional
+from pyftpdlib.servers import FTPServer as PyFTPServer
 
 logger = log(__name__)
 
@@ -35,7 +36,7 @@ class Instance:
         # Initialize any other instances here
         self._app = None
         self._db_engine = None
-
+        self._ftp_server = None
     @property
     def app(self):
         if self._app is None:
@@ -65,3 +66,22 @@ class Instance:
             raise TypeError(
                 f"Expected an instance of 'SQLAlchemy', but got '{type(value).__name__}' instead."
             )
+
+    # FTP serv
+    @property
+    def ftp_server(self):
+        #if self._ftp_server is None:
+            #raise ValueError("The PyFTPServer instance has not been set yet.")
+            
+        # direct returns the ftp server variable, start logic checks if this is none, if so, start server
+        return self._ftp_server
+
+    @ftp_server.setter
+    def ftp_server(self, value):
+        #if isinstance(value, PyFTPServer):
+        #    self._ftp_server = value
+        #lse:
+        #    raise TypeError(
+        #        f"Expected an instance of 'PyFTPServer', but got '{type(value).__name__}' instead."
+        #    )
+        self._ftp_server = value

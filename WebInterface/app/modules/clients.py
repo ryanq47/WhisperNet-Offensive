@@ -14,7 +14,6 @@ def clients():
         if not check_login():
             return
 
-
         ui.markdown("# Clients")
         
         raw_client_data = get_client_data()
@@ -90,7 +89,7 @@ def get_client_data() -> dict:
     Function to retrieve client data from server.
     """
     try:
-        url = Config().get_url() / "clients"
+        url = Config().get_url() / "stats" / "clients"
         token = Config().get_token()
 
         headers = {

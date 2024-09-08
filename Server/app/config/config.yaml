@@ -2,10 +2,12 @@ server:
   name: !!str "name"
 
   tls:
+    # These 2 are used only by start.sh
     # These do not need to exist, however, if they don't, start.sh will create them with the below options
     tls_key_file: !!str ./server.key
     tls_crt_file: !!str ./server.crt
 
+    # these are used by everything else
     # common name for tls cert
     tls_cn: !!str "some.domain"
     # org name for tls cert
@@ -32,6 +34,31 @@ server:
       max_file_size: !!int 1000000 # in Bytes
       max_file_backups: !!int 10   # how many files to keep after rollover
       file_name: !!str "audit.log"
+
+  ftp:
+    bind:
+      ip: !!str "0.0.0.0"
+      port: !!int 21
+
+    users:
+      anonymous: 
+        enabled: !!bool False # Allow anonymous user
+        permissions: !!str "w" # permissions for anonymous user
+
+      standard:
+        permissions: !!str "elradfmw" # Permissions for standard user
+
+    tls:
+      enabled: True # enable TLS
+      tls_key_file: !!str plugins/ftp_server/ftp_key.pem #key & crt files, by default will use the already generated certs
+      tls_crt_file: !!str plugins/ftp_server/ftp_cert.pem
+
+    misc:
+      banner: !!str "Whispernet-FTP Server" # banner for FTP if you decide you want this.
+      # by default, it displays the pyftpd lib, so set to "" if you don't want that
+
+    #config:
+    #  root_dir: !!str "ftp" # use relative path for putting it in server root, or an absolute path for anywhere on box
 
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7

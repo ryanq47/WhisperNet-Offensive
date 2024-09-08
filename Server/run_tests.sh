@@ -29,20 +29,21 @@ SERVER_PID=$!
 echo "Server started with PID $SERVER_PID"
 
 # Allow some time for the server to start
-sleep 2
+sleep 5
 
 # Run the tests
 echo "Running tests..."
-python3 development/tests/user_auth.py
-python3 development/tests/simple_http.py
-python3 development/tests/stats.py
+python3 ../development/tests/user_auth.py
+python3 ../development/tests/simple_http.py
+python3 ../development/tests/stats.py
+python3 ../development/tests/ftp_test.py
 
 #python3 development/tests/client_load_test.py
 #python3 development/tests/sequential_client_load_test.py
-python3 development/tests/looping_clients.py
+#python3 development/tests/looping_clients.py
 
 #keep alive
-sleep 1000000000 
+#sleep 1000000000 
 
 # Kill the server after the tests
 echo "Killing server with PID $SERVER_PID"

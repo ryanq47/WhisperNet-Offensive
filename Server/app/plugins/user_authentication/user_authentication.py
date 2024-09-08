@@ -75,7 +75,7 @@ def login():
 
         else:
             # keeping this a 401 as its still technically invalid creds
-            logger.warning("User '%s' tried to log in, but was not found.", username)
+            logger.warning(f"User '{username}' tried to log in, but was not found.")
             return api_response(
                 message="Login Failure", data={"access_token": ""}, status=401
             )

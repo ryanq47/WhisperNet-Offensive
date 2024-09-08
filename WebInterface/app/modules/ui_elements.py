@@ -13,6 +13,7 @@ def create_header():
             with ui.row().classes("m-0 p-0 gap-0 items-center"):  # No margin/padding and no gap between buttons
                 ui.button('Home', on_click=lambda: ui.open('/home'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")  # Remove rounded corners, fixed width
                 ui.button('Clients', on_click=lambda: ui.open('/clients'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('Plugins', on_click=lambda: ui.open('/plugins'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
                 ui.button('Log Out', on_click=lambda: ui.open('/logout'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
 
 
