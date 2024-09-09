@@ -46,5 +46,4 @@ Gunicorn is the WSGI server for the server. It handles a lot of things such as l
 
 
 - `plugins` - DIR: Holds plugins, which are used to enhance the functionality of the app. Plugins *have* routable endpoints.
-    What is a plugin? A plugin is a single python file that adds extensibilty to the app
 
