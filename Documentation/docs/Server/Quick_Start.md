@@ -1,10 +1,15 @@
 # Quick Start
 
-Alright lets get it up and rolling asap.
+Quick start to getting the server up and rolling.
 
 
-1. Install reqs:
-`pip install -r requirements.txt`
+
+1. Run `install.sh` to install all the needed items
+This will install:
+    - Redis Docker Container (Also starts it)
+    - Requirements.txt
+    - Gunicorn
+    - yq
 
 2. Config .env
 ```
@@ -25,7 +30,5 @@ DEFAULT_PASSWORD="password" # Please Change
 3. Optional, review `./app/config/config.yaml` for additional server settings/options.
 
 
-
-
-4. Make `start.sh` executable, and execute it, everything should start up!
+4. Make `app/start.sh` executable, and execute it, everything should start up! Next, check out `<put_a_link_to_webint_quickstart>`
 

@@ -1,0 +1,2 @@
+mkdocs
+mkdocs-material>=9.0.0
