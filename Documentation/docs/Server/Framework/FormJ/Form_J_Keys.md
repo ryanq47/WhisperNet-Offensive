@@ -80,6 +80,19 @@ Attributes:
 
 ```
 
+## portscan
+Portscans other hosts
+
+```
+"portscan": {
+  "target":"127.0.0.1",   # target host to scan
+  "start_port":1,         # start port
+  "end_port":1024,        # End Port
+  "timeout":1             # Timeout to wait on each port in seconds (maybe move to MS?)
+}
+```
+
+
 
 # Utility/data transfer
 
@@ -120,3 +133,5 @@ Attributes:
 } 
 
 ```
+
+
