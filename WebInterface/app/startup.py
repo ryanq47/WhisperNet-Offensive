@@ -7,8 +7,7 @@ from app.modules.login import check_login
 import app.modules.login
 import app.modules.static
 import app.modules.plugins
-
-
+import app.modules.help_about
 
 def startup() -> None:
     @ui.page('/')

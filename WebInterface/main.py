@@ -38,5 +38,9 @@ app.on_startup(startup)
 ui.run(
     dark=True,
     host=args.host,
-    port=args.port
+    port=args.port,
+    favicon="static/icon.png",
+    title="Whispernet-Offensive"
 )
+
+# image: https://pngtree.com/freepng/cyber-hacker-icon_6566749.html
