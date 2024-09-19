@@ -9,7 +9,6 @@ import app.modules.static
 import app.modules.plugins
 
 
-
 def startup() -> None:
     @ui.page('/')
     def index():
