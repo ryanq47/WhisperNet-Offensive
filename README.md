@@ -54,4 +54,8 @@ Alternatively, you can find these guides in the README files located in the `Ser
 
 ## Usage
 
-Once you've done the Quickstarts, you should be able to access the WebInterface, at `https://127.0.0.1:8080`
+Once you've done the Quickstarts, you should be able to access the WebInterface, at `https://127.0.0.1:8080`, or whatever you set the IP/PORT to.
+
+On success, you should see this:
+
+![Login Page](Documentation/images/webinterface/login_screen.png)
