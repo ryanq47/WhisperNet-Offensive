@@ -13,15 +13,15 @@ This will install:
 
 2. Config .env
 ```
-`cp ./app/env.example ./app/.env``
+cp ./app/env.example ./app/.env
 ```
-Edit new .env with your editor of choice:
+Edit new `.env` with your editor of choice:
 
 ```
 JWT_SECRET_KEY="somejwtkey" # Your secret key for JWT tokens, KEEP THIS STRONG
-SECRET_KEY="somekey" # The general secret key for the flask app, also keep strong
+SECRET_KEY="somekey"        # The general secret key for the flask app, also keep strong
 
-#Default creds used if no users exist in DB
+# Initial user credentials that are used if no users exist in DB
 DEFAULT_USERNAME="username" # Please change
 DEFAULT_PASSWORD="password" # Please Change
 
@@ -32,3 +32,28 @@ DEFAULT_PASSWORD="password" # Please Change
 
 4. Make `app/start.sh` executable, and execute it, everything should start up! Next, check out `<put_a_link_to_webint_quickstart>`
 
+## Troubleshooting:
+
+### Redis errors:
+
+#### Make sure docker container is up/exists:
+
+This will list all docker containers:
+```
+sudo docker ps -a
+```
+
+This will start the docker container:
+```
+sudo docker start <CONTAINER ID>
+``` 
+
+#### If you are in a VM, and suspended the session:
+
+For some reason, Docker networking breaks on my kali box when I suspend it. You can fix that with this command:
+
+```
+sudo systemctl restart NetworkManager docker
+```
+
+Then, go and restart the Redis container (see above command)

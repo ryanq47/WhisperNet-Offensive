@@ -7,8 +7,7 @@ Welcome to the WhisperNet C2 server! This project is currently in active develop
 - [Features](#features)
 - [Plugins](#plugins)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
+- [Basic Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
 - [Disclaimer](#disclaimer)
@@ -51,3 +50,8 @@ Plugins allow for extensibiility to WhisperNet
 
 Alternatively, you can find these guides in the README files located in the `Server` and `WebInterface` directories.
 
+
+
+## Usage
+
+Once you've done the Quickstarts, you should be able to access the WebInterface, at `https://127.0.0.1:8080`
