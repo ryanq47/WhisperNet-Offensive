@@ -30,7 +30,7 @@ DEFAULT_PASSWORD="password" # Please Change
 3. Optional, review `./app/config/config.yaml` for additional server settings/options.
 
 
-4. Make `app/start.sh` executable, and execute it, everything should start up! Next, check out `<put_a_link_to_webint_quickstart>`
+4. Make `app/start.sh` executable, and execute it, everything should start up!
 
 ## Troubleshooting:
 
@@ -50,7 +50,7 @@ sudo docker start <CONTAINER ID>
 
 #### If you are in a VM, and suspended the session:
 
-For some reason, Docker networking breaks on my kali box when I suspend it. You can fix that with this command:
+For some reason, Docker networking breaks on my dev box when I suspend it. You can fix that with this command:
 
 ```
 sudo systemctl restart NetworkManager docker
