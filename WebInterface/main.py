@@ -38,5 +38,7 @@ app.on_startup(startup)
 ui.run(
     dark=True,
     host=args.host,
-    port=args.port
+    port=args.port,
+    favicon="static/tab_icon.png",
+    title="Whispernet-Offensive"
 )

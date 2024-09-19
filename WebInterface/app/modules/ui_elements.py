@@ -3,10 +3,6 @@ from app.modules.config import Config
 
 # Creates a navbar
 def create_header():
-    # setting page title here as well cuz everything calls this function anyway
-    # there's probably a better way to do this
-    ui.page_title('Whispernet-Offensive')
-
     with ui.header().classes("m-0 p-0") as header:  # Remove any margin or padding from header
         with ui.row().classes('w-full justify-between items-center m-0 p-0').style(f"background-color: {Config().get_button_color()};"):  # Full width, space between elements, no margin/padding, and centered items
             
@@ -36,8 +32,6 @@ def add_particles_background():
 """
 
 def add_particles_background():
-    # this one sets it on particles load, as the login page does not call the create_header
-    ui.page_title('Whispernet-Offensive')
     # Add the particles.js container and load the existing configuration
     ui.add_body_html('''
     <div id="particles-js" style="position: fixed; width: 100%; height: 100%; z-index: -1;"></div>
