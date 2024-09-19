@@ -1,4 +1,4 @@
-# # [image](WebInterface/static/icon_full.png) WhisperNet C2 Server
+# # ![image](WebInterface/static/icon_full.png) WhisperNet C2 Server
 
 Welcome to the WhisperNet C2 server! This project is currently in active development, and features, functionalities, and APIs may change. Please check back regularly for updates! 
 
