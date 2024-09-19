@@ -39,6 +39,8 @@ ui.run(
     dark=True,
     host=args.host,
     port=args.port,
-    favicon="static/tab_icon.png",
+    favicon="static/icon.png",
     title="Whispernet-Offensive"
 )
+
+# image: https://pngtree.com/freepng/cyber-hacker-icon_6566749.html
