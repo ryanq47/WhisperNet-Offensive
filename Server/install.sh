@@ -2,6 +2,12 @@
 
 #sudo apt-get install pip -y
 
+echo "Creating virtual environment 'server_venv'..."
+python3 -m venv server_venv
+
+# Activate the virtual environment
+source server_venv/bin/activate
+
 echo "installing pip reqs"
 pip install -r requirements.txt
 
