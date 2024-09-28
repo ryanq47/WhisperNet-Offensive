@@ -11,3 +11,4 @@ gunicorn
 python-dotenv
 redis-om
 pyftpdlib
+docker
