@@ -19,8 +19,8 @@
 
 import docker
 from docker.errors import NotFound, APIError
-
 from modules.log import log
+from modules.redis_models import Container
 
 logger = log(__name__)
 
@@ -33,6 +33,13 @@ def start_container(container_name):
     try:
         container = client.containers.get(container_name)
         container.start()
+
+        c = Container(
+            name=f"{container_name}",
+            options="Container started, not ran. Addtl logic required for this field, fix later"
+        )
+        c.save()
+
         logger.info(f"Container '{container_name}' started.")
     except NotFound:
         logger.info(f"Container '{container_name}' not found.")
@@ -68,7 +75,7 @@ def pull_and_run_container(image_name, container_name, tag='latest', **kwargs):
         Pulls an image and runs it with a given name
         **kwargs allows additional Docker parameters such as ports, environment variables, etc.
 
-        Ex: pull_and_run_container("redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
+        Ex: pull_and_run_container(image_name="redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
 
     '''
     try:
@@ -83,6 +90,15 @@ def pull_and_run_container(image_name, container_name, tag='latest', **kwargs):
                 detach=True,  # Run in detached mode
                 **kwargs      # Pass any additional parameters
             )
+            
+            # add details to redis
+            # can expand more if needed later on. 
+            c = Container(
+                name=f"{image_name}:{tag}",
+                options=str(kwargs)
+            )
+            c.save()
+
             logger.info(f"Container '{container_name}' started successfully with image '{image_name}:{tag}'.")
         else:
             logger.info(f"Container '{container_name}' already exists.")

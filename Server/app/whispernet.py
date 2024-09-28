@@ -79,12 +79,14 @@ with app.app_context():
 # Application Instance
 Instance().app = app
 
+## Everything that relies on Instance stuff, goes AFTER this line
+
 # Spin up needed docker containers BEFORE loading plugins. 
 # could probably toss this in a config file & loop over those values for each needed container
 logger.info("Checking on docker containers...")
 ## redis
 if not container_exists("redis-stack-server"):
-    pull_and_run_container("redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
+    pull_and_run_container(image_name="redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
 else:
     start_container("redis-stack-server")
 

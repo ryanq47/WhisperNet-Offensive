@@ -23,7 +23,7 @@ def plugins():
         active_services = service_data.get("plugins", [])
 
         # Create a container for the stacked layout (one card per row)
-        with ui.column().classes('w-full h-screen p-4 space-y-6'):
+        with ui.column().classes('w-full p-4 space-y-6'):  # Removed 'h-screen' to allow page to adjust height
             for service in active_services:
                 name = service.get("name", "Unknown Service")
                 info = service.get("info", "No Description")
@@ -35,7 +35,6 @@ def plugins():
                     # Row to contain header and buttons aligned on the right side
                     with ui.row().classes('w-full justify-between items-center'):
                         ui.markdown(f"### {name}").classes('text-white')  # Service name (header)
-                        #ui.markdown(f"#### {info}").classes('text-white')  # Service name (header)
 
                         # Buttons aligned to the right of the header
                         with ui.row().classes('gap-2'):
@@ -45,28 +44,40 @@ def plugins():
                     ui.markdown(f"#### Plugin Details").classes('text-white')
                     ui.markdown(f"{info}").classes('text-white')
 
-                    # Define table columns and rows
-                    # sooooo unless this data is included in the dashboard, don't include?
-                    # columns = [
-                    #     {'name': 'label', 'label': 'Label', 'field': 'label', 'required': True, 'align': 'left'},
-                    #     {'name': 'value', 'label': 'Value', 'field': 'value'},
-                    # ]
-                    # rows = [
-                    #     {'label': 'Status', 'value': 'Active'},
-                    #     {'label': 'IP Address', 'value': ip},
-                    #     {'label': 'Port', 'value': port},
-                    # ]
+        # Add the section for "Server Containers"
+        ui.markdown("# Server Containers")
+        
+        # LOGIC DOES NOT EXIST FOR THIS YET
+        # Fetch container data from the server
+        container_data = get_container_data()
 
-                    # # Table with service details
-                    # ui.table(columns=columns, rows=rows, row_key='label').classes('w-full text-left text-sm text-white border')
+        # Extract active containers from the data
+        active_containers = container_data.get("containers", [])
 
-                    # # Add padding or margin if necessary
-                    # ui.markdown("<br>")
-                    
+        # Create a container for the stacked layout (one card per row)
+        with ui.column().classes('w-full p-4 space-y-6'):
+            for container in active_containers:
+                container_name = container.get("name", "Unknown Container")
+                container_info = container.get("options", "No Options")
+                #start_url = container.get("start", "N/A")
+                #stop_url = container.get("stop", "N/A")
+
+                # Create a collapsible card for each active container
+                with ui.expansion(f"{container_name}").classes('w-full border'):
+                    # Row to contain header and buttons aligned on the right side
+                    with ui.row().classes('w-full justify-between items-center'):
+                        ui.markdown(f"### {container_name}").classes('text-white')  # Container name (header)
+
+                        # Buttons aligned to the right of the header
+                        #with ui.row().classes('gap-2'):
+                        #    ui.button('Start', on_click=lambda: start_container(start_url)).classes('bg-blue-500 text-white')
+                        #    ui.button('Stop', on_click=lambda: stop_container(stop_url)).classes('bg-red-500 text-white')
+
+                    ui.markdown(f"#### Container Details").classes('text-white')
+                    ui.markdown(f"{container_info}").classes('text-white')
 
     except Exception as e:
-        logger.error(e)
-        raise e
+        ui.notify(f"Error loading plugins page: {e}", level="error")
 
 def start_ftp(start_url:str):
     try:
@@ -138,6 +149,35 @@ def get_service_data() -> dict:
             #print(data)
             client_data = data.get("data", {})
             logger.debug(f"Service data retrieved: {client_data}")  # Debugging: Log the client data
+            return client_data
+        else:
+            logger.warning(f"Received a {response.status_code} status code when requesting {url}")
+            return {}
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        raise e
+
+def get_container_data() -> dict:
+    """
+    Function to retrieve container data from server.
+    """
+    try:
+        url = Config().get_url() / "stats" / "containers"
+        token = Config().get_token()
+
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        logger.debug("Getting containers from server")
+        response = requests.get(url, headers=headers, verify=Config().get_verify_certs())
+
+        if response.status_code == 200:
+            data = response.json()
+            #print(data)
+            client_data = data.get("data", {})
+            logger.debug(f"Container data retrieved: {client_data}")  # Debugging: Log the client data
             return client_data
         else:
             logger.warning(f"Received a {response.status_code} status code when requesting {url}")

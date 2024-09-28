@@ -63,7 +63,9 @@ Together, all these keys make up the contents of the `/clients` endpoint, which 
 
 ## Active Service Model
 
-The active service model is used to store the current active services on the server. It's primarily used by the stats plugin to allow the WebClient to view the current active Services
+The active service model is used to store the current active services on the server. It's primarily used by the stats plugin to allow the WebClient to view the current active Services. This is different than Plugin/Container models, as this only holds data of the *service*, not the method it's being run with. 
+
+TLDR: Implementation agnostic service display
 
 ```
 class ActiveService(JsonModel):
@@ -85,6 +87,26 @@ class ActiveService(JsonModel):
 ## Plugin Model
 
 The plugin model is used to store the currently loaded plugins on the server. It's also used primarily by the stats plugin to allow the WebClient to interact with/view/control the current plugins.
+
+```
+class Plugin(JsonModel):
+    name: str = Field(index=True, primary_key=True) # name of plugin, make primary key so it doesnt repeat
+
+
+    # optional fields for if the service has a start/stop componenet
+    start: str = Field(default="")                  # start field, holds endpoint to start service, ex /ftp/start
+    stop: str = Field(default="")                   # stop field, same as above but for stopping  
+    info: str = Field(default="No info provided")   # Info field for the plugin
+
+    class Meta:
+        database = redis                            # The Redis connection
+        global_key_prefix = "plugin"                # Prefix of key
+```
+
+
+## Container Model
+
+The Container model is used for tracking all the containers that are up. 
 
 ```
 class Plugin(JsonModel):
