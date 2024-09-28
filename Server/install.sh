@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 # make sure source calls this script
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "Error: This script must be run using 'source', ex 'source install.sh'"
@@ -8,7 +9,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 #sudo apt-get install pip -y
-
+sudo apt-get install python3-venv -y
  
 # Check if venv is available
 if ! python3 -m venv --help > /dev/null 2>&1; then

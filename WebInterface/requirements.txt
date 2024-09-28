@@ -1,3 +1,4 @@
 nicegui
 requests
 httpx
+munch
