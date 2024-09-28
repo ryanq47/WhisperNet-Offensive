@@ -104,8 +104,8 @@ fi
 echo "Installing GUnicorn"
 sudo apt-get install gunicorn
 
-echo "Pulling & starting redis docker container"
+#echo "Pulling & starting redis docker container"
 #may need to pull this based on docker in python implementation
-sudo docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest 
+#sudo docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest 
 
 echo "SUCCESS... hopefully - Anyways, you should be in the 'server_venv' virtual enviornment "

@@ -15,6 +15,7 @@ import pathlib
 import time
 import bcrypt
 from modules.banner import print_banner
+from modules.docker_handler import start_container, container_exists, pull_and_run_container
 
 print_banner()
 
@@ -78,7 +79,18 @@ with app.app_context():
 # Application Instance
 Instance().app = app
 
+# Spin up needed docker containers BEFORE loading plugins. 
+# could probably toss this in a config file & loop over those values for each needed container
+logger.info("Checking on docker containers...")
+## redis
+if not container_exists("redis-stack-server"):
+    pull_and_run_container("redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
+else:
+    start_container("redis-stack-server")
+
+
 # Plugin Loader
+logger.info("Loading Plugins...")
 plugin_loader()
 
 
@@ -106,6 +118,7 @@ with app.app_context():
         logger.info(f"Created default user: {Config().env.default_username}")
     else:
         logger.info("User DB is not empty, not adding default user.")
+
 
 
 # Used when calling from Gunicorn

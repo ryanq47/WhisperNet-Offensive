@@ -16,8 +16,6 @@ logger = log(__name__)
 
 # Add warnings N stuff to this
 def plugin_loader():
-    logger.info("Loading plugins")
-
     # Plugin Root Dir
     plugin_dir = Config().launch_path / "plugins"
 
