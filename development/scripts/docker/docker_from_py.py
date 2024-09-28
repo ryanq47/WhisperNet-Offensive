@@ -17,3 +17,5 @@ for container in client.containers.list():
 # Stop and remove the container
 container.stop()
 container.remove()
+
+
