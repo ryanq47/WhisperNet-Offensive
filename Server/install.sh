@@ -9,7 +9,7 @@ fi
 
 #sudo apt-get install pip -y
 
-
+ 
 # Check if venv is available
 if ! python3 -m venv --help > /dev/null 2>&1; then
     echo "Error: 'venv' module is not available. Please ensure Python 3 is installed."
@@ -65,6 +65,9 @@ then
         # Clean up
         echo "start.sh: Cleaning up..."
         rm yq_linux_amd64
+
+        echo "start.sh: moving yq to /usr/bin/yq"
+        sudo cp ~/.local/bin/yq /usr/bin/yq
         
         echo "start.sh: yq has been installed successfully at ~/.local/bin/yq."
 
@@ -104,4 +107,4 @@ echo "Pulling & starting redis docker container"
 #may need to pull this based on docker in python implementation
 sudo docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest 
 
-echo "SUCCESS... hopefully"
+echo "SUCCESS... hopefully - Anyways, you should be in the 'server_venv' virtual enviornment "

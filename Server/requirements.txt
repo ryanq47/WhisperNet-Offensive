@@ -10,3 +10,4 @@ munch
 gunicorn
 python-dotenv
 redis-om
+pyftpdlib

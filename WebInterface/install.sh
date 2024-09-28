@@ -36,4 +36,4 @@ else
     exit 1
 fi
 
-echo "Setup complete. The virtual environment '$VENV_NAME' is now activated."
+echo "SUCCESS... hopefully - Anyways, you should be in the 'webint_venv' virtual enviornment. Run 'app/start.sh' to start the server "
