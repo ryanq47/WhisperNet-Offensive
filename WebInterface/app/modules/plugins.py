@@ -68,6 +68,11 @@ def plugins():
                     # Row to contain header and buttons aligned on the right side
                     with ui.row().classes('w-full justify-between items-center'):
                         ui.markdown(f"### {container_name}").classes('text-white')  # Container name (header)
+                        
+                        with ui.row().classes('gap-2'):
+                            ui.button('Start', on_click=lambda: start_container(container_name)).classes('bg-blue-500 text-white')
+                            ui.button('Stop', on_click=lambda: stop_container(container_name)).classes('bg-red-500 text-white')
+
 
                     # Container details in a structured format
                     ui.markdown(f"#### Container Details").classes('text-white')
@@ -134,7 +139,6 @@ def stop_ftp(stop_url:str):
         raise e
 
 
-
 def get_service_data() -> dict:
     """
     Function to retrieve client data from server.
@@ -188,6 +192,55 @@ def get_container_data() -> dict:
         else:
             logger.warning(f"Received a {response.status_code} status code when requesting {url}")
             return {}
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        raise e
+
+
+def start_container(container_name:str):
+    try:
+        url = Config().get_url() / "docker" / "start"/ container_name
+        token = Config().get_token()
+
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        logger.debug(f"Starting container {container_name}")
+        response = requests.post(url, headers=headers, verify=Config().get_verify_certs())
+
+        if response.status_code == 200:
+            pass
+
+        else:
+            logger.warning(f"Received a {response.status_code} status code when requesting {url}")
+
+        ui.notify(response.json().get("message","No message in response"))
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        raise e
+
+def stop_container(container_name:str):
+    try:
+        url = Config().get_url() / "docker" / "stop" /container_name
+        token = Config().get_token()
+
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        logger.debug(f"Stopping container {container_name}")
+        response = requests.post(url, headers=headers, verify=Config().get_verify_certs())
+
+        if response.status_code == 200:
+            pass
+
+        else:
+            logger.warning(f"Received a {response.status_code} status code when requesting {url}")
+
+        ui.notify(response.json().get("message","No message in response"))
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
