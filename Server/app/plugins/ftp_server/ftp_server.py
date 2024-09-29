@@ -72,7 +72,7 @@ if not cert_file.exists() or not key_file.exists():
 
 
 # Route to start the FTP server
-@app.route('/ftp/start', methods=['GET'])
+@app.route('/ftp/start', methods=['POST'])
 @jwt_required()  # Uncomment this if JWT protection is needed
 def ftp_start_server():
     instance = Instance()
@@ -106,7 +106,7 @@ def ftp_start_server():
         return api_response(status=500, message="Internal server error")
 
 # Route to stop the FTP server
-@app.route('/ftp/stop', methods=['GET'])
+@app.route('/ftp/stop', methods=['POST'])
 @jwt_required()  # Uncomment this if JWT protection is needed
 def ftp_stop_server():
     instance = Instance()

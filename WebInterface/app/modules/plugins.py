@@ -38,8 +38,8 @@ def plugins():
 
                         # Buttons aligned to the right of the header
                         with ui.row().classes('gap-2'):
-                            ui.button('Start', on_click=lambda: start_ftp(start_url)).classes('bg-blue-500 text-white')
-                            ui.button('Stop', on_click=lambda: stop_ftp(stop_url)).classes('bg-red-500 text-white')
+                            ui.button('Start', on_click=lambda: start_plugin(start_url)).classes('bg-blue-500 text-white')
+                            ui.button('Stop', on_click=lambda: stop_plugin(stop_url)).classes('bg-red-500 text-white')
 
                     ui.markdown(f"#### Plugin Details").classes('text-white')
                     ui.markdown(f"{info}").classes('text-white')
@@ -90,7 +90,7 @@ def plugins():
     except Exception as e:
         ui.notify(f"Error loading plugins page: {e}", level="error")
 
-def start_ftp(start_url:str):
+def start_plugin(start_url:str):
     try:
         url = Config().get_url() / start_url
         token = Config().get_token()
@@ -100,7 +100,7 @@ def start_ftp(start_url:str):
         }
 
         logger.debug("Getting services from server")
-        response = requests.get(url, headers=headers, verify=Config().get_verify_certs())
+        response = requests.post(url, headers=headers, verify=Config().get_verify_certs())
 
         if response.status_code == 200:
             pass
@@ -114,7 +114,7 @@ def start_ftp(start_url:str):
         logger.error(f"An error occurred: {e}")
         raise e
 
-def stop_ftp(stop_url:str):
+def stop_plugin(stop_url:str):
     try:
         url = Config().get_url() / stop_url
         token = Config().get_token()
@@ -124,7 +124,7 @@ def stop_ftp(stop_url:str):
         }
 
         logger.debug("Getting services from server")
-        response = requests.get(url, headers=headers, verify=Config().get_verify_certs())
+        response = requests.post(url, headers=headers, verify=Config().get_verify_certs())
 
         if response.status_code == 200:
             pass
