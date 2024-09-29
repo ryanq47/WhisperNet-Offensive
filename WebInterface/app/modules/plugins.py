@@ -58,9 +58,10 @@ def plugins():
         with ui.column().classes('w-full p-4 space-y-6'):
             for container in active_containers:
                 container_name = container.get("name", "Unknown Container")
-                container_info = container.get("options", "No Options")
-                #start_url = container.get("start", "N/A")
-                #stop_url = container.get("stop", "N/A")
+                container_image = container.get("image", "Container missing an Image name")
+                container_volumes = container.get("volumes", "Container has no Volumes")
+                container_hostname = container.get("hostname", "Container has no hostname")
+                container_ports = container.get("ports", "Container has no exposed ports")
 
                 # Create a collapsible card for each active container
                 with ui.expansion(f"{container_name}").classes('w-full border'):
@@ -68,13 +69,18 @@ def plugins():
                     with ui.row().classes('w-full justify-between items-center'):
                         ui.markdown(f"### {container_name}").classes('text-white')  # Container name (header)
 
-                        # Buttons aligned to the right of the header
-                        #with ui.row().classes('gap-2'):
-                        #    ui.button('Start', on_click=lambda: start_container(start_url)).classes('bg-blue-500 text-white')
-                        #    ui.button('Stop', on_click=lambda: stop_container(stop_url)).classes('bg-red-500 text-white')
-
+                    # Container details in a structured format
                     ui.markdown(f"#### Container Details").classes('text-white')
-                    ui.markdown(f"{container_info}").classes('text-white')
+                    ui.markdown(
+                        f"""
+                        | **Property**        | **Details**                      |
+                        |---------------------|----------------------------------|
+                        | **Image**           | {container_image}                |
+                        | **Volumes**         | {container_volumes}              |
+                        | **Hostname**        | {container_hostname}             |
+                        | **Exposed Ports**   | {container_ports}                |
+                        """
+                    ).classes('text-white')
 
     except Exception as e:
         ui.notify(f"Error loading plugins page: {e}", level="error")

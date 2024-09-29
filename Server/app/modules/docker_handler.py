@@ -35,9 +35,13 @@ def start_container(container_name):
         container.start()
 
         c = Container(
-            name=f"{container_name}",
-            options="Container started, not ran. Addtl logic required for this field, fix later"
-        )
+                name=container_name,
+                #options=str(kwargs)
+                image=str(container.attrs['Config'].get("Image","")),
+                volumes=str(container.attrs['Config'].get("Volumes","")),
+                hostname=str(container.attrs['Config'].get("Hostname","")),
+                ports=str(container.attrs['Config'].get("ExposedPorts","")),
+            )
         c.save()
 
         logger.info(f"Container '{container_name}' started.")
@@ -94,8 +98,12 @@ def pull_and_run_container(image_name, container_name, tag='latest', **kwargs):
             # add details to redis
             # can expand more if needed later on. 
             c = Container(
-                name=f"{image_name}:{tag}",
-                options=str(kwargs)
+                name=container_name,
+                #options=str(kwargs)
+                image=str(container.attrs['Config'].get("Image","")),
+                volumes=str(container.attrs['Config'].get("Volumes","")),
+                hostname=str(container.attrs['Config'].get("Hostname","")),
+                ports=str(container.attrs['Config'].get("ExposedPorts","")),
             )
             c.save()
 
