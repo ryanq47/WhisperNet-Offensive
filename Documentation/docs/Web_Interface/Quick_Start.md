@@ -10,10 +10,10 @@ This is the main interface for interacting with the Whispernet Server. All actio
         cd WebInterface
     ```
 
-2. Install dependencies:
+2. Run setup script:
 
     ```
-        pip install -r requirements.txt
+        source install.sh
     ```
 
 3. Start the web server:

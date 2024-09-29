@@ -8,6 +8,24 @@ Each plugin can have its own Redis models definition file, keeping data schemas 
 
 `from modules.redis_models import ...`
 
+## Using these models
+
+To use these models, follow the redis-om docs: https://redis.io/docs/latest/integrate/redisom-for-python/
+
+If you don't want to dig through those, a basic example to save to the redis db is as such:
+
+```
+#Init the class
+c = SomeModel(
+        name=container_name,
+        # any other options defined in the model
+    )
+
+# Call the save method, which saves it to the DB
+c.save()
+```
+
+
 ## Client model
 THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
 Basically, when a client checks in, either a key is created, or updated, based on it's ID with the follwoing information:
