@@ -38,7 +38,7 @@ headers = {
 
 FTP_DIRECTORY = 'app/ftp/'  # Directory where files are uploaded
 
-def send_request_and_print(url, method="get", json_data=None, headers=None):
+def send_request_and_print(url, method="post", json_data=None, headers=None):
     """
     Helper function to send HTTP requests and print the response using rich console.
     """
@@ -58,7 +58,7 @@ def test_ftp_start_server():
     """
     Test starting the FTP server via HTTP endpoint.
     """
-    console.print(Panel("GET /ftp/start", title="Test Case", expand=False))
+    console.print(Panel("POST /ftp/start", title="Test Case", expand=False))
     url = f"{BASE_URL}/ftp/start"
     response = send_request_and_print(url, headers=headers)
     assert response.status_code == 200 or response.status_code == 400
@@ -68,7 +68,7 @@ def test_ftp_stop_server():
     """
     Test stopping the FTP server via HTTP endpoint.
     """
-    console.print(Panel("GET /ftp/stop", title="Test Case", expand=False))
+    console.print(Panel("POST /ftp/stop", title="Test Case", expand=False))
     url = f"{BASE_URL}/ftp/stop"
     response = send_request_and_print(url, headers=headers)
     assert response.status_code == 200 or response.status_code == 400

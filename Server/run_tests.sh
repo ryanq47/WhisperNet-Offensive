@@ -4,6 +4,9 @@ echo "===================="
 echo "WhisperNet Tests"
 echo "===================="
 
+echo "Running setup script:"
+source install.sh
+
 # Delete the users.db file
 echo "Deleting users.db"
 rm ./app/instance/users.db
@@ -31,12 +34,16 @@ echo "Server started with PID $SERVER_PID"
 # Allow some time for the server to start
 sleep 5
 
+
+
 # Run the tests
 echo "Running tests..."
 python3 ../development/tests/user_auth.py
 python3 ../development/tests/simple_http.py
 python3 ../development/tests/stats.py
 python3 ../development/tests/ftp_test.py
+python3 ../development/tests/docker.py
+
 
 #python3 development/tests/client_load_test.py
 #python3 development/tests/sequential_client_load_test.py
