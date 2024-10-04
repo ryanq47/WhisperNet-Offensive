@@ -36,4 +36,4 @@ else
     exit 1
 fi
 
-echo "SUCCESS... hopefully - Anyways, you should be in the 'webint_venv' virtual enviornment. Run 'app/start.sh' to start the server "
+echo "SUCCESS... hopefully - Anyways, you should be in the 'webint_venv' virtual enviornment. Run 'python3 main.py' to start the server "
