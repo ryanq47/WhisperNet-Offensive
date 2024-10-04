@@ -42,7 +42,7 @@ class LeFTPServer:
         self.sid = str(sid)
 
         # Set up the root directory
-        self.root_directory = (Config().launch_path / "ftp").resolve()
+        self.root_directory = (Config().launch_path / ".." /"data" /"ftp").resolve()
         self.root_directory.mkdir(parents=True, exist_ok=True)
 
         self.authorizer = DummyAuthorizer()

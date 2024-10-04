@@ -36,7 +36,7 @@ headers = {
     "Authorization": f"Bearer {os.environ['jwt_token']}",
 }
 
-FTP_DIRECTORY = 'app/ftp/'  # Directory where files are uploaded
+FTP_DIRECTORY = './data/ftp/'  # Directory where files are uploaded
 
 def send_request_and_print(url, method="post", json_data=None, headers=None):
     """
