@@ -30,7 +30,7 @@ class CommandConsole:
                     ui.label('Status: Connected').classes('text-sm text-green-400')
                     
                     # Button to navigate back to the /clients page
-                    ui.button('Back to Clients', on_click=lambda: ui.open('/clients'), color=Config().get_button_color()).classes(
+                    ui.button('Back to Clients', on_click=lambda: ui.navigate.to('/clients'), color=Config().get_button_color()).classes(
                         'bg-blue-500 text-white px-4 py-1 rounded-sm'
                     )
 

@@ -60,3 +60,24 @@ class Plugin(JsonModel):
         database = redis  # The Redis connection
         global_key_prefix = "plugin"
 
+class Container(JsonModel):
+    name: str = Field(index=True, primary_key=True) # name of Container, make primary key so it doesnt repeat
+    #options: str # options field for options. not great but it works
+
+
+    image: str   = Field(default="Container missing an Image name")  # Docker image name
+    volumes: str  = Field(default="Container has no Volumes")   # Volmes if any
+    hostname: str = Field(default="Container has no hostname")   # hostname of container
+    ports: str    = Field(default="Container has no exposed ports")   # exposed ports in container
+
+    # optional fields for if the service has a start/stop componenet
+    #start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
+    #stop: str = Field(default="") # stop field, same as above but for stopping  
+    
+    #info: str = Field(default="No info provided")
+    #ip: str # ip/hostname, what it listends on if it has a service on it
+    #port: int 
+
+    class Meta:
+        database = redis  # The Redis connection
+        global_key_prefix = "container"

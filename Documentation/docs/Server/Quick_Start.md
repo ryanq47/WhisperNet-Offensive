@@ -4,9 +4,8 @@ Quick start to getting the server up and rolling.
 
 
 
-1. Run `install.sh` to install all the needed items
+1. Run `source install.sh` to install all the needed items
 This will install:
-    - Redis Docker Container (Also starts it)
     - Requirements.txt
     - Gunicorn
     - yq

@@ -72,7 +72,7 @@ def logout_page():
 
     session_store['logged_in'] = False
     Config().set_token("")
-    ui.open('/login')
+    ui.navigate.to('/login')
 
 def check_login():
     """Function to ensure user is logged in before accessing the page."""
@@ -81,7 +81,7 @@ def check_login():
             return True
         else:
             ui.notify('You must log in to access this page.', type='warning')
-            ui.open('/login')
+            ui.navigate.to('/login')
             return False
 
     except Exception as e:
@@ -97,7 +97,7 @@ def main_page():
             ui.label('Welcome to the main page!')
         else:
             ui.notify('You must log in to access this page.', type='warning')
-            ui.open('/login')
+            ui.navigate.to('/login')
 
     except Exception as e:
         ui.notify("An unkown error occured - check logs")
@@ -121,7 +121,7 @@ async def login(username, password):
                     username=username,
                     password=password
                 )
-                ui.open('/home')  # Navigate to the clients page after successful login
+                ui.navigate.to('/home')  # Navigate to the clients page after successful login
             else:
                 ui.notify('Invalid credentials', type='negative')
 

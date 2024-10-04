@@ -13,11 +13,11 @@ def create_header():
 
             # Right-aligned items (buttons in a row without spacing)
             with ui.row().classes("m-0 p-0 gap-0 items-center"):  # No margin/padding and no gap between buttons
-                ui.button('Home', on_click=lambda: ui.open('/home'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")  # Remove rounded corners, fixed width
-                ui.button('Clients', on_click=lambda: ui.open('/clients'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
-                ui.button('Plugins', on_click=lambda: ui.open('/plugins'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
-                ui.button('Help/About', on_click=lambda: ui.open('/help-about'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
-                ui.button('Log Out', on_click=lambda: ui.open('/logout'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('Home', on_click=lambda: ui.navigate.to('/home'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")  # Remove rounded corners, fixed width
+                ui.button('Clients', on_click=lambda: ui.navigate.to('/clients'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('Plugins', on_click=lambda: ui.navigate.to('/plugins'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('Help/About', on_click=lambda: ui.navigate.to('/help-about'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('Log Out', on_click=lambda: ui.navigate.to('/logout'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
 
 
 """

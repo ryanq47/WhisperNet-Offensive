@@ -184,3 +184,6 @@ yq_linux_amd64
 
 Server/testfile.txt
 Server/app/ftp/test.txt
+
+*server_venv*
+*webint_venv*

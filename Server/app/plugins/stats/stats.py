@@ -115,3 +115,30 @@ def plugins():
         data=plugins_dict
     )
 
+@app.route('/stats/containers', methods=['GET'])
+def containers():
+    '''returns json of plugins that are currently up/serving something'''
+
+    prefix = "container:*"
+    # Initialize the dictionary to store results
+    container_dict = {"containers": []}
+
+    # Using SCAN to find all keys that match the prefix
+    cursor = 0
+    while True:
+        cursor, keys = redis.scan(cursor=cursor, match=prefix)
+        for key in keys:
+            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
+            container_data = redis.json().get(key)
+                # Append the fetched data to the list in the dictionary
+            container_dict["containers"].append(container_data)
+
+        if cursor == 0:
+            break
+
+    # format into formj
+    # send back
+    return api_response(
+        data=container_dict
+    )
+
