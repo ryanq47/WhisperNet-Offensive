@@ -60,6 +60,17 @@ server:
     #config:
     #  root_dir: !!str "ftp" # use relative path for putting it in server root, or an absolute path for anywhere on box
 
+  docker:
+    # could potentailyl change these to live under agent/dropper config sections instead of here
+    buildfiles:
+      # build files for agents - probably won't be used.
+      agents:
+      # build files for droppers
+      droppers:
+        x64_windows: !!str "_docker/dockerfiles/debian_windows_x64.dockerfile"
+        x86_windows: !!str ""
+
+    output: !!str "data/compiled/"
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
