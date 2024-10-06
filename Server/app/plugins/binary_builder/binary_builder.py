@@ -31,7 +31,7 @@ def build_target(target):
             case "x64_windows_dropper":
                 logger.info("Building target: x64_windows")
                 # get config value
-                dockerfile_path = Config().config.server.docker.buildfiles.droppers.x64_windows
+                dockerfile_path = Config().config.server.binaries.dropers.x64_windows_dropper
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -74,12 +74,12 @@ def valid_targets():
 
         droppers_dict = {
             key: (value if value else 'No buildfile')
-            for key, value in Config().config.server.docker.buildfiles.droppers.items()
+            for key, value in Config().config.server.binaries.droppers.items()
         }
 
         agents_dict = {
             key: (value if value else 'No buildfile')
-            for key, value in Config().config.server.docker.buildfiles.agents.items()
+            for key, value in Config().config.server.binaries.agents.items()
         }
 
         final_response = {
