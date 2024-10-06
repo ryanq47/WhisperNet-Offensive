@@ -43,22 +43,30 @@ def build_target(target):
                     code=400
                 )
 
+        # [X] pathify
         # move this to the data/output
-        output_dir = "./data/compiled/" #pathify this
+        output_dir      = str((Config().launch_path / "data" / "compiled").absolute())
+        build_context   = str(Config().root_project_path) #str((Config().launch_path).absolute() / "..")
+
+        logger.debug(f"Compiled output directory: {output_dir}")
+        logger.debug(f"Docker build Context: {build_context}")
+
+        #output_dir = "./data/compiled/" #pathify this
 
         build(
             dockerfile_path = dockerfile_path,
             output_dir = output_dir,
             #build_context = "../" # moving this up one dir. Should prolly use base path here instead of this ../
-            build_context="/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/"
+            build_context = build_context
         )
 
         return api_response(
             message=f"successfully built {target}",
-            code=200
+            status=200
         )
     except Exception as e:
-         return api_response(
+        logger.error(e)
+        return api_response(
             message="An error occured",
-            code=500
+            status=500
         )       
