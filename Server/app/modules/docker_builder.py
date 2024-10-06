@@ -10,15 +10,16 @@ client = docker.from_env()
 def build(
     dockerfile_path:str,
     output_dir:str,
-    build_context:str = "./data/compiled/" # pathify this
+    build_context:str
 
 ):
     '''
     dockerfile_path:str: Path of docker file. Use config file
 
-    build_context:str: Where to "build" it from. 
-
     output_dir:str: output dir of the built rust file. Use config file
+
+    build_context:str: Where to "build" it from. Generally you want to use `Config().root_project_path`
+
 
     '''
     try:

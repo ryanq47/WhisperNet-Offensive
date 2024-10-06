@@ -32,10 +32,6 @@ def build_target(target):
                 logger.info("Building target: x64_windows")
                 # get config value
                 dockerfile_path = Config().config.server.docker.buildfiles.droppers.x64_windows
-                # code for pattern 1
-            #case pattern2:
-                # code for pattern 2
-
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -43,8 +39,6 @@ def build_target(target):
                     code=400
                 )
 
-        # [X] pathify
-        # move this to the data/output
         output_dir      = str((Config().launch_path / "data" / "compiled").absolute())
         build_context   = str(Config().root_project_path) #str((Config().launch_path).absolute() / "..")
 
@@ -56,7 +50,6 @@ def build_target(target):
         build(
             dockerfile_path = dockerfile_path,
             output_dir = output_dir,
-            #build_context = "../" # moving this up one dir. Should prolly use base path here instead of this ../
             build_context = build_context
         )
 
@@ -64,9 +57,58 @@ def build_target(target):
             message=f"successfully built {target}",
             status=200
         )
+
     except Exception as e:
         logger.error(e)
         return api_response(
             message="An error occured",
             status=500
         )       
+
+@app.route('/binary_builder/targets', methods=['GET'])
+def valid_targets():
+    '''
+        Returns a list of valid compile targets
+    '''
+    try:
+
+        droppers_dict = {
+            key: (value if value else 'No buildfile')
+            for key, value in Config().config.server.docker.buildfiles.droppers.items()
+        }
+
+        agents_dict = {
+            key: (value if value else 'No buildfile')
+            for key, value in Config().config.server.docker.buildfiles.agents.items()
+        }
+
+        final_response = {
+            'droppers': droppers_dict,
+            'agents': agents_dict
+        }
+
+        ''' Output example: 
+            {
+            "data": {
+                "agents": {
+                "x64_windows": "No Dockerfile"
+                },
+                "droppers": {
+                "x64_windows": "_docker/dockerfiles/debian_windows_x64.dockerfile",
+                "x86_windows": "No Dockerfile"
+                }
+            },
+            "message": "",
+            "rid": "af073584-5af9-4592-9338-0ebc03e49310",
+            "status": 200,
+            "timestamp": 1728241553
+            }
+        '''
+
+        return api_response(data=final_response)
+
+    except Exception as e:
+        logger.error(e)
+        return api_response(
+            status=500
+        )

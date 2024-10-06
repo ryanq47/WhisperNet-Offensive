@@ -63,9 +63,10 @@ server:
   docker:
     # could potentailyl change these to live under agent/dropper config sections instead of here
     buildfiles:
-      # build files for agents - probably won't be used.
+      # build files for agents
       agents:
       # build files for droppers
+        x64_windows: !!str ""
       droppers:
         x64_windows: !!str "_docker/dockerfiles/debian_windows_x64.dockerfile"
         x86_windows: !!str ""
