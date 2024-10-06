@@ -5,13 +5,16 @@ from app.modules.login import check_login
 import logging
 import requests
 import munch
+from app.modules.utils import is_base64
 
 logger = logging.getLogger(__name__)
 
+# Placeholder for targets data
+targets = {}
 
 def get_targets() -> dict:
     """
-    Function to retrieve container data from server.
+    Function to retrieve container data from the server.
     """
     try:
         url = Config().get_url() / "binary_builder" / "targets"
@@ -37,14 +40,44 @@ def get_targets() -> dict:
         logger.error(f"An error occurred: {e}")
         raise e
 
+def on_target_select(selected_name):
+    """
+    Callback function to update the description, header, language, and display the shellcode field if a dropper is selected.
+    """
+    # Access descriptions and language using dictionary key access
+    agent = targets.agents.get(selected_name)
+    dropper = targets.droppers.get(selected_name)
+    
+    # Initialize variables for description and language
+    description = "No description available for this target."
+    language = "Unknown"
 
-from nicegui import ui
+    # Set description and language based on what was found
+    if agent:
+        description = agent.get('description', description)
+        language = agent.get('language', language)
+        shellcode_input.visible = False  # Hide shellcode input if it's an agent
+    elif dropper:
+        description = dropper.get('description', description)
+        language = dropper.get('language', language)
+        shellcode_input.visible = True  # Show shellcode input field if it's a dropper
+    else:
+        shellcode_input.visible = False  # Hide shellcode input if not a dropper
 
-# Declare log_area globally
-log_area = None
+    # Escape underscores in the selected name
+    escaped_name = selected_name.replace('_', '\\_')
+
+    # Update the description text, header, and language dynamically
+    description_header.set_content(f"### {escaped_name}")
+    description_text.set_content(description)
+    language_text.set_content(f"Language: {language}")
+
 
 @ui.page('/binary-builder')
-def help_about():
+def binary_builder_page():
+    """
+    Main UI page for Binary Builder.
+    """
     try:
         if not check_login():
             return
@@ -54,63 +87,52 @@ def help_about():
         ui.markdown("# Binary Builder")
 
         # Fetch binaries from the server
-        global targets  # Make targets global to access in the callback
+        global targets, shellcode_input, description_text, description_header, language_text  # Make necessary elements global for update access
         targets = get_targets()
+
 
         # Create layout
         with ui.card().classes('w-full p-4 space-y-6'):
+            # Initialize description area
+            description_header = ui.markdown("### Select a binary")
+            description_text = ui.markdown("Select a binary from the dropdown to proceed.")
+            language_text = ui.markdown(f"Language: ")
+
             # Dropdown selection for selecting binary
             binary_select = ui.select(
                 list({**targets.agents, **targets.droppers}.keys()),  # Combine keys from agents and droppers
                 value=None,
-            ).bind_value(on_target_select, 'value')  # Bind the selected value to the callback
+                label="Select a binary",
+                on_change=lambda e: on_target_select(e.value)  # Call on_target_select on change
+            )
 
-            # Description section
-            with ui.column().classes('w-full max-w-md'):
-                ui.markdown("### Description")
-                log_area = ui.markdown("Select a binary from the dropdown to proceed.")
-
-            # Input fields
+            # Input fields for additional binary configuration
             with ui.row().classes('space-x-4'):
-                with ui.column().classes('flex-1'):
-                    ip_input = ui.input('IP Address', placeholder='Enter IP address')
-                    port_input = ui.input('Port', placeholder='Enter port')
-                    binary_input = ui.input('Binary Name', placeholder='Enter binary name')
+                ip_input = ui.input('IP Address', placeholder='Enter IP address')
+                port_input = ui.input('Port', placeholder='Enter port')
+                binary_input = ui.input('Binary Name', placeholder='Enter binary name')
 
-                with ui.column().classes('max-w-md'):
-                    ui.markdown("### Description")
-                    ui.markdown("**IP Address:** The address of the target machine.")
-                    ui.markdown("**Port:** The port to connect to on the target machine.")
-                    ui.markdown("**Binary Name:** The name of the binary to be downloaded.")
+            # Shellcode input (hidden by default, only visible for droppers)
+            # can do an on_changed to validate input as well.
+            shellcode_input = ui.textarea(label='Shellcode (base64 please)', placeholder='Enter shellcode here', on_change=lambda e:validate_shellcode(e.value)).classes('w-full').props('autogrow').props('clearable')
+            shellcode_input.visible = False  # Set initial visibility to False
+
+            # Download button
+            ui.button('Download Binary', on_click=lambda: download_binary(binary_input.value)).classes('mt-4')
 
     except Exception as e:
         logger.error(e)
         raise e
 
-def on_target_select(selected_name, targets):
-    global log_area  # Access the global log_area
-    # Initialize description
-    description = ""
-
-    # Access descriptions using dictionary key access
-    agent_description = targets.agents.get(selected_name, {}).get('description', None)
-    dropper_description = targets.droppers.get(selected_name, {}).get('description', None)
-
-    # Set description based on what was found
-    if agent_description:
-        description = agent_description
-    elif dropper_description:
-        description = dropper_description
-    else:
-        description = 'No description available for this target.'
-
-    # Update the description area
-    #ui.update(log_area, value=description)
-
+def validate_shellcode(b64_shellcode):
+    if not is_base64(b64_shellcode):
+        ui.notify("Shellcode is seemingly not base64!", type="warning")
 
 
 def download_binary(binary_name):
+    """
+    Function to handle downloading the selected binary.
+    """
     logger.info(f"Downloading binary: {binary_name}")
     # Implement your binary download logic here
-    ui.notify(f'Downloading {binary_name}...')  # Feedback to user
-
+    ui.notify(f'Downloading {binary_name}...')  # Feedback to the user
