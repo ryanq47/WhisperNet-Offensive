@@ -106,61 +106,82 @@ def download_binary(filename):
         ui.notify(f"An error occurred: {e}", type="negative")
         raise e
 
+# Queue compilation function
+def queue_compilation():
+
+    if selected_type == 'agent':
+        queue_agent_compilation(target=binary_select.value, binary_name=binary_name_input.value, ip=ip_input.value, port=port_input.value)
+    elif selected_type == 'dropper':
+        queue_dropper_compilation(target=binary_select.value, binary_name=binary_name_input.value, ip=ip_input.value, port=port_input.value)
+    elif selected_type == 'custom':
+        queue_custom_compilation(target=binary_select.value, shellcode=shellcode_input.value, binary_name=binary_name_input.value)
+    else:
+        ui.notify("Please select a valid binary type.")
+
+def queue_agent_compilation(target, binary_name, ip, port):
+    """
+    Function to queue compilation for an agent.
+    """
+    # Agent-specific endpoint
+    url = Config().get_url() / "binary-builder" / "build" / "agent"
+    # Your agent-specific logic here
+    return send_compilation_request(url, {"target": target, "binary_name": binary_name, "ip":ip, "port":port})
+
+def queue_dropper_compilation(target, binary_name, ip, port):
+    """
+    Function to queue compilation for a dropper.
+    """
+    # Dropper-specific endpoint
+    url = Config().get_url() / "binary-builder" / "build" / "dropper"
+    # Your dropper-specific logic here
+    return send_compilation_request(url, {"target": target, "binary_name": binary_name, "ip":ip, "port":port})
+
+def send_compilation_request(url, data):
+    """
+    Sends a compilation request to the server.
+    """
+    token = Config().get_token()
+    headers = {'Authorization': f'Bearer {token}'}
+
+    response = requests.post(url, headers=headers, json=data, verify=Config().get_verify_certs())
+    if response.status_code == 200:
+        return True
+    else:
+        logger.warning(f"Compilation request failed with status {response.status_code} for {url}")
+        return False
+
+# Adjust the `on_target_select` to store the type (e.g., 'agent', 'dropper', 'custom')
+selected_type = None
+
 def on_target_select(selected_name):
-    """
-    Callback function to update the description, header, language, and display the shellcode field if a custom is selected.
-    """
+    global selected_type  # Store the type of the selected target
+    
     # Access descriptions and language using dictionary key access
     agent = targets.agents.get(selected_name)
     dropper = targets.droppers.get(selected_name)
     custom = targets.customs.get(selected_name)
-    
-    # Initialize variables for description and language
-    description = "No description available for this target."
-    language = "Unknown"
 
-    # Set description and language based on what was found
+    # Set the selected type and show/hide input fields accordingly
     if agent:
-        description = agent.get('description', description)
-        language = agent.get('language', language)
-        shellcode_input.visible = False  # Hide shellcode input if it's an agent
-        ip_input.visible = True
-        port_input.visible = True
-        binary_name_input.visible = True
-
+        selected_type = 'agent'
+        shellcode_input.visible = False
     elif dropper:
-        description = dropper.get('description', description)
-        language = dropper.get('language', language)
-        shellcode_input.visible = False  # Hide shellcode input if it's an agent
-        ip_input.visible = True
-        port_input.visible = True
-        binary_name_input.visible = True
-
+        selected_type = 'dropper'
+        shellcode_input.visible = False
     elif custom:
-        description = custom.get('description', description)
-        language = custom.get('language', language)
-        shellcode_input.visible = True  # Show shellcode input field if it's a custom
-        ip_input.visible = False
-        port_input.visible = False
-        binary_name_input.visible = True
-
-
+        selected_type = 'custom'
+        shellcode_input.visible = True
     else:
-        shellcode_input.visible = False  # Hide shellcode input if not a custom
+        selected_type = None
 
-    # Escape underscores in the selected name
-    escaped_name = selected_name.replace('_', '\\_')
+    # Update UI elements with the selected target's information
+    description_header.set_content(f"### {selected_name.replace('_', '\\_')}")
+    description_text.set_content(agent.get('description') if agent else (dropper.get('description') if dropper else custom.get('description')))
+    language_text.set_content(f"Language: {agent.get('language') if agent else (dropper.get('language') if dropper else custom.get('language'))}")
 
-    # Update the description text, header, and language dynamically
-    description_header.set_content(f"### {escaped_name}")
-    description_text.set_content(description)
-    language_text.set_content(f"Language: {language}")
 
 @ui.page('/binary-builder')
 def binary_builder_page():
-    """
-    Main UI page for Binary Builder.
-    """
     try:
         if not check_login():
             return
@@ -168,7 +189,7 @@ def binary_builder_page():
         create_header()  # Add the header to the page
 
         # Make necessary elements global for update access
-        global targets, shellcode_input, description_text, description_header, language_text, ip_input, port_input, binary_name_input
+        global targets, shellcode_input, description_text, description_header, language_text, ip_input, port_input, binary_name_input, binary_select
         
         # Fetch binaries from the server
         targets = get_targets()
@@ -199,11 +220,16 @@ def binary_builder_page():
                     binary_name_input = ui.input('Binary Name', placeholder='Enter binary name')
 
                 # Shellcode input (hidden by default, only visible for customs)
-                shellcode_input = ui.textarea(label='Shellcode (base64 please)', placeholder='Enter shellcode here', on_change=lambda e:validate_shellcode(e.value)).classes('w-full').props('autogrow').props('clearable')
+                shellcode_input = (
+                    ui.textarea(label='Shellcode (base64 please)', placeholder='Enter shellcode here', on_change=lambda e: validate_shellcode(e.value))
+                    .classes('w-full')
+                    .style('max-height: 400px; overflow-y: auto;')  # Set a max height and scrolling
+                    .props('clearable')
+                )
                 shellcode_input.visible = False  # Set initial visibility to False
 
-                # Download button
-                ui.button('Download Binary', on_click=lambda: download_binary(binary_name_input.value)).classes('mt-4')
+                # Queue compilation button
+                ui.button('Queue for compilation', on_click=queue_compilation)
 
             # Right card (15% width) with rows for binary files
             with ui.card().classes('w-[25%] h-full flex flex-col'):
@@ -216,11 +242,6 @@ def binary_builder_page():
                     with ui.row().classes('justify-between items-center w-full'):
                         ui.label(binary_name)  # Display the binary name
                         ui.button("Download", on_click=lambda path=binary_path: download_binary(binary_name)).classes('ml-2')
-
-    except Exception as e:
-        logger.error(e)
-        raise e
-
 
     except Exception as e:
         logger.error(e)

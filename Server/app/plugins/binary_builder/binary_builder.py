@@ -1,4 +1,4 @@
-from flask import jsonify, send_from_directory
+from flask import jsonify, send_from_directory, request
 from modules.instances import Instance
 from modules.log import log
 from modules.config import Config
@@ -67,7 +67,7 @@ def build_target(target):
         )       
 """
 @app.route('/binary-builder/build/custom', methods=['POST'])
-def build_custom(target):
+def build_custom():
     '''
         Build target
 
@@ -139,7 +139,7 @@ def build_custom(target):
         )     
 
 @app.route('/binary-builder/build/dropper', methods=['POST'])
-def build_dropper(target):
+def build_dropper():
     '''
         Build target
 
@@ -171,11 +171,11 @@ def build_dropper(target):
             case "x64_windows_dropper":
                 logger.info("Building target: x64_windows_dropper")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_custom
+                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_dropper
             case "x86_windows_dropper":
                 logger.info("Building target: x86_windows_dropper")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_custom            
+                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_dropper            
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -210,7 +210,7 @@ def build_dropper(target):
         )   
 
 @app.route('/binary-builder/build/agent', methods=['POST'])
-def build_agent(target):
+def build_agent():
     '''
         Build target
 
@@ -244,11 +244,11 @@ def build_agent(target):
             case "x64_windows_agent: ":
                 logger.info("Building target: x64_windows_agent")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.agents.x64_windows_custom
+                dockerfile_path = Config().config.server.binaries.agents.x64_windows_agent
             case "x86_windows_agent":
                 logger.info("Building target: x86_windows_agent")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.agents.x86_windows_custom            
+                dockerfile_path = Config().config.server.binaries.agents.x86_windows_agent            
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
