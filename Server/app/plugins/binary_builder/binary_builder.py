@@ -66,7 +66,7 @@ def build_target(target):
             status=500
         )       
 """
-@app.route('/binary_builder/build/custom', methods=['POST'])
+@app.route('/binary-builder/build/custom', methods=['POST'])
 def build_custom(target):
     '''
         Build target
@@ -138,7 +138,7 @@ def build_custom(target):
             status=500
         )     
 
-@app.route('/binary_builder/build/dropper', methods=['POST'])
+@app.route('/binary-builder/build/dropper', methods=['POST'])
 def build_dropper(target):
     '''
         Build target
@@ -209,7 +209,7 @@ def build_dropper(target):
             status=500
         )   
 
-@app.route('/binary_builder/build/agent', methods=['POST'])
+@app.route('/binary-builder/build/agent', methods=['POST'])
 def build_agent(target):
     '''
         Build target
@@ -283,7 +283,7 @@ def build_agent(target):
         )   
 
 # serve the binaires
-@app.route('/binary_builder/binaries/<path:filename>', methods=['GET'])
+@app.route('/binary-builder/binaries/<path:filename>', methods=['GET'])
 def compiled_binaries(filename):
     '''
     Serve the compiled binaries from the /data/compiled directory
@@ -303,7 +303,7 @@ def compiled_binaries(filename):
         return api_response(status=500)
 
 # GEt list of binaries
-@app.route('/binary_builder/binaries', methods=['GET'])
+@app.route('/binary-builder/binaries', methods=['GET'])
 def list_binaries():
     '''
     Get a list of all the binaries in the folder, and the path they are at
@@ -317,16 +317,18 @@ def list_binaries():
     for file_path in bin_path.iterdir():
         if file_path.is_file():
             # Add the filename and its endpoint path to the dictionary
-            binaries[file_path.name] = f"/binary_builder/binaries/{file_path.name}"
+            binaries[file_path.name] = f"binary-builder/binaries/{file_path.name}"
 
 
     # Return the dictionary as a JSON response
-    return jsonify(binaries)
+    return api_response(
+        data=binaries
+    )
 
 
 
 
-@app.route('/binary_builder/targets', methods=['GET'])
+@app.route('/binary-builder/targets', methods=['GET'])
 def valid_targets():
     '''
         Returns a list of valid compile targets
