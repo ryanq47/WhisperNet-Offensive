@@ -42,11 +42,12 @@ def get_targets() -> dict:
 
 def on_target_select(selected_name):
     """
-    Callback function to update the description, header, language, and display the shellcode field if a dropper is selected.
+    Callback function to update the description, header, language, and display the shellcode field if a custom is selected.
     """
     # Access descriptions and language using dictionary key access
     agent = targets.agents.get(selected_name)
     dropper = targets.droppers.get(selected_name)
+    custom = targets.customs.get(selected_name)
     
     # Initialize variables for description and language
     description = "No description available for this target."
@@ -57,12 +58,29 @@ def on_target_select(selected_name):
         description = agent.get('description', description)
         language = agent.get('language', language)
         shellcode_input.visible = False  # Hide shellcode input if it's an agent
+        ip_input.visible = True
+        port_input.visible = True
+        binary_name_input.visible = True
+
     elif dropper:
         description = dropper.get('description', description)
         language = dropper.get('language', language)
-        shellcode_input.visible = True  # Show shellcode input field if it's a dropper
+        shellcode_input.visible = False  # Hide shellcode input if it's an agent
+        ip_input.visible = True
+        port_input.visible = True
+        binary_name_input.visible = True
+
+    elif custom:
+        description = custom.get('description', description)
+        language = custom.get('language', language)
+        shellcode_input.visible = True  # Show shellcode input field if it's a custom
+        ip_input.visible = False
+        port_input.visible = False
+        binary_name_input.visible = True
+
+
     else:
-        shellcode_input.visible = False  # Hide shellcode input if not a dropper
+        shellcode_input.visible = False  # Hide shellcode input if not a custom
 
     # Escape underscores in the selected name
     escaped_name = selected_name.replace('_', '\\_')
@@ -84,15 +102,18 @@ def binary_builder_page():
 
         create_header()  # Add the header to the page
 
-        ui.markdown("# Binary Builder")
 
+         # Make necessary elements global for update access
+        global targets, shellcode_input, description_text, description_header, language_text , ip_input, port_input, binary_name_input
+        
         # Fetch binaries from the server
-        global targets, shellcode_input, description_text, description_header, language_text  # Make necessary elements global for update access
         targets = get_targets()
 
 
         # Create layout
-        with ui.card().classes('w-full p-4 space-y-6'):
+        with ui.card().classes('w-full h-[93vh] flex flex-col'):
+            ui.markdown("# Binary Builder")
+
             # Initialize description area
             description_header = ui.markdown("### Select a binary")
             description_text = ui.markdown("Select a binary from the dropdown to proceed.")
@@ -100,7 +121,7 @@ def binary_builder_page():
 
             # Dropdown selection for selecting binary
             binary_select = ui.select(
-                list({**targets.agents, **targets.droppers}.keys()),  # Combine keys from agents and droppers
+                list({**targets.agents, **targets.customs, **targets.droppers}.keys()),  # Combine keys from agents and customs
                 value=None,
                 label="Select a binary",
                 on_change=lambda e: on_target_select(e.value)  # Call on_target_select on change
@@ -110,15 +131,15 @@ def binary_builder_page():
             with ui.row().classes('space-x-4'):
                 ip_input = ui.input('IP Address', placeholder='Enter IP address')
                 port_input = ui.input('Port', placeholder='Enter port')
-                binary_input = ui.input('Binary Name', placeholder='Enter binary name')
+                binary_name_input = ui.input('Binary Name', placeholder='Enter binary name')
 
-            # Shellcode input (hidden by default, only visible for droppers)
+            # Shellcode input (hidden by default, only visible for customs)
             # can do an on_changed to validate input as well.
             shellcode_input = ui.textarea(label='Shellcode (base64 please)', placeholder='Enter shellcode here', on_change=lambda e:validate_shellcode(e.value)).classes('w-full').props('autogrow').props('clearable')
             shellcode_input.visible = False  # Set initial visibility to False
 
             # Download button
-            ui.button('Download Binary', on_click=lambda: download_binary(binary_input.value)).classes('mt-4')
+            ui.button('Download Binary', on_click=lambda: download_binary(binary_name_input.value)).classes('mt-4')
 
     except Exception as e:
         logger.error(e)

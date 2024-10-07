@@ -80,7 +80,7 @@ server:
         buildfile: !!str ""
         description: !!str "An x64 windows agent - NOT IMPLEMENTED"
         language: !!str "rust"
-        
+
       x86_windows_agent: 
         buildfile: !!str ""
         description: !!str "An x64 windows agent - NOT IMPLEMENTED"
@@ -97,6 +97,16 @@ server:
         description: "An x86 windows dropper - NOT IMPLEMENTED"
         language: !!str "rust"
 
+    customs:
+      x64_windows_custom: 
+        buildfile: !!str "_docker/dockerfiles/debian_windows_x64.dockerfile"
+        description: !!str "An x64 windows dropper"
+        language: !!str "rust"
+
+      x86_windows_custom: 
+        buildfile: !!str ""
+        description: "An x86 windows dropper - NOT IMPLEMENTED"
+        language: !!str "rust"
 
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
