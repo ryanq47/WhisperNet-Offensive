@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, send_from_directory
 from modules.instances import Instance
 from modules.log import log
 from modules.config import Config
@@ -87,7 +87,7 @@ def build_custom(target):
 
         if missing_keys:
             return api_response(
-                message=f"Missing fields in request"
+                message=f"Missing fields in request",
                 status=400
             )
 
@@ -157,7 +157,7 @@ def build_dropper(target):
 
         if missing_keys:
             return api_response(
-                message=f"Missing fields in request"
+                message=f"Missing fields in request",
                 status=400
             )
 
@@ -230,7 +230,7 @@ def build_agent(target):
 
         if missing_keys:
             return api_response(
-                message=f"Missing fields in request"
+                message=f"Missing fields in request",
                 status=400
             )
 
@@ -281,6 +281,49 @@ def build_agent(target):
             message="An error occured",
             status=500
         )   
+
+# serve the binaires
+@app.route('/binary_builder/binaries/<path:filename>', methods=['GET'])
+def compiled_binaries(filename):
+    '''
+    Serve the compiled binaries from the /data/compiled directory
+    '''
+    try:
+        # DON"T use resolve/absolute, might result in dir traversal
+        bin_path = Config().launch_path / "data" / "compiled"
+
+        # Use send_from_directory to serve the file
+        return send_from_directory(bin_path, filename)
+    except FileNotFoundError:
+        logger.error(f"File not found: {filename}")
+        return api_response(status=404, message="File not found")
+
+    except Exception as e:
+        logger.error(e)
+        return api_response(status=500)
+
+# GEt list of binaries
+@app.route('/binary_builder/binaries', methods=['GET'])
+def list_binaries():
+    '''
+    Get a list of all the binaries in the folder, and the path they are at
+    '''
+    bin_path = Config().launch_path / "data" / "compiled"
+
+    # Initialize a dictionary to hold filenames and their paths
+    binaries = {}
+
+    # Walk through the directory and add each file to the dictionary
+    for file_path in bin_path.iterdir():
+        if file_path.is_file():
+            # Add the filename and its endpoint path to the dictionary
+            binaries[file_path.name] = f"/binary_builder/binaries/{file_path.name}"
+
+
+    # Return the dictionary as a JSON response
+    return jsonify(binaries)
+
+
 
 
 @app.route('/binary_builder/targets', methods=['GET'])
