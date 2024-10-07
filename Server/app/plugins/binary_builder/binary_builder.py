@@ -76,15 +76,35 @@ def build_custom(target):
         {
             "target":"x64_windows_dropper,
             "shellcode":"aabbcc=="
+            "binary_name":"somename"
         }
 
     '''
     try:
+        dict_data = request.get_json()
+        required_keys = ["target", "shellcode", "binary_name"]
+        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+
+        if missing_keys:
+            return api_response(
+                message=f"Missing fields in request"
+                status=400
+            )
+
+        # Extract values since all are validated
+        target = dict_data["target"]
+        shellcode = dict_data["shellcode"]
+        binary_name = dict_data["binary_name"]
+
         match target:
-            case "x64_windows_dropper":
-                logger.info("Building target: x64_windows")
+            case "x64_windows_custom":
+                logger.info("Building target: x64_windows_custom")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.dropers.x64_windows_dropper
+                dockerfile_path = Config().config.server.binaries.customs.x64_windows_custom
+            case "x86_windows_custom":
+                logger.info("Building target: x86_windows_custom")
+                # get config value
+                dockerfile_path = Config().config.server.binaries.customs.x86_windows_custom            
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -131,11 +151,31 @@ def build_dropper(target):
 
     '''
     try:
+        dict_data = request.get_json()
+        required_keys = ["target", "ip", "port", "binary_name"]
+        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+
+        if missing_keys:
+            return api_response(
+                message=f"Missing fields in request"
+                status=400
+            )
+
+        # Extract values since all are validated
+        target = dict_data["target"]
+        ip = dict_data["ip"]
+        port = dict_data["ip"]
+        binary_name = dict_data["binary_name"]
+
         match target:
             case "x64_windows_dropper":
-                logger.info("Building target: x64_windows")
+                logger.info("Building target: x64_windows_dropper")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.dropers.x64_windows_dropper
+                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_custom
+            case "x86_windows_dropper":
+                logger.info("Building target: x86_windows_dropper")
+                # get config value
+                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_custom            
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -184,11 +224,31 @@ def build_agent(target):
 
     '''
     try:
+        dict_data = request.get_json()
+        required_keys = ["target", "ip", "port", "binary_name"]
+        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+
+        if missing_keys:
+            return api_response(
+                message=f"Missing fields in request"
+                status=400
+            )
+
+        # Extract values since all are validated
+        target = dict_data["target"]
+        ip = dict_data["ip"]
+        port = dict_data["ip"]
+        binary_name = dict_data["binary_name"]
+
         match target:
-            case "x64_windows_dropper":
-                logger.info("Building target: x64_windows")
+            case "x64_windows_agent: ":
+                logger.info("Building target: x64_windows_agent")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.dropers.x64_windows_dropper
+                dockerfile_path = Config().config.server.binaries.agents.x64_windows_custom
+            case "x86_windows_agent":
+                logger.info("Building target: x86_windows_agent")
+                # get config value
+                dockerfile_path = Config().config.server.binaries.agents.x86_windows_custom            
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
