@@ -31,7 +31,7 @@ WORKDIR /usr/src/myapp
 
 
 # Copy your source code to the container
-COPY ./agents/dropper/ .
+COPY ./agents/windows/dropper .
 
 # Build the Rust application for Windows
 RUN cargo build --release --target x86_64-pc-windows-gnu

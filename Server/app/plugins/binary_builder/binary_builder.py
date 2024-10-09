@@ -171,11 +171,11 @@ def build_dropper():
             case "x64_windows_dropper":
                 logger.info("Building target: x64_windows_dropper")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_dropper
+                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_dropper.buildfile
             case "x86_windows_dropper":
                 logger.info("Building target: x86_windows_dropper")
                 # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_dropper            
+                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_dropper.buildfile       
             case _:
                 logger.info(f"Unknown target: {target}")
                 return api_response(
@@ -188,7 +188,7 @@ def build_dropper():
 
         logger.debug(f"Compiled output directory: {output_dir}")
         logger.debug(f"Docker build Context: {build_context}")
-
+        logger.debug(f"Dockerfile selected to be built: {dockerfile_path}")
         #output_dir = "./data/compiled/" #pathify this
 
         build(

@@ -80,6 +80,7 @@ server:
         buildfile: !!str ""
         description: !!str "An x64 windows agent - NOT IMPLEMENTED"
         language: !!str "rust"
+        #source_code: !!str
 
       x86_windows_agent: 
         buildfile: !!str ""
@@ -88,7 +89,7 @@ server:
 
     droppers:
       x64_windows_dropper: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_x64.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
         description: !!str "An x64 windows dropper"
         language: !!str "rust"
 
@@ -99,7 +100,7 @@ server:
 
     customs:
       x64_windows_custom: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_x64.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_x64.dockerfile"
         description: !!str "An x64 windows dropper"
         language: !!str "rust"
 
