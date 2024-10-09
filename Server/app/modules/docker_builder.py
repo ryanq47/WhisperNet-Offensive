@@ -1,57 +1,123 @@
 import docker
 import os
+import tarfile
 from docker.errors import NotFound, APIError
 from modules.log import log
-import tarfile
 
 logger = log(__name__)
-client = docker.from_env()
 
-def build(
-    dockerfile_path:str,
-    output_dir:str,
-    build_context:str
+class DockerBuilder:
+    def __init__(self, dockerfile_path: str, output_dir: str, build_context: str):
+        '''
+        Initializes the DockerBuilder class with paths and context.
 
-):
-    '''
-    dockerfile_path:str: Path of docker file. Use config file
+        Args:
+            dockerfile_path (str): Path of the Dockerfile.
+            output_dir (str): Directory to store the compiled output files.
+            build_context (str): Path to the build context.
+        '''
+        self.dockerfile_path = dockerfile_path
+        self.output_dir = output_dir
+        self.build_context = build_context
+        self.client = docker.from_env()
 
-    output_dir:str: output dir of the built rust file. Use config file
+    def build_image(self, tag: str = 'my-rust-app'):
+        '''
+        Builds the Docker image.
 
-    build_context:str: Where to "build" it from. Generally you want to use `Config().root_project_path`
+        Args:
+            tag (str): Tag for the Docker image.
 
+        Returns:
+            image (Image): Built Docker image.
+        '''
+        try:
+            logger.info("Building Docker image...")
+            image, build_logs = self.client.images.build(
+                path=self.build_context, 
+                dockerfile=self.dockerfile_path, 
+                tag=tag
+            )
+            return image
+        except (APIError, Exception) as e:
+            logger.error(f"Error occurred while building Docker image: {e}")
+            raise e
 
-    '''
-    try:
-        logger.info("Building Docker image...")
-        image, build_logs = client.images.build(path=build_context, dockerfile=dockerfile_path, tag='my-rust-app')
+    def create_container(self, image_id: str):
+        '''
+        Creates a Docker container without starting it.
 
-        # Create the container without starting it
-        logger.info("Creating Docker container...")
-        container = client.containers.create(image.id)
+        Args:
+            image_id (str): ID of the Docker image to create a container from.
 
-        # Ensure the output directory exists
-        os.makedirs(output_dir, exist_ok=True)
+        Returns:
+            container (Container): Created Docker container.
+        '''
+        try:
+            logger.info("Creating Docker container...")
+            return self.client.containers.create(image=image_id)
+        except (APIError, NotFound, Exception) as e:
+            logger.error(f"Error occurred while creating container: {e}")
+            raise e
 
-        # Copy files from the container
-        logger.info("Copying compiled files from container...")
-        tar_stream, _ = container.get_archive('/output/')
-        with open(os.path.join(output_dir, 'output.tar'), 'wb') as f:
-            for chunk in tar_stream:
-                f.write(chunk)
+    def copy_files(self, container, src_path: str = '/output/'):
+        '''
+        Copies files from the container to the output directory.
 
-        # Extract the tar file
-        with tarfile.open(os.path.join(output_dir, 'output.tar')) as tar:
-            tar.extractall(path=output_dir)
+        Args:
+            container (Container): Docker container to copy files from.
+            src_path (str): Path in the container to copy files from.
+        '''
+        try:
+            # Ensure the output directory exists
+            os.makedirs(self.output_dir, exist_ok=True)
+            logger.info("Copying compiled files from container...")
+            
+            tar_stream, _ = container.get_archive(src_path)
+            tar_path = os.path.join(self.output_dir, 'output.tar')
+            
+            with open(tar_path, 'wb') as f:
+                for chunk in tar_stream:
+                    f.write(chunk)
 
-        # Clean up: Remove the container
-        logger.info("Removing container...")
-        container.remove()
+            # Extract the tar file
+            with tarfile.open(tar_path) as tar:
+                tar.extractall(path=self.output_dir)
 
-        # Clean up: Remove the tar file
-        os.remove(os.path.join(output_dir, 'output.tar'))
+            # Clean up the tar file after extraction
+            os.remove(tar_path)
+            logger.info(f"Files copied successfully to: {self.output_dir}")
+        except Exception as e:
+            logger.error(f"Error occurred while copying files from container: {e}")
+            raise e
 
-        logger.info("Files copied successfully to:", output_dir)
-    except Exception as e:
-        logger.error(f"Error occured while building docker image: {e}")
-        raise e
+    def clean_up_container(self, container):
+        '''
+        Removes the specified container.
+
+        Args:
+            container (Container): Docker container to remove.
+        '''
+        try:
+            logger.info("Removing container...")
+            container.remove()
+        except (APIError, NotFound, Exception) as e:
+            logger.error(f"Error occurred while removing container: {e}")
+            raise e
+
+    def execute(self):
+        '''
+        Main execution method to build, create container, copy files, and clean up.
+        '''
+        try:
+            image = self.build_image()
+            container = self.create_container(image.id)
+            self.copy_files(container)
+            self.clean_up_container(container)
+        except Exception as e:
+            logger.error(f"Execution failed: {e}")
+            raise e
+
+# Usage Example:
+# builder = DockerBuilder(dockerfile_path="path/to/Dockerfile", output_dir="output/dir", build_context="build/context")
+# builder.execute()
