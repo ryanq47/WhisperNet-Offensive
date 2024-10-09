@@ -39,8 +39,196 @@ The current plugin supports compiling the following target:
 
 ## API Endpoints
 
-### `/binary_builder/<target>` - POST
-Initiates the Docker build process for a specified target, compiling a binary based on the provided configuration.
+Here’s comprehensive documentation for the three endpoints, covering purpose, parameters, example requests, responses, and potential errors.
+
+### Overview
+The Binary Builder API provides endpoints for compiling custom binaries, droppers, and agents using Docker containers. Each endpoint uses specific Docker configurations to compile binaries tailored to user-defined specifications.
+
+---
+
+### 1. **`POST /binary-builder/build/custom`**
+#### Description
+Compiles a custom binary specified by the user with provided target architecture, shellcode, and binary name.
+
+#### Request Parameters
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **JSON Payload**:
+  - `target` (string, required): The target architecture and OS for the binary. Accepted values include:
+    - `"x64_windows_custom"`
+    - `"x86_windows_custom"`
+  - `shellcode` (string, required): Base64-encoded shellcode to include in the binary.
+  - `binary_name` (string, required): Desired name of the output binary file.
+
+#### Example Request
+```json
+POST /binary-builder/build/custom
+Content-Type: application/json
+
+{
+  "target": "x64_windows_custom",
+  "shellcode": "aabbcc==",
+  "binary_name": "custom_binary"
+}
+```
+
+#### Example Response
+```json
+{
+  "message": "successfully built x64_windows_custom",
+  "status": 200
+}
+```
+
+#### Error Responses
+- **400 Bad Request**: Missing fields in the JSON payload.
+  ```json
+  {
+    "message": "Missing fields in request",
+    "status": 400
+  }
+  ```
+- **400 Bad Request**: Unknown target.
+  ```json
+  {
+    "message": "Unknown target",
+    "status": 400
+  }
+  ```
+- **500 Internal Server Error**: Generic server error during build.
+  ```json
+  {
+    "message": "An error occurred",
+    "status": 500
+  }
+  ```
+
+---
+
+### 2. **`POST /binary-builder/build/dropper`**
+#### Description
+Builds a dropper binary for the specified target, with options for IP, port, and binary name.
+
+#### Request Parameters
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **JSON Payload**:
+  - `target` (string, required): Specifies the dropper target environment. Accepted values include:
+    - `"x64_windows_dropper"`
+    - `"x86_windows_dropper"`
+  - `ip` (string, required): IP address for the dropper to use in the generated binary.
+  - `port` (string, required): Port for the dropper to connect to.
+  - `binary_name` (string, required): Desired name of the output dropper file.
+
+#### Example Request
+```json
+POST /binary-builder/build/dropper
+Content-Type: application/json
+
+{
+  "target": "x64_windows_dropper",
+  "ip": "192.168.1.100",
+  "port": "8080",
+  "binary_name": "dropper_binary"
+}
+```
+
+#### Example Response
+```json
+{
+  "message": "successfully built x64_windows_dropper",
+  "status": 200
+}
+```
+
+#### Error Responses
+- **400 Bad Request**: Missing fields in the JSON payload.
+  ```json
+  {
+    "message": "Missing fields in request",
+    "status": 400
+  }
+  ```
+- **400 Bad Request**: Unknown target.
+  ```json
+  {
+    "message": "Unknown target",
+    "status": 400
+  }
+  ```
+- **500 Internal Server Error**: Generic server error during build.
+  ```json
+  {
+    "message": "An error occurred",
+    "status": 500
+  }
+  ```
+
+---
+
+### 3. **`POST /binary-builder/build/agent`**
+#### Description
+Builds an agent binary for the specified target, which can be a dropper or custom agent.
+
+#### Request Parameters
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **JSON Payload**:
+  - `target` (string, required): The target architecture and OS for the agent. Accepted values include:
+    - `"x64_windows_agent"`
+    - `"x86_windows_agent"`
+  - `ip` (string, required): IP address for the agent binary.
+  - `port` (string, required): Port for the agent binary.
+  - `binary_name` (string, required): Desired name of the output agent file.
+
+#### Example Request
+```json
+POST /binary-builder/build/agent
+Content-Type: application/json
+
+{
+  "ip": "192.168.1.100",
+  "port": "8080",
+  "binary_name": "agent_binary"
+}
+```
+
+#### Example Response
+```json
+{
+  "message": "successfully built x64_windows_agent",
+  "status": 200
+}
+```
+
+#### Error Responses
+- **400 Bad Request**: Missing fields in the JSON payload.
+  ```json
+  {
+    "message": "Missing fields in request",
+    "status": 400
+  }
+  ```
+- **400 Bad Request**: Unknown target.
+  ```json
+  {
+    "message": "Unknown target",
+    "status": 400
+  }
+  ```
+- **500 Internal Server Error**: Generic server error during build.
+  ```json
+  {
+    "message": "An error occurred",
+    "status": 500
+  }
+  ```
+
+---
+
+### Notes
+- **Configuration**: Targets, Dockerfile paths, and build details are defined in the configuration file (`config.yaml`). Each target must be mapped to a Dockerfile, defining compilation environments for different binaries.
+- **File Storage**: Compiled binaries are saved in the `/data/compiled` folder, accessible via endpoint calls to serve or retrieve binaries.
 
 ---
 

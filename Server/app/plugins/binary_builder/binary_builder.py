@@ -212,16 +212,7 @@ def build_dropper():
 @app.route('/binary-builder/build/agent', methods=['POST'])
 def build_agent():
     '''
-        Build target
-
-        json: 
-
-        {
-            "target":"x64_windows_dropper,
-            "type": "dropper",
-            "shellcode":"aabbcc=="
-        }
-
+        Build agent
     '''
     try:
         dict_data = request.get_json()
