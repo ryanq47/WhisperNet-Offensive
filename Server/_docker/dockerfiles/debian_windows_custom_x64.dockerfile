@@ -1,13 +1,15 @@
 # file name: buildenv_target_arch
 
 #docker build --build-arg BINARY_NAME=my_custom_binary -t my-image .
+ARG BINARY_NAME=default_name
 
 # Start from a minimal Debian image
 FROM debian:buster-slim
 
-# ...and translate to env for runtime, as only env's are accessible at runtime
-# This needs to go AFTER the FROM statement
-#ENV BINARY_NAME=${BINARY_NAME}
+# SO. Apparenty each FROM command magically makes all previous ARG's go bye bye. 
+# As such, we need to redeclare this arg. F#CKING kill me cuz this took way too long to figure out
+# https://stackoverflow.com/questions/44438637/arg-substitution-in-run-command-not-working-for-dockerfile
+ARG BINARY_NAME
 
 # Install dependencies for cross-compilation and Rust
 RUN apt-get update && \
@@ -36,7 +38,6 @@ RUN rustup target add x86_64-pc-windows-gnu
 # Set the working directory inside the container
 WORKDIR /usr/src/myapp
 
-
 # Copy your source code to the container
 COPY ./agents/windows/dropper .
 
@@ -49,24 +50,15 @@ RUN mkdir /output
 # List the files in the target directory for verification
 RUN ls -lsa target/x86_64-pc-windows-gnu/release
 
-# kinda jank cuz the *.exe
-# Copy the compiled binary to the /output directory in the container for volume sharing
-RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /output
+RUN echo "Copying file to output with name: $BINARY_NAME"
 
-#ANNOYING
-# easiest way to do this becuase cargo build doesn't have an outfile flag >:|
-#RUN mv /output/*.exe /output/${BINARY_NAME}
+# Copy the compiled binary to the /output directory in the container for volume sharing
+
+# option w bash
+#RUN /bin/bash -c "cp target/x86_64-pc-windows-gnu/release/*.exe /output/$BINARY_NAME"
+
+# option raw
+RUN cp target/x86_64-pc-windows-gnu/release/*.exe /output/${BINARY_NAME}
 
 RUN ls -lsa /output/
-## Build
-#docker build -t my-rust-app -f buildenv_target_arch .
-
-## then run w volume args
-#docker run --rm -v $(pwd)/agent:/output my-rust-app
-
-
-
-# Copy the compiled binary to /output directory
-#RUN cp target/x86_64-pc-windows-gnu/release/myapp /output/
-
 

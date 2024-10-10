@@ -45,6 +45,7 @@ class DockerBuilder:
         self.build_context = build_context
         self.client = docker.from_env()
         self.build_args = build_args
+        self.env_vars = env_vars
 
     def build_image(self, tag: str = "my-rust-app"):
         """
@@ -79,13 +80,17 @@ class DockerBuilder:
                 buildargs=self.build_args,
                 rm=True,
             )
+
+            # logger.debug(f"Buld Logs: {i for i in build_logs}")
+            for i in build_logs:
+                logger.debug(i)
             return image
 
         except (APIError, ValueError, Exception) as e:
             logger.error(f"Error occurred while building Docker image: {e}")
             raise e
 
-    def create_container(self, image, env_vars: dict = None):
+    def create_container(self, image):
         """
         Creates a Docker container with environment variables for runtime.
 
@@ -97,12 +102,24 @@ class DockerBuilder:
             container (Container): Created Docker container.
         """
         try:
+            # If `image` is a string (ID or tag), retrieve the actual Image object
+            if isinstance(image, str):
+                image = self.client.images.get(image)
+
             logger.info(
                 "Creating Docker container with runtime environment variables..."
             )
+            logger.debug(f"Env Vars: {self.env_vars}")
+            logger.debug(f"ImageID: {image.id}")
+
             container = self.client.containers.create(
-                image=image.id, environment=env_vars  # Runtime ENV variables
+                image=image.id, environment=self.env_vars  # Runtime ENV variables
             )
+
+            # output = container.attach(stdout=True, stream=True, logs=True)
+            # for line in output:
+            #    print(line)
+
             return container
 
         except (docker.errors.APIError, Exception) as e:
@@ -168,7 +185,7 @@ class DockerBuilder:
         """
         try:
             image = self.build_image()
-            container = self.create_container(image.id, self.env_vars)
+            container = self.create_container(image.id)
             self.copy_files(container)
             self.clean_up_container(container)
         except Exception as e:
