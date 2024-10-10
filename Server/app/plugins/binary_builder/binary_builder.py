@@ -1,29 +1,32 @@
-from flask import jsonify, send_from_directory, request
+from flask import jsonify, request, send_from_directory
+from modules.binary_models import Agent, Custom, Dropper
+from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
-from modules.config import Config
-from modules.docker_builder import build
 from modules.utils import api_response
 
 logger = log(__name__)
 app = Instance().app
 
+
 class Info:
     name = "binary_builder"
     author = "ryanq.47"
 
+
 # Optional route example
-@app.route('/binary_builder', methods=['GET'])
+@app.route("/binary_builder", methods=["GET"])
 def buinary_builder():
     return jsonify({"somekey": "somevalue"})
+
 
 ## routes:
 # /binary_builder/<name_of_target?>
 
 # then if tree it for names based on supported items?
-# not super modular but it works  
+# not super modular but it works
 
-#dep
+# dep
 """
 @app.route('/binary_builder/<target>', methods=['POST'])
 def build_target(target):
@@ -66,100 +69,73 @@ def build_target(target):
             status=500
         )       
 """
-@app.route('/binary-builder/build/custom', methods=['POST'])
+
+
+@app.route("/binary-builder/build/custom", methods=["POST"])
 def build_custom():
-    '''
-        Build target
+    """
+    Build target
 
-        json: 
+    json:
 
-        {
-            "target":"x64_windows_dropper,
-            "shellcode":"aabbcc=="
-            "binary_name":"somename"
-        }
+    {
+        "target":"x64_windows_dropper,
+        "shellcode":"aabbcc=="
+        "binary_name":"somename"
+    }
 
-    '''
+    """
     try:
         dict_data = request.get_json()
         required_keys = ["target", "shellcode", "binary_name"]
-        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+        missing_keys = [
+            key for key in required_keys if not dict_data or dict_data.get(key) is None
+        ]
+
+        logger.debug(dict_data)
 
         if missing_keys:
-            return api_response(
-                message=f"Missing fields in request",
-                status=400
-            )
+            logger.debug("Missing keys")
+            return api_response(message=f"Missing fields in request", status=400)
 
         # Extract values since all are validated
         target = dict_data["target"]
-        shellcode = dict_data["shellcode"]
+        payload = dict_data["shellcode"]
         binary_name = dict_data["binary_name"]
 
-        match target:
-            case "x64_windows_custom":
-                logger.info("Building target: x64_windows_custom")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.customs.x64_windows_custom
-            case "x86_windows_custom":
-                logger.info("Building target: x86_windows_custom")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.customs.x86_windows_custom            
-            case _:
-                logger.info(f"Unknown target: {target}")
-                return api_response(
-                    message="Unknown target",
-                    code=400
-                )
+        c = Custom(build_target=target, binary_name=binary_name, payload=payload)
 
-        output_dir      = str((Config().launch_path / "data" / "compiled").absolute())
-        build_context   = str(Config().root_project_path) #str((Config().launch_path).absolute() / "..")
+        c.build()
 
-        logger.debug(f"Compiled output directory: {output_dir}")
-        logger.debug(f"Docker build Context: {build_context}")
-
-        #output_dir = "./data/compiled/" #pathify this
-
-        build(
-            dockerfile_path = dockerfile_path,
-            output_dir = output_dir,
-            build_context = build_context
-        )
-
-        return api_response(
-            message=f"successfully built {target}",
-            status=200
-        )
+        return api_response(message=f"successfully built {target}", status=200)
 
     except Exception as e:
         logger.error(e)
-        return api_response(
-            message="An error occured",
-            status=500
-        )     
+        return api_response(message="An error occured", status=500)
 
-@app.route('/binary-builder/build/dropper', methods=['POST'])
+
+# [ ] not done
+@app.route("/binary-builder/build/dropper", methods=["POST"])
 def build_dropper():
-    '''
-        Build target
+    """
+    Build target
 
-        json: 
+    json:
 
-        {
-            "target":"x64_windows_dropper,
-        }
+    {
+        "target":"x64_windows_dropper,
+    }
 
-    '''
+    """
     try:
         dict_data = request.get_json()
         required_keys = ["target", "ip", "port", "binary_name"]
-        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+        missing_keys = [
+            key for key in required_keys if not dict_data or dict_data.get(key) is None
+        ]
 
         if missing_keys:
-            return api_response(
-                message=f"Missing fields in request",
-                status=400
-            )
+            return api_response(message=f"Missing fields in request", status=400)
 
         # Extract values since all are validated
         target = dict_data["target"]
@@ -167,63 +143,34 @@ def build_dropper():
         port = dict_data["ip"]
         binary_name = dict_data["binary_name"]
 
-        match target:
-            case "x64_windows_dropper":
-                logger.info("Building target: x64_windows_dropper")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x64_windows_dropper.buildfile
-            case "x86_windows_dropper":
-                logger.info("Building target: x86_windows_dropper")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.droppers.x86_windows_dropper.buildfile       
-            case _:
-                logger.info(f"Unknown target: {target}")
-                return api_response(
-                    message="Unknown target",
-                    code=400
-                )
-
-        output_dir      = str((Config().launch_path / "data" / "compiled").absolute())
-        build_context   = str(Config().root_project_path) #str((Config().launch_path).absolute() / "..")
-
-        logger.debug(f"Compiled output directory: {output_dir}")
-        logger.debug(f"Docker build Context: {build_context}")
-        logger.debug(f"Dockerfile selected to be built: {dockerfile_path}")
-        #output_dir = "./data/compiled/" #pathify this
-
-        build(
-            dockerfile_path = dockerfile_path,
-            output_dir = output_dir,
-            build_context = build_context
+        d = Dropper(
+            build_target=target,
+            server_address=ip,
+            server_port=port,
+            binary_name=binary_name,
         )
 
-        return api_response(
-            message=f"successfully built {target}",
-            status=200
-        )
+        return api_response(message=f"successfully built {target}", status=200)
 
     except Exception as e:
         logger.error(e)
-        return api_response(
-            message="An error occured",
-            status=500
-        )   
+        return api_response(message="An error occured", status=500)
 
-@app.route('/binary-builder/build/agent', methods=['POST'])
+
+@app.route("/binary-builder/build/agent", methods=["POST"])
 def build_agent():
-    '''
-        Build agent
-    '''
+    """
+    Build agent
+    """
     try:
         dict_data = request.get_json()
         required_keys = ["target", "ip", "port", "binary_name"]
-        missing_keys = [key for key in required_keys if not dict_data or dict_data.get(key) is None]
+        missing_keys = [
+            key for key in required_keys if not dict_data or dict_data.get(key) is None
+        ]
 
         if missing_keys:
-            return api_response(
-                message=f"Missing fields in request",
-                status=400
-            )
+            return api_response(message=f"Missing fields in request", status=400)
 
         # Extract values since all are validated
         target = dict_data["target"]
@@ -231,54 +178,28 @@ def build_agent():
         port = dict_data["ip"]
         binary_name = dict_data["binary_name"]
 
-        match target:
-            case "x64_windows_agent: ":
-                logger.info("Building target: x64_windows_agent")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.agents.x64_windows_agent
-            case "x86_windows_agent":
-                logger.info("Building target: x86_windows_agent")
-                # get config value
-                dockerfile_path = Config().config.server.binaries.agents.x86_windows_agent            
-            case _:
-                logger.info(f"Unknown target: {target}")
-                return api_response(
-                    message="Unknown target",
-                    code=400
-                )
-
-        output_dir      = str((Config().launch_path / "data" / "compiled").absolute())
-        build_context   = str(Config().root_project_path) #str((Config().launch_path).absolute() / "..")
-
-        logger.debug(f"Compiled output directory: {output_dir}")
-        logger.debug(f"Docker build Context: {build_context}")
-
-        #output_dir = "./data/compiled/" #pathify this
-
-        build(
-            dockerfile_path = dockerfile_path,
-            output_dir = output_dir,
-            build_context = build_context
+        a = Agent(
+            build_target=target,
+            server_address=ip,
+            server_port=port,
+            binary_name=binary_name,
         )
 
-        return api_response(
-            message=f"successfully built {target}",
-            status=200
-        )
+        a.build()
+
+        return api_response(message=f"successfully built {target}", status=200)
 
     except Exception as e:
         logger.error(e)
-        return api_response(
-            message="An error occured",
-            status=500
-        )   
+        return api_response(message="An error occured", status=500)
+
 
 # serve the binaires
-@app.route('/binary-builder/binaries/<path:filename>', methods=['GET'])
+@app.route("/binary-builder/binaries/<path:filename>", methods=["GET"])
 def compiled_binaries(filename):
-    '''
+    """
     Serve the compiled binaries from the /data/compiled directory
-    '''
+    """
     try:
         # DON"T use resolve/absolute, might result in dir traversal
         bin_path = Config().launch_path / "data" / "compiled"
@@ -293,12 +214,13 @@ def compiled_binaries(filename):
         logger.error(e)
         return api_response(status=500)
 
+
 # GEt list of binaries
-@app.route('/binary-builder/binaries', methods=['GET'])
+@app.route("/binary-builder/binaries", methods=["GET"])
 def list_binaries():
-    '''
+    """
     Get a list of all the binaries in the folder, and the path they are at
-    '''
+    """
     bin_path = Config().launch_path / "data" / "compiled"
 
     # Initialize a dictionary to hold filenames and their paths
@@ -310,44 +232,39 @@ def list_binaries():
             # Add the filename and its endpoint path to the dictionary
             binaries[file_path.name] = f"binary-builder/binaries/{file_path.name}"
 
-
     # Return the dictionary as a JSON response
-    return api_response(
-        data=binaries
-    )
+    return api_response(data=binaries)
 
 
-
-
-@app.route('/binary-builder/targets', methods=['GET'])
+@app.route("/binary-builder/targets", methods=["GET"])
 def valid_targets():
-    '''
-        Returns a list of valid compile targets
-    '''
+    """
+    Returns a list of valid compile targets
+    """
     try:
 
         droppers_dict = {
-            key: (value if value else 'No buildfile')
+            key: (value if value else "No buildfile")
             for key, value in Config().config.server.binaries.droppers.items()
         }
 
         agents_dict = {
-            key: (value if value else 'No buildfile')
+            key: (value if value else "No buildfile")
             for key, value in Config().config.server.binaries.agents.items()
         }
 
         customs_dict = {
-            key: (value if value else 'No buildfile')
+            key: (value if value else "No buildfile")
             for key, value in Config().config.server.binaries.customs.items()
         }
 
         final_response = {
-            'droppers': droppers_dict,
-            'agents': agents_dict,
-            'customs': customs_dict
+            "droppers": droppers_dict,
+            "agents": agents_dict,
+            "customs": customs_dict,
         }
 
-        ''' Output example: 
+        """ Output example: 
             {
             "data": {
                 "agents": {
@@ -363,12 +280,10 @@ def valid_targets():
             "status": 200,
             "timestamp": 1728241553
             }
-        '''
+        """
 
         return api_response(data=final_response)
 
     except Exception as e:
         logger.error(e)
-        return api_response(
-            status=500
-        )
+        return api_response(status=500)
