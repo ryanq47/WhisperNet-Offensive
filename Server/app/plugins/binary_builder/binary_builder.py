@@ -140,7 +140,7 @@ def build_dropper():
         # Extract values since all are validated
         target = dict_data["target"]
         ip = dict_data["ip"]
-        port = dict_data["ip"]
+        port = dict_data["port"]
         binary_name = dict_data["binary_name"]
 
         d = Dropper(
@@ -176,7 +176,7 @@ def build_agent():
         # Extract values since all are validated
         target = dict_data["target"]
         ip = dict_data["ip"]
-        port = dict_data["ip"]
+        port = dict_data["port"]
         binary_name = dict_data["binary_name"]
 
         a = Agent(

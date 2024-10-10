@@ -30,6 +30,7 @@ class DockerBuilder:
         output_dir: str,
         build_context: str,
         build_args: dict,
+        image_tag: str,
     ):
         """
         Initializes the DockerBuilder class with paths and context.
@@ -44,8 +45,9 @@ class DockerBuilder:
         self.build_context = build_context
         self.client = docker.from_env()
         self.build_args = build_args
+        self.image_tag = image_tag
 
-    def build_image(self, tag: str = "whispernet-rust-compile-env"):
+    def build_image(self):
         """
         Builds the Docker image with optional build arguments, validating inputs to prevent injection.
 
@@ -74,7 +76,7 @@ class DockerBuilder:
             image, build_logs = self.client.images.build(
                 path=self.build_context,
                 dockerfile=self.dockerfile_path,
-                tag=tag,
+                tag=self.image_tag,
                 buildargs=self.build_args,
                 rm=True,
             )

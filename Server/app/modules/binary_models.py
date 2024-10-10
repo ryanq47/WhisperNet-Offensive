@@ -46,6 +46,7 @@ class Agent:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
+                image_tag=self.build_target,
             )
 
             docker_instance.execute()
@@ -107,6 +108,7 @@ class Dropper:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
+                image_tag=self.build_target,
             )
 
             docker_instance.execute()
@@ -156,6 +158,7 @@ class Custom:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
+                image_tag=self.build_target,
             )
 
             docker_instance.execute()

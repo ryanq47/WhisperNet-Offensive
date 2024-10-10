@@ -192,6 +192,7 @@ def send_compilation_request(url, data):
         url, headers=headers, json=data, verify=Config().get_verify_certs()
     )
     if response.status_code == 200:
+        ui.notify("Successfully queued for compilation")
         return True
     else:
         logger.warning(
