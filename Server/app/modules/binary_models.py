@@ -15,7 +15,6 @@ class Agent:
         self.server_port = server_port
         self.binary_name = binary_name
 
-        # get rid of absolute.
         self.output_dir = str((Config().root_project_path / "data" / "compiled"))
         self.build_context = str(Config().root_project_path)
 
@@ -34,15 +33,27 @@ class Agent:
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
 
+            # build_args = {"BINARY_NAME": "URMOM.exe"}
+            build_args = {
+                "BINARY_NAME": self.binary_name,
+                "SERVER_ADDRESS": self.server_address,
+                "SERVER_PORT": self.server_port,
+            }
+
             # build the binary
             docker_instance = DockerBuilder(
                 dockerfile_path=self.build_options.buildfile,
                 output_dir=self.output_dir,
                 build_context=self.build_context,
+                build_args=build_args,
             )
 
             docker_instance.execute()
             return True
+
+        except ValueError as ve:
+            logger.error(f"Could not build binary: {ve}")
+            raise ve
 
         except Exception as e:
             logger.error(f"Could not build binary: {e}")
@@ -63,6 +74,51 @@ class Dropper:
         self.server_port = server_port
         self.binary_name = binary_name
         self.server_payload_enpoint = server_payload_enpoint
+
+        self.output_dir = str((Config().root_project_path / "data" / "compiled"))
+        self.build_context = str(Config().root_project_path)
+
+        # get values based on target/config
+        # self.build_options = Config().config.server.binaries.agents.x86_windows_agent
+        self.build_options = Config().config.server.binaries.agents.get(build_target)
+
+        logger.debug(f"Compiled output directory: {self.output_dir}")
+        logger.debug(f"Docker build Context: {self.build_context}")
+        logger.debug(f"Dockerfile selected to be built: {self.build_options.buildfile}")
+
+    def build(self):
+        try:
+            logger.info(f"Building {self.build_target}")
+            # debug print items
+            logger.debug(options for options in self.build_options.items())
+            # make an async function or threaded so it can just be called.
+
+            # build_args = {"BINARY_NAME": "URMOM.exe"}
+            build_args = {
+                "BINARY_NAME": self.binary_name,
+                "SERVER_ADDRESS": self.server_address,
+                "SERVER_PORT": self.server_port,
+                "SERVER_PAYLOAD_ENDPOINT": self.server_payload_enpoint,
+            }
+
+            # build the binary
+            docker_instance = DockerBuilder(
+                dockerfile_path=self.build_options.buildfile,
+                output_dir=self.output_dir,
+                build_context=self.build_context,
+                build_args=build_args,
+            )
+
+            docker_instance.execute()
+            return True
+
+        except ValueError as ve:
+            logger.error(f"Could not build binary: {ve}")
+            raise ve
+
+        except Exception as e:
+            logger.error(f"Could not build binary: {e}")
+            raise e
 
 
 class Custom:
@@ -90,8 +146,9 @@ class Custom:
             # make an async function or threaded so it can just be called.
 
             # build_args = {"BINARY_NAME": "URMOM.exe"}
-            build_args = {"BINARY_NAME": self.binary_name}
-            env_vars = {"BINARY_NAME": self.binary_name}
+            build_args = {
+                "BINARY_NAME": self.binary_name,
+            }
 
             # build the binary
             docker_instance = DockerBuilder(
@@ -99,11 +156,14 @@ class Custom:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
-                env_vars=env_vars,
             )
 
             docker_instance.execute()
             return True
+
+        except ValueError as ve:
+            logger.error(f"Could not build binary: {ve}")
+            raise ve
 
         except Exception as e:
             logger.error(f"Could not build binary: {e}")

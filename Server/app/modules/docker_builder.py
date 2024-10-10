@@ -30,7 +30,6 @@ class DockerBuilder:
         output_dir: str,
         build_context: str,
         build_args: dict,
-        env_vars: dict,
     ):
         """
         Initializes the DockerBuilder class with paths and context.
@@ -45,9 +44,8 @@ class DockerBuilder:
         self.build_context = build_context
         self.client = docker.from_env()
         self.build_args = build_args
-        self.env_vars = env_vars
 
-    def build_image(self, tag: str = "my-rust-app"):
+    def build_image(self, tag: str = "whispernet-rust-compile-env"):
         """
         Builds the Docker image with optional build arguments, validating inputs to prevent injection.
 
@@ -106,15 +104,10 @@ class DockerBuilder:
             if isinstance(image, str):
                 image = self.client.images.get(image)
 
-            logger.info(
-                "Creating Docker container with runtime environment variables..."
-            )
-            logger.debug(f"Env Vars: {self.env_vars}")
+            logger.info("Creating Docker container")
             logger.debug(f"ImageID: {image.id}")
 
-            container = self.client.containers.create(
-                image=image.id, environment=self.env_vars  # Runtime ENV variables
-            )
+            container = self.client.containers.create(image=image.id)
 
             # output = container.attach(stdout=True, stream=True, logs=True)
             # for line in output:
