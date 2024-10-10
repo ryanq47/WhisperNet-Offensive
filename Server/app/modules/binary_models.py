@@ -89,11 +89,17 @@ class Custom:
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
 
+            # build_args = {"BINARY_NAME": "URMOM.exe"}
+            build_args = {"BINARY_NAME": self.binary_name}
+            env_vars = {"BINARY_NAME": self.binary_name}
+
             # build the binary
             docker_instance = DockerBuilder(
                 dockerfile_path=self.build_options.buildfile,
                 output_dir=self.output_dir,
                 build_context=self.build_context,
+                build_args=build_args,
+                env_vars=env_vars,
             )
 
             docker_instance.execute()

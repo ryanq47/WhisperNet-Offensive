@@ -1,6 +1,13 @@
 # file name: buildenv_target_arch
+
+#docker build --build-arg BINARY_NAME=my_custom_binary -t my-image .
+
 # Start from a minimal Debian image
 FROM debian:buster-slim
+
+# ...and translate to env for runtime, as only env's are accessible at runtime
+# This needs to go AFTER the FROM statement
+#ENV BINARY_NAME=${BINARY_NAME}
 
 # Install dependencies for cross-compilation and Rust
 RUN apt-get update && \
@@ -42,8 +49,13 @@ RUN mkdir /output
 # List the files in the target directory for verification
 RUN ls -lsa target/x86_64-pc-windows-gnu/release
 
+# kinda jank cuz the *.exe
 # Copy the compiled binary to the /output directory in the container for volume sharing
 RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /output
+
+#ANNOYING
+# easiest way to do this becuase cargo build doesn't have an outfile flag >:|
+#RUN mv /output/*.exe /output/${BINARY_NAME}
 
 RUN ls -lsa /output/
 ## Build

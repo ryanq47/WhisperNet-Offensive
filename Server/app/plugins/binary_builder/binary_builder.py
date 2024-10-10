@@ -157,6 +157,7 @@ def build_dropper():
         return api_response(message="An error occured", status=500)
 
 
+# [ ] not done
 @app.route("/binary-builder/build/agent", methods=["POST"])
 def build_agent():
     """

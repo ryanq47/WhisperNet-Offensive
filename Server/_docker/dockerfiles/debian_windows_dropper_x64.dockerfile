@@ -1,3 +1,7 @@
+
+## Build args
+ARG BINARY_NAME=default_bin_name
+
 # file name: buildenv_target_arch
 # Start from a minimal Debian image
 FROM debian:buster-slim
@@ -29,12 +33,11 @@ RUN rustup target add x86_64-pc-windows-gnu
 # Set the working directory inside the container
 WORKDIR /usr/src/myapp
 
-
 # Copy your source code to the container
 COPY ./agents/windows/dropper .
 
 # Build the Rust application for Windows
-RUN cargo build --release --target x86_64-pc-windows-gnu
+RUN cargo build --release --target x86_64-pc-windows-gnu --bin ${BINARY_NAME}
 
 # Create a directory to store the compiled binary
 RUN mkdir /output
