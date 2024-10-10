@@ -43,7 +43,7 @@ RUN mkdir /output
 RUN ls -lsa target/x86_64-pc-windows-gnu/release
 
 # Copy the compiled binary to the /output directory for volume sharing
-RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /output/
+RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /
 
 RUN ls -lsa /output/
 ## Build

@@ -42,8 +42,8 @@ RUN mkdir /output
 # List the files in the target directory for verification
 RUN ls -lsa target/x86_64-pc-windows-gnu/release
 
-# Copy the compiled binary to the /output directory for volume sharing
-RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /output/
+# Copy the compiled binary to the /output directory in the container for volume sharing
+RUN cp -r target/x86_64-pc-windows-gnu/release/*.exe /output
 
 RUN ls -lsa /output/
 ## Build

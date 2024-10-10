@@ -202,7 +202,7 @@ def compiled_binaries(filename):
     """
     try:
         # DON"T use resolve/absolute, might result in dir traversal
-        bin_path = Config().launch_path / "data" / "compiled"
+        bin_path = Config().root_project_path / "data" / "compiled"
 
         # Use send_from_directory to serve the file
         return send_from_directory(bin_path, filename)
@@ -221,7 +221,7 @@ def list_binaries():
     """
     Get a list of all the binaries in the folder, and the path they are at
     """
-    bin_path = Config().launch_path / "data" / "compiled"
+    bin_path = Config().root_project_path / "data" / "compiled"
 
     # Initialize a dictionary to hold filenames and their paths
     binaries = {}
