@@ -1,5 +1,5 @@
 from flask import jsonify, request, send_from_directory
-from modules.binary_models import Agent, Custom, Dropper
+from modules.binary_models import Agent, Custom
 from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
@@ -82,12 +82,13 @@ def build_custom():
         "target":"x64_windows_dropper,
         "shellcode":"aabbcc=="
         "binary_name":"somename"
+        "delivery_method": "name_of_technique"
     }
 
     """
     try:
         dict_data = request.get_json()
-        required_keys = ["target", "shellcode", "binary_name"]
+        required_keys = ["target", "shellcode", "binary_name", "delivery_method"]
         missing_keys = [
             key for key in required_keys if not dict_data or dict_data.get(key) is None
         ]
@@ -102,53 +103,16 @@ def build_custom():
         target = dict_data["target"]
         payload = dict_data["shellcode"]
         binary_name = dict_data["binary_name"]
+        delivery_method = dict_data["delivery_method"]
 
-        c = Custom(build_target=target, binary_name=binary_name, payload=payload)
+        c = Custom(
+            build_target=target,
+            binary_name=binary_name,
+            payload=payload,
+            delivery=delivery_method,
+        )
 
         c.build()
-
-        return api_response(message=f"successfully built {target}", status=200)
-
-    except Exception as e:
-        logger.error(e)
-        return api_response(message="An error occured", status=500)
-
-
-# [ ] not done
-@app.route("/binary-builder/build/dropper", methods=["POST"])
-def build_dropper():
-    """
-    Build target
-
-    json:
-
-    {
-        "target":"x64_windows_dropper,
-    }
-
-    """
-    try:
-        dict_data = request.get_json()
-        required_keys = ["target", "ip", "port", "binary_name"]
-        missing_keys = [
-            key for key in required_keys if not dict_data or dict_data.get(key) is None
-        ]
-
-        if missing_keys:
-            return api_response(message=f"Missing fields in request", status=400)
-
-        # Extract values since all are validated
-        target = dict_data["target"]
-        ip = dict_data["ip"]
-        port = dict_data["port"]
-        binary_name = dict_data["binary_name"]
-
-        d = Dropper(
-            build_target=target,
-            server_address=ip,
-            server_port=port,
-            binary_name=binary_name,
-        )
 
         return api_response(message=f"successfully built {target}", status=200)
 
@@ -243,10 +207,22 @@ def valid_targets():
     Returns a list of valid compile targets
     """
     try:
-
         droppers_dict = {
-            key: (value if value else "No buildfile")
-            for key, value in Config().config.server.binaries.droppers.items()
+            key: value
+            for key, value in sorted(
+                Config().config.server.binaries.delivery.items(),
+                key=lambda item: item[1].get("type"),
+            )
+            if value.get("type") == "dropper"
+        }
+
+        loaders_dict = {
+            key: value
+            for key, value in sorted(
+                Config().config.server.binaries.delivery.items(),
+                key=lambda item: item[1].get("type"),
+            )
+            if value.get("type") == "loader"
         }
 
         agents_dict = {
@@ -260,9 +236,11 @@ def valid_targets():
         }
 
         final_response = {
-            "droppers": droppers_dict,
-            "agents": agents_dict,
-            "customs": customs_dict,
+            "payloads": {
+                "agents": agents_dict,
+                "customs": customs_dict,
+            },
+            "delivery": {"loaders": loaders_dict, "droppers": droppers_dict},
         }
 
         """ Output example: 

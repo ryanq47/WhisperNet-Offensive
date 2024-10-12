@@ -65,12 +65,14 @@ server:
     agents:
       x64_windows_agent: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_x86.dockerfile"
+        source_code: str!! "agents/windows/."
         description: !!str "An x64 windows agent"
         language: !!str "rust"
         #source_code: !!str
 
       x86_windows_agent: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_x86.dockerfile"
+        source_code: str!! "agents/windows/."
         description: !!str "An x86 windows agent"
         language: !!str "rust"
 
@@ -85,14 +87,31 @@ server:
         description: "An x86 windows dropper"
         language: !!str "rust"
 
+    delivery:
+      # loader/droppers can go here. basically the same thing
+      name_of_deliv_01: 
+        #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
+        type: !!str "loader"
+        description: !!str "An x64 windows dropper"
+        language: !!str "rust"
+        source_code: !!str "agents/windows/loaders/test_01"
+
+      name_of_deliv_02: 
+        type: !!str "dropper"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+        description: "An x86 windows dropper"
+        language: !!str "rust"
+
     customs:
       x64_windows_custom: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_custom_x64.dockerfile"
+        source_code: str!! "agents/windows/."
         description: !!str "An x64 windows dropper"
         language: !!str "rust"
 
       x86_windows_custom: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_custom_x86.dockerfile"
+        source_code: str!! "agents/windows/."
         description: "An x86 windows dropper"
         language: !!str "rust"
 

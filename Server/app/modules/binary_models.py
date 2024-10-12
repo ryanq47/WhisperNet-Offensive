@@ -1,4 +1,5 @@
 # Holds class def's for binaries. May need to rename from `binary_models` if that name is no longer appropriate
+from modules.binary_constructor import Loader
 from modules.config import Config
 from modules.docker_builder import DockerBuilder
 from modules.log import log
@@ -61,7 +62,8 @@ class Agent:
             raise e
 
 
-class Dropper:
+# dep
+"""class Dropper:
     def __init__(
         self,
         build_target,
@@ -121,13 +123,15 @@ class Dropper:
         except Exception as e:
             logger.error(f"Could not build binary: {e}")
             raise e
+            """
 
 
 class Custom:
-    def __init__(self, build_target, binary_name, payload):
+    def __init__(self, build_target, binary_name, payload, delivery):
         self.build_target = build_target
         self.binary_name = binary_name
         self.payload = payload
+        self.delivery = delivery  # name of delivery method
         # get rid of absolute.
         self.output_dir = str((Config().root_project_path / "data" / "compiled"))
         self.build_context = str(Config().root_project_path)
@@ -135,7 +139,12 @@ class Custom:
         # get values based on target/config
         # self.build_options = Config().config.server.binaries.agents.x86_windows_agent
         self.build_options = Config().config.server.binaries.customs.get(build_target)
+        self.delivery_options = Config().config.server.binaries.delivery.get(delivery)
 
+        logger.debug(f"Build Target: {self.build_target}")
+        logger.debug(f"Binary Name: {self.binary_name}")
+        logger.debug(f"Payload: {self.payload}")
+        logger.debug(f"Delivery method: {self.delivery}")
         logger.debug(f"Compiled output directory: {self.output_dir}")
         logger.debug(f"Docker build Context: {self.build_context}")
         logger.debug(f"Dockerfile selected to be built: {self.build_options.buildfile}")
@@ -147,9 +156,20 @@ class Custom:
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
 
+            ## Construct src code
+            # whatever = Loader().construct(args...)
+
+            loader = Loader(
+                loader_source_code_path=self.delivery_options.source_code,
+                shellcode=self.payload,
+            )
+
+            loader.construct()
+
             # build_args = {"BINARY_NAME": "URMOM.exe"}
             build_args = {
                 "BINARY_NAME": self.binary_name,
+                # source_code: source_code_path_from_construct
             }
 
             # build the binary
