@@ -145,6 +145,8 @@ class BinaryBuilderPage:
             ),
         }
 
+        logger.info(f"Sending:{data}")
+
         self.send_compilation_request(data)
 
     def send_compilation_request(self, data):
