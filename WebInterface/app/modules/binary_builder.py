@@ -5,7 +5,7 @@ import requests
 from app.modules.config import Config
 from app.modules.login import check_login
 from app.modules.ui_elements import create_header
-from app.modules.utils import is_base64
+from app.modules.utils import is_base64, is_hex_shellcode
 from nicegui import ui
 
 logger = logging.getLogger(__name__)
@@ -232,9 +232,9 @@ class BinaryBuilderPage:
             )
             self.delivery_language_text.set_content("")
 
-    def validate_shellcode(self, b64_shellcode):
-        if not is_base64(b64_shellcode):
-            ui.notify("Shellcode is not valid base64!", type="warning")
+    def validate_shellcode(self, hex_shellcode):
+        if not is_hex_shellcode(hex_shellcode):
+            ui.notify("Shellcode is not valid hex!", type="warning")
 
     def init_ui(self):
         @ui.page("/binary-builder")
@@ -301,8 +301,8 @@ class BinaryBuilderPage:
 
                         self.shellcode_input = (
                             ui.textarea(
-                                label="Shellcode (base64)",
-                                placeholder="Enter shellcode here",
+                                label="Shellcode (Hex)",
+                                placeholder="0x00, 0x01, etc",
                                 on_change=lambda e: self.validate_shellcode(e.value),
                             )
                             .classes("w-full")

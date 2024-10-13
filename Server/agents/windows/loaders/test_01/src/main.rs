@@ -12,7 +12,7 @@ use winapi::um::synchapi::WaitForSingleObject;
 fn main() {
     // Generating sample calc shellcode using metasploit
     // msfvenom -p windows/x64/exec CMD=calc.exe -f rust
-    let shellcode: [u8; 276] = [
+    let shellcode: [u8; SHELLCODE_SIZE_PLACEHOLDER] = [
         SHELLCODE_PLACEHOLDER
     ];
 
