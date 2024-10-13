@@ -1,6 +1,8 @@
 # file name: buildenv_target_arch
 
 #docker build --build-arg BINARY_NAME=my_custom_binary -t my-image .
+#docker build --build-arg BINARY_NAME=my_custom_binary --build-arg SOURCE_CODE_PATH=_docker/build_tmp/f59ee5b8-9d05-446c-9c98-bc8cbad95c45/ -t my-image ../../ -f debian_windows_custom_x64.dockerfile
+
 ARG BINARY_NAME
 ARG SOURCE_CODE_PATH
 
