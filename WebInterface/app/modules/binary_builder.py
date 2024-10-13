@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-import munch
 import requests
 from app.modules.config import Config
 from app.modules.login import check_login
@@ -11,321 +10,327 @@ from nicegui import ui
 
 logger = logging.getLogger(__name__)
 
-# Placeholder for targets data
-targets = {}
 
+class BinaryBuilderPage:
+    def __init__(self):
+        self.targets = {}
+        self.binaries = {}
+        self.selected_payload_type = None
+        self.selected_payload_name = None
+        self.selected_delivery_type = None
+        self.selected_delivery_name = None
+        self.payload_data = {}
+        self.delivery_data = {}
+        # self.init_data()
+        self.init_ui()
 
-def get_targets() -> dict:
-    """
-    Function to retrieve container data from the server.
-    """
-    try:
-        url = Config().get_url() / "binary-builder" / "targets"
-        token = Config().get_token()
+    def get_data(self):
+        self.targets = self.get_targets()
+        self.binaries = self.get_binaries()
+        self.process_targets()
 
-        headers = {"Authorization": f"Bearer {token}"}
+    def get_targets(self) -> dict:
+        """
+        Retrieve container data from the server.
+        """
+        try:
+            url = Config().get_url() / "binary-builder" / "targets"
+            token = Config().get_token()
+            headers = {"Authorization": f"Bearer {token}"}
 
-        logger.debug("Getting containers from server")
-        response = requests.get(
-            url, headers=headers, verify=Config().get_verify_certs()
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            target_data = munch.Munch(data.get("data", {}))
-            logger.debug(f"target_data retrieved: {target_data}")
-            return target_data
-        else:
-            logger.warning(
-                f"Received a {response.status_code} status code when requesting {url}"
+            logger.debug("Getting targets from server")
+            response = requests.get(
+                url, headers=headers, verify=Config().get_verify_certs()
             )
-            return {}
 
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        raise e
+            if response.status_code == 200:
+                data = response.json()
+                logger.debug(f"Targets retrieved: {data}")
+                return data
+            else:
+                logger.warning(f"Received {response.status_code} when requesting {url}")
+                return {}
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            raise e
 
+    def get_binaries(self) -> dict:
+        """
+        Retrieve binaries data from the server.
+        """
+        try:
+            url = Config().get_url() / "binary-builder" / "binaries"
+            token = Config().get_token()
+            headers = {"Authorization": f"Bearer {token}"}
 
-def get_binaries() -> dict:
-    """
-    Function to retrieve container data from the server.
-    """
-    try:
-        url = Config().get_url() / "binary-builder" / "binaries"
-        token = Config().get_token()
-
-        headers = {"Authorization": f"Bearer {token}"}
-
-        logger.debug("Getting containers from server")
-        response = requests.get(
-            url, headers=headers, verify=Config().get_verify_certs()
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            target_data = munch.Munch(data.get("data", {}))
-            logger.debug(f"target_data retrieved: {target_data}")
-            return target_data
-        else:
-            logger.warning(
-                f"Received a {response.status_code} status code when requesting {url}"
+            logger.debug("Getting binaries from server")
+            response = requests.get(
+                url, headers=headers, verify=Config().get_verify_certs()
             )
-            return {}
 
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        raise e
+            if response.status_code == 200:
+                data = response.json().get("data", {})
+                logger.debug(f"Binaries retrieved: {data}")
+                return data
+            else:
+                logger.warning(f"Received {response.status_code} when requesting {url}")
+                return {}
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            raise e
 
+    def process_targets(self):
+        """
+        Process the targets data to extract payloads and deliveries.
+        """
+        data = self.targets.get("data", {})
+        self.payload_data = data.get("payloads", {})
+        self.delivery_data = data.get("delivery", {})
 
-def download_binary(filename):
-    """
-    Function to download a binary from the Flask API and serve it to the user via NiceGUI.
-    """
-    try:
-        # Construct the Flask API URL for downloading
-        url = str(Config().get_url() / "binary-builder" / "binaries" / filename)
-        token = Config().get_token()
+    def download_binary(self, filename):
+        """
+        Download a binary from the server and serve it via NiceGUI.
+        """
+        try:
+            url = str(Config().get_url() / "binary-builder" / "binaries" / filename)
+            token = Config().get_token()
+            headers = {"Authorization": f"Bearer {token}"}
 
-        headers = {"Authorization": f"Bearer {token}"}
-
-        # Fetch the file from the Flask API
-        response = requests.get(
-            url, headers=headers, stream=True, verify=Config().get_verify_certs()
-        )
-        if response.status_code != 200:
-            ui.notify(
-                f"Failed to download {filename}: {response.status_code}",
-                type="negative",
+            response = requests.get(
+                url, headers=headers, stream=True, verify=Config().get_verify_certs()
             )
-            logger.error(f"Failed to download {filename}: {response.status_code}")
+            if response.status_code != 200:
+                ui.notify(
+                    f"Failed to download {filename}: {response.status_code}",
+                    type="negative",
+                )
+                logger.error(f"Failed to download {filename}: {response.status_code}")
+                return
+
+            temp_dir = Path("temp_download")
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            file_path = temp_dir / filename
+            with open(file_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            ui.download(str(file_path), filename=filename)
+            ui.notify(f"Downloading {filename}...")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            ui.notify(f"An error occurred: {e}", type="negative")
+            raise e
+
+    def queue_compilation(self):
+        """
+        Queue the compilation based on selected options.
+        """
+        if not self.selected_payload_type or not self.selected_payload_name:
+            ui.notify("Please select a valid payload.", type="warning")
+            return
+        if not self.selected_delivery_type or not self.selected_delivery_name:
+            ui.notify("Please select a valid delivery method.", type="warning")
             return
 
-        # Save the file temporarily
-        temp_dir = Path("temp_download")
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        file_path = temp_dir / filename
-        with open(file_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+        data = {
+            "payload_type": self.selected_payload_type,
+            "payload_name": self.selected_payload_name,
+            "delivery_type": self.selected_delivery_type,
+            "delivery_name": self.selected_delivery_name,
+            "binary_name": self.binary_name_input.value,
+            "ip": self.ip_input.value,
+            "port": self.port_input.value,
+            "shellcode": (
+                self.shellcode_input.value if self.shellcode_input.visible else None
+            ),
+        }
 
-        # Trigger download in NiceGUI to serve it to the client
-        ui.download(str(file_path), filename=filename)
-        ui.notify(f"Downloading {filename}...")
+        self.send_compilation_request(data)
 
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        ui.notify(f"An error occurred: {e}", type="negative")
-        raise e
+    def send_compilation_request(self, data):
+        """
+        Send a compilation request to the server.
+        """
+        try:
+            url = Config().get_url() / "binary-builder" / "build"
+            token = Config().get_token()
+            headers = {"Authorization": f"Bearer {token}"}
 
-
-# Queue compilation function
-def queue_compilation():
-
-    if selected_type == "agent":
-        queue_agent_compilation(
-            target=binary_select.value,
-            binary_name=binary_name_input.value,
-            ip=ip_input.value,
-            port=port_input.value,
-        )
-    elif selected_type == "dropper":
-        queue_dropper_compilation(
-            target=binary_select.value,
-            binary_name=binary_name_input.value,
-            ip=ip_input.value,
-            port=port_input.value,
-        )
-    elif selected_type == "custom":
-        queue_custom_compilation(
-            target=binary_select.value,
-            shellcode=shellcode_input.value,
-            binary_name=binary_name_input.value,
-        )
-    else:
-        ui.notify("Please select a valid binary type.")
-
-
-def queue_agent_compilation(target, binary_name, ip, port):
-    """
-    Function to queue compilation for an agent.
-    """
-    # Agent-specific endpoint
-    url = Config().get_url() / "binary-builder" / "build" / "agent"
-    # Your agent-specific logic here
-    return send_compilation_request(
-        url, {"target": target, "binary_name": binary_name, "ip": ip, "port": port}
-    )
-
-
-def queue_dropper_compilation(target, binary_name, ip, port):
-    """
-    Function to queue compilation for a dropper.
-    """
-    # Dropper-specific endpoint
-    url = Config().get_url() / "binary-builder" / "build" / "dropper"
-    # Your dropper-specific logic here
-    return send_compilation_request(
-        url, {"target": target, "binary_name": binary_name, "ip": ip, "port": port}
-    )
-
-
-def queue_custom_compilation(target, binary_name, shellcode):
-    """
-    Function to queue compilation for a dropper.
-    """
-    # Dropper-specific endpoint
-    url = Config().get_url() / "binary-builder" / "build" / "custom"
-    # Your dropper-specific logic here
-    return send_compilation_request(
-        url, {"target": target, "binary_name": binary_name, "shellcode": shellcode}
-    )
-
-
-def send_compilation_request(url, data):
-    """
-    Sends a compilation request to the server.
-    """
-    token = Config().get_token()
-    headers = {"Authorization": f"Bearer {token}"}
-
-    response = requests.post(
-        url, headers=headers, json=data, verify=Config().get_verify_certs()
-    )
-    if response.status_code == 200:
-        ui.notify("Successfully queued for compilation")
-        return True
-    else:
-        logger.warning(
-            f"Compilation request failed with status {response.status_code} for {url}"
-        )
-        return False
-
-
-# Adjust the `on_target_select` to store the type (e.g., 'agent', 'dropper', 'custom')
-selected_type = None
-
-
-def on_target_select(selected_name):
-    global selected_type  # Store the type of the selected target
-
-    # Access descriptions and language using dictionary key access
-    agent = targets.agents.get(selected_name)
-    dropper = targets.droppers.get(selected_name)
-    custom = targets.customs.get(selected_name)
-
-    # Set the selected type and show/hide input fields accordingly
-    if agent:
-        selected_type = "agent"
-        shellcode_input.visible = False
-    elif dropper:
-        selected_type = "dropper"
-        shellcode_input.visible = False
-    elif custom:
-        selected_type = "custom"
-        shellcode_input.visible = True
-    else:
-        selected_type = None
-
-    # Update UI elements with the selected target's information
-    description_header.set_content(f"### {selected_name.replace('_', '\\_')}")
-    description_text.set_content(
-        agent.get("description")
-        if agent
-        else (dropper.get("description") if dropper else custom.get("description"))
-    )
-    language_text.set_content(
-        f"Language: {agent.get('language') if agent else (dropper.get('language') if dropper else custom.get('language'))}"
-    )
-
-
-@ui.page("/binary-builder")
-def binary_builder_page():
-    try:
-        if not check_login():
-            return
-
-        create_header()  # Add the header to the page
-
-        # Make necessary elements global for update access
-        global targets, shellcode_input, description_text, description_header, language_text, ip_input, port_input, binary_name_input, binary_select
-
-        # Fetch binaries from the server
-        targets = get_targets()
-
-        # Main layout with two side-by-side cards
-        with ui.row().classes("w-full h-[93vh] flex"):
-            # Left card (85% width)
-            with ui.card().classes("flex-1 h-full flex flex-col"):
-                ui.markdown("# Binary Builder")
-
-                # Initialize description area
-                description_header = ui.markdown("### Select a binary")
-                description_text = ui.markdown(
-                    "Select a binary from the dropdown to proceed."
+            response = requests.post(
+                url, headers=headers, json=data, verify=Config().get_verify_certs()
+            )
+            if response.status_code == 200:
+                ui.notify("Successfully queued for compilation")
+            else:
+                logger.warning(
+                    f"Compilation request failed with status {response.status_code} for {url}"
                 )
-                language_text = ui.markdown(f"Language: ")
-
-                # Dropdown selection for selecting binary
-                binary_select = ui.select(
-                    list(
-                        {**targets.agents, **targets.customs, **targets.droppers}.keys()
-                    ),
-                    value=None,
-                    label="Select a binary",
-                    on_change=lambda e: on_target_select(e.value),
+                ui.notify(
+                    f"Failed to queue compilation: {response.status_code}",
+                    type="negative",
                 )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            ui.notify(f"An error occurred: {e}", type="negative")
+            raise e
 
-                # Input fields for additional binary configuration
-                with ui.row().classes("space-x-4"):
-                    ip_input = ui.input("IP Address", placeholder="Enter IP address")
-                    port_input = ui.input("Port", placeholder="Enter port")
-                    binary_name_input = ui.input(
-                        "Binary Name", placeholder="Enter binary name"
-                    )
+    def on_payload_select(self, selected_name):
+        self.selected_payload_name = selected_name
 
-                # Shellcode input (hidden by default, only visible for customs)
-                shellcode_input = (
-                    ui.textarea(
-                        label="Shellcode (base64 please)",
-                        placeholder="Enter shellcode here",
-                        on_change=lambda e: validate_shellcode(e.value),
-                    )
-                    .classes("w-full")
-                    .style(
-                        "max-height: 400px; overflow-y: auto;"
-                    )  # Set a max height and scrolling
-                    .props("clearable")
-                )
-                shellcode_input.visible = False  # Set initial visibility to False
+        for payload_type in ["agents", "customs"]:
+            payload_dict = self.payload_data.get(payload_type, {})
+            if selected_name in payload_dict:
+                self.selected_payload_type = payload_type
+                payload = payload_dict[selected_name]
+                break
+        else:
+            self.selected_payload_type = None
+            payload = None
 
-                # Queue compilation button
-                ui.button("Queue for compilation", on_click=queue_compilation)
+        if payload:
+            self.description_header.set_content(
+                f"### {selected_name.replace('_', '\\_')}"
+            )
+            self.description_text.set_content(payload.get("description", ""))
+            self.language_text.set_content(f"Language: {payload.get('language', '')}")
+            self.shellcode_input.visible = self.selected_payload_type == "customs"
+        else:
+            self.description_header.set_content("### Select a payload")
+            self.description_text.set_content(
+                "Select a payload from the dropdown to proceed."
+            )
+            self.language_text.set_content("")
+            self.shellcode_input.visible = False
 
-            # Right card (15% width) with rows for binary files
-            with ui.card().classes("w-[25%] h-full flex flex-col"):
-                ui.markdown("## Available Binaries")
+    def on_delivery_select(self, selected_name):
+        self.selected_delivery_name = selected_name
 
-                available_binaries = get_binaries()
+        for delivery_type in ["droppers", "loaders"]:
+            delivery_dict = self.delivery_data.get(delivery_type, {})
+            if selected_name in delivery_dict:
+                self.selected_delivery_type = delivery_type
+                delivery = delivery_dict[selected_name]
+                break
+        else:
+            self.selected_delivery_type = None
+            delivery = None
 
-                # Add rows with name and download button for each binary file
-                for (
-                    binary_name,
-                    binary_path,
-                ) in available_binaries.items():  # Iterate over key-value pairs
-                    with ui.row().classes("justify-between items-center w-full"):
-                        ui.label(binary_name)  # Display the binary name
+        if delivery:
+            self.delivery_description_header.set_content(
+                f"### {selected_name.replace('_', '\\_')}"
+            )
+            self.delivery_description_text.set_content(delivery.get("description", ""))
+            self.delivery_language_text.set_content(
+                f"Language: {delivery.get('language', '')}"
+            )
+        else:
+            self.delivery_description_header.set_content("### Select a delivery method")
+            self.delivery_description_text.set_content(
+                "Select a delivery method from the dropdown to proceed."
+            )
+            self.delivery_language_text.set_content("")
+
+    def validate_shellcode(self, b64_shellcode):
+        if not is_base64(b64_shellcode):
+            ui.notify("Shellcode is not valid base64!", type="warning")
+
+    def init_ui(self):
+        @ui.page("/binary-builder")
+        def binary_builder_page():
+            try:
+                if not check_login():
+                    return
+
+                create_header()
+
+                # DO NOT CALL until logged in, as the login function sets the url & stuff
+                self.get_data()
+
+                with ui.row().classes("w-full h-[93vh] flex"):
+                    with ui.card().classes("flex-1 h-full flex flex-col"):
+                        ui.markdown("# Binary Builder")
+
+                        self.description_header = ui.markdown("### Select a payload")
+                        self.description_text = ui.markdown(
+                            "Select a payload from the dropdown to proceed."
+                        )
+                        self.language_text = ui.markdown("Language: ...")
+
+                        payload_options = []
+                        for payload_type in ["agents", "customs"]:
+                            payload_dict = self.payload_data.get(payload_type, {})
+                            payload_options.extend(payload_dict.keys())
+
+                        self.payload_select = ui.select(
+                            payload_options,
+                            value=None,
+                            label="Select a payload",
+                            on_change=lambda e: self.on_payload_select(e.value),
+                        )
+
+                        self.delivery_description_header = ui.markdown(
+                            "### Select a delivery method"
+                        )
+                        self.delivery_description_text = ui.markdown(
+                            "Select a delivery method from the dropdown to proceed."
+                        )
+                        self.delivery_language_text = ui.markdown("Language: ...")
+
+                        delivery_options = []
+                        for delivery_type in ["droppers", "loaders"]:
+                            delivery_dict = self.delivery_data.get(delivery_type, {})
+                            delivery_options.extend(delivery_dict.keys())
+
+                        self.delivery_select = ui.select(
+                            delivery_options,
+                            value=None,
+                            label="Select a delivery method",
+                            on_change=lambda e: self.on_delivery_select(e.value),
+                        )
+
+                        with ui.row().classes("space-x-4"):
+                            self.ip_input = ui.input(
+                                "IP Address", placeholder="Enter IP address"
+                            )
+                            self.port_input = ui.input("Port", placeholder="Enter port")
+                            self.binary_name_input = ui.input(
+                                "Binary Name", placeholder="Enter binary name"
+                            )
+
+                        self.shellcode_input = (
+                            ui.textarea(
+                                label="Shellcode (base64)",
+                                placeholder="Enter shellcode here",
+                                on_change=lambda e: self.validate_shellcode(e.value),
+                            )
+                            .classes("w-full")
+                            .style("max-height: 400px; overflow-y: auto;")
+                            .props("clearable")
+                        )
+                        self.shellcode_input.visible = False
+
                         ui.button(
-                            "Download",
-                            on_click=lambda path=binary_path: download_binary(
-                                binary_name
-                            ),
-                        ).classes("ml-2")
+                            "Queue for compilation", on_click=self.queue_compilation
+                        )
 
-    except Exception as e:
-        logger.error(e)
-        raise e
+                    with ui.card().classes("w-[25%] h-full flex flex-col"):
+                        ui.markdown("## Available Binaries")
+
+                        for binary_name, _ in self.binaries.items():
+                            with ui.row().classes(
+                                "justify-between items-center w-full"
+                            ):
+                                ui.label(binary_name)
+                                ui.button(
+                                    "Download",
+                                    on_click=lambda name=binary_name: self.download_binary(
+                                        name
+                                    ),
+                                ).classes("ml-2")
+            except Exception as e:
+                logger.error(e)
+                ui.notify(f"An error occurred: {e}", type="negative")
 
 
-def validate_shellcode(b64_shellcode):
-    if not is_base64(b64_shellcode):
-        ui.notify("Shellcode is seemingly not base64!", type="warning")
+# Instantiate the page
+binary_builder_page = BinaryBuilderPage()
