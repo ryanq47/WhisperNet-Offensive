@@ -81,9 +81,6 @@ class DockerBuilder:
                 rm=True,
             )
 
-            # logger.debug(f"Buld Logs: {i for i in build_logs}")
-            for i in build_logs:
-                logger.debug(i)
             return image
 
         except (APIError, ValueError, Exception) as e:

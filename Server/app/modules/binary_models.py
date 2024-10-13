@@ -166,13 +166,14 @@ class Custom:
                 shellcode=self.payload,
             )
 
-            loader.construct()
+            temp_source_code_path = loader.construct()
 
             logger.debug("ADD IN OPTIONS FOR DOCKER CONTAINER HERE NOW")
 
             # build_args = {"BINARY_NAME": "URMOM.exe"}
             build_args = {
                 "BINARY_NAME": self.binary_name,
+                "SOURCE_CODE_PATH": str(temp_source_code_path),
                 # source_code: source_code_path_from_construct
             }
 

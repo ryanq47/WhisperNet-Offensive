@@ -1,7 +1,8 @@
 # file name: buildenv_target_arch
 
 #docker build --build-arg BINARY_NAME=my_custom_binary -t my-image .
-ARG BINARY_NAME=default_name
+ARG BINARY_NAME
+ARG SOURCE_CODE_PATH
 
 # Start from a minimal Debian image
 FROM debian:buster-slim
@@ -10,6 +11,7 @@ FROM debian:buster-slim
 # As such, we need to redeclare this arg. F#CKING kill me cuz this took way too long to figure out
 # https://stackoverflow.com/questions/44438637/arg-substitution-in-run-command-not-working-for-dockerfile
 ARG BINARY_NAME
+ARG SOURCE_CODE_PATH
 
 # Install dependencies for cross-compilation and Rust
 RUN apt-get update && \
@@ -39,7 +41,13 @@ RUN rustup target add x86_64-pc-windows-gnu
 WORKDIR /usr/src/myapp
 
 # Copy your source code to the container
-COPY ./agents/windows/dropper .
+#COPY ./agents/windows/dropper .
+COPY /${SOURCE_CODE_PATH} .
+
+RUN ls -lsa .
+
+# copt some_var_where_combined_code_is
+# copy ./agents/temp/1234 .
 
 # Build the Rust application for Windows
 RUN cargo build --release --target x86_64-pc-windows-gnu

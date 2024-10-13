@@ -188,3 +188,5 @@ Server/app/ftp/test.txt
 *server_venv*
 *webint_venv*
 *exe*
+
+*build_tmp*

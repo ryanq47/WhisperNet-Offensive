@@ -28,25 +28,31 @@ class Loader:
     def construct(self):
         try:
             # Create a unique temp directory
-            tmp_dir = Path("/tmp") / str(uuid.uuid4())
-            tmp_dir.mkdir(parents=True, exist_ok=True)
+            # will need to clean this up every so often.
+            build_context_tmp_dir = Path("_docker/build_tmp") / str(uuid.uuid4())
+            build_context_tmp_dir.mkdir(parents=True, exist_ok=True)
 
-            logger.debug(f"Loader being constructed in {str(tmp_dir)}")
+            logger.debug(f"Loader being constructed in {str(build_context_tmp_dir)}")
 
             # Copy the source code to the temp directory
-            logger.debug(f"Copying {self.loader_source_code_path} to {tmp_dir}")
+            logger.debug(
+                f"Copying {self.loader_source_code_path} to {build_context_tmp_dir}"
+            )
             # Copy the entire contents of the source directory to the temp directory
+            # Copy the entire contents of the source directory to the build context temp directory
             try:
                 shutil.copytree(
-                    self.loader_source_code_path, tmp_dir, dirs_exist_ok=True
+                    self.loader_source_code_path,
+                    build_context_tmp_dir,
+                    dirs_exist_ok=True,
                 )
-                logger.debug(
-                    f"Copied contents of {self.loader_source_code_path} to {tmp_dir}"
+                print(
+                    f"Copied contents of {self.loader_source_code_path} to {build_context_tmp_dir}"
                 )
             except Exception as e:
                 print(f"Error copying files: {e}")
 
-            main_rs_file = tmp_dir / "src" / "main.rs"
+            main_rs_file = build_context_tmp_dir / "src" / "main.rs"
 
             logger.debug(f"Looking for main.rs at {str(main_rs_file)}")
 
@@ -65,7 +71,7 @@ class Loader:
                 file.write(processed_code)
 
             # Return the path of the modified file
-            return tmp_dir
+            return build_context_tmp_dir
         except Exception as e:
             logger.error(e)
             raise e
