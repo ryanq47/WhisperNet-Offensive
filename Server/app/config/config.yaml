@@ -98,7 +98,8 @@ server:
 
       name_of_deliv_02: 
         type: !!str "dropper"
-        buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+        #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+        source_code: str!! "agents/windows/."
         description: "An x86 windows dropper"
         language: !!str "rust"
 

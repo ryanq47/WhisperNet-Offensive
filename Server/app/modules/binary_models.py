@@ -10,8 +10,8 @@ logger = log(__name__)
 
 
 class Agent:
-    def __init__(self, build_target, server_address, server_port, binary_name):
-        self.build_target = build_target
+    def __init__(self, payload_name, server_address, server_port, binary_name):
+        self.payload_name = payload_name
         self.server_address = server_address
         self.server_port = server_port
         self.binary_name = binary_name
@@ -21,7 +21,7 @@ class Agent:
 
         # get values based on target/config
         # self.build_options = Config().config.server.binaries.agents.x86_windows_agent
-        self.build_options = Config().config.server.binaries.agents.get(build_target)
+        self.build_options = Config().config.server.binaries.agents.get(payload_name)
 
         logger.debug(f"Compiled output directory: {self.output_dir}")
         logger.debug(f"Docker build Context: {self.build_context}")
@@ -29,7 +29,7 @@ class Agent:
 
     def build(self):
         try:
-            logger.info(f"Building {self.build_target}")
+            logger.info(f"Building {self.payload_name}")
             # debug print items
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
@@ -47,7 +47,7 @@ class Agent:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
-                image_tag=self.build_target,
+                image_tag=self.payload_name,
             )
 
             docker_instance.execute()
@@ -66,13 +66,13 @@ class Agent:
 """class Dropper:
     def __init__(
         self,
-        build_target,
+        payload_name,
         server_address,
         server_port,
         binary_name,
         server_payload_enpoint,
     ):
-        self.build_target = build_target
+        self.payload_name = payload_name
         self.server_address = server_address
         self.server_port = server_port
         self.binary_name = binary_name
@@ -83,7 +83,7 @@ class Agent:
 
         # get values based on target/config
         # self.build_options = Config().config.server.binaries.agents.x86_windows_agent
-        self.build_options = Config().config.server.binaries.agents.get(build_target)
+        self.build_options = Config().config.server.binaries.agents.get(payload_name)
 
         logger.debug(f"Compiled output directory: {self.output_dir}")
         logger.debug(f"Docker build Context: {self.build_context}")
@@ -91,7 +91,7 @@ class Agent:
 
     def build(self):
         try:
-            logger.info(f"Building {self.build_target}")
+            logger.info(f"Building {self.payload_name}")
             # debug print items
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
@@ -110,7 +110,7 @@ class Agent:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
-                image_tag=self.build_target,
+                image_tag=self.payload_name,
             )
 
             docker_instance.execute()
@@ -127,31 +127,33 @@ class Agent:
 
 
 class Custom:
-    def __init__(self, build_target, binary_name, payload, delivery):
-        self.build_target = build_target
+    def __init__(self, payload_name, binary_name, payload, delivery_name):
+        self.payload_name = payload_name
         self.binary_name = binary_name
         self.payload = payload
-        self.delivery = delivery  # name of delivery method
+        self.delivery_name = delivery_name  # name of delivery_name method
         # get rid of absolute.
         self.output_dir = str((Config().root_project_path / "data" / "compiled"))
         self.build_context = str(Config().root_project_path)
 
         # get values based on target/config
         # self.build_options = Config().config.server.binaries.agents.x86_windows_agent
-        self.build_options = Config().config.server.binaries.customs.get(build_target)
-        self.delivery_options = Config().config.server.binaries.delivery.get(delivery)
+        self.build_options = Config().config.server.binaries.customs.get(payload_name)
+        self.delivery_options = Config().config.server.binaries.delivery.get(
+            delivery_name
+        )
 
-        logger.debug(f"Build Target: {self.build_target}")
+        logger.debug(f"Build Target: {self.payload_name}")
         logger.debug(f"Binary Name: {self.binary_name}")
         logger.debug(f"Payload: {self.payload}")
-        logger.debug(f"Delivery method: {self.delivery}")
+        logger.debug(f"Delivery method: {self.delivery_name}")
         logger.debug(f"Compiled output directory: {self.output_dir}")
         logger.debug(f"Docker build Context: {self.build_context}")
         logger.debug(f"Dockerfile selected to be built: {self.build_options.buildfile}")
 
     def build(self):
         try:
-            logger.info(f"Building {self.build_target}")
+            logger.info(f"Building {self.payload_name}")
             # debug print items
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
@@ -166,6 +168,8 @@ class Custom:
 
             loader.construct()
 
+            logger.debug("ADD IN OPTIONS FOR DOCKER CONTAINER HERE NOW")
+
             # build_args = {"BINARY_NAME": "URMOM.exe"}
             build_args = {
                 "BINARY_NAME": self.binary_name,
@@ -178,7 +182,7 @@ class Custom:
                 output_dir=self.output_dir,
                 build_context=self.build_context,
                 build_args=build_args,
-                image_tag=self.build_target,
+                image_tag=self.payload_name,
             )
 
             docker_instance.execute()

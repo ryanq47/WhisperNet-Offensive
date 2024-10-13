@@ -68,13 +68,13 @@ def build_binary():
         # Handle the build process
         if "agent" in payload_type:
             # Build agent
-            target = payload_type
+            payload_name = dict_data["payload_name"]
             ip = dict_data["ip"]
             port = dict_data["port"]
             binary_name = dict_data["binary_name"]
 
             agent_builder = Agent(
-                build_target=target,
+                payload_name=payload_name,
                 server_address=ip,
                 server_port=port,
                 binary_name=binary_name,
@@ -86,16 +86,16 @@ def build_binary():
 
         elif "custom" in payload_type:
             # Build custom
-            target = payload_type
+            payload_name = dict_data["payload_name"]
             shellcode = dict_data["shellcode"]
             binary_name = dict_data["binary_name"]
-            delivery_method = dict_data["delivery_method"]
+            delivery_name = dict_data["delivery_name"]
 
             custom_builder = Custom(
-                build_target=target,
+                payload_name=payload_name,
                 binary_name=binary_name,
                 payload=shellcode,
-                delivery=delivery_method,
+                delivery_name=delivery_name,
             )
             custom_builder.build()
             return api_response(

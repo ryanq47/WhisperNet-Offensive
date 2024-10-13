@@ -17,7 +17,7 @@ class BinaryBuilderPage:
         self.binaries = {}
         self.selected_payload_type = None
         self.selected_payload_name = None
-        self.selected_delivery_type = None
+        self.selected_delivery_method = None
         self.selected_delivery_name = None
         self.payload_data = {}
         self.delivery_data = {}
@@ -128,14 +128,14 @@ class BinaryBuilderPage:
         if not self.selected_payload_type or not self.selected_payload_name:
             ui.notify("Please select a valid payload.", type="warning")
             return
-        if not self.selected_delivery_type or not self.selected_delivery_name:
+        if not self.selected_delivery_method or not self.selected_delivery_name:
             ui.notify("Please select a valid delivery method.", type="warning")
             return
 
         data = {
             "payload_type": self.selected_payload_type,
             "payload_name": self.selected_payload_name,
-            "delivery_type": self.selected_delivery_type,
+            "delivery_method": self.selected_delivery_method,
             "delivery_name": self.selected_delivery_name,
             "binary_name": self.binary_name_input.value,
             "ip": self.ip_input.value,
@@ -207,14 +207,14 @@ class BinaryBuilderPage:
     def on_delivery_select(self, selected_name):
         self.selected_delivery_name = selected_name
 
-        for delivery_type in ["droppers", "loaders"]:
-            delivery_dict = self.delivery_data.get(delivery_type, {})
+        for delivery_method in ["droppers", "loaders"]:
+            delivery_dict = self.delivery_data.get(delivery_method, {})
             if selected_name in delivery_dict:
-                self.selected_delivery_type = delivery_type
+                self.selected_delivery_method = delivery_method
                 delivery = delivery_dict[selected_name]
                 break
         else:
-            self.selected_delivery_type = None
+            self.selected_delivery_method = None
             delivery = None
 
         if delivery:
@@ -279,8 +279,8 @@ class BinaryBuilderPage:
                         self.delivery_language_text = ui.markdown("Language: ...")
 
                         delivery_options = []
-                        for delivery_type in ["droppers", "loaders"]:
-                            delivery_dict = self.delivery_data.get(delivery_type, {})
+                        for delivery_method in ["droppers", "loaders"]:
+                            delivery_dict = self.delivery_data.get(delivery_method, {})
                             delivery_options.extend(delivery_dict.keys())
 
                         self.delivery_select = ui.select(
