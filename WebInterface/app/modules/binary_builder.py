@@ -260,12 +260,12 @@ class BinaryBuilderPage:
                     one = ui.tab("Options")
                     two = ui.tab("Advanced Options")
 
-                with ui.row().classes("w-full h-[93vh] flex"):
+                with ui.row().classes("w-full h-[85vh] flex"):
                     with ui.card().classes("flex-1 h-full flex flex-col"):
-                        ui.markdown("# Binary Builder")
+                        ui.markdown("## Binary Builder")
                         ui.separator()
 
-                        with ui.tab_panels(tabs, value=two).classes("w-full"):
+                        with ui.tab_panels(tabs, value=one).classes("w-full"):
                             with ui.tab_panel(one):
                                 ## Binary Type
                                 with ui.row().classes("w-full"):
@@ -327,12 +327,14 @@ class BinaryBuilderPage:
                                 self.shellcode_input.visible = False
 
                             with ui.tab_panel(two):
+                                ui.markdown("## Loader/Dropper options")
 
                                 ## Advanced Options
                                 with ui.row().classes("w-full"):
 
                                     # put the dropdown on the right
                                     # ui.space()
+
                                     self.delivery_description_header = ui.markdown(
                                         "### Select a delivery method"
                                     )
@@ -346,6 +348,7 @@ class BinaryBuilderPage:
                                         )
                                         delivery_options.extend(delivery_dict.keys())
 
+                                    # Give this a default option
                                     self.delivery_select = ui.select(
                                         delivery_options,
                                         with_input=True,
@@ -366,10 +369,12 @@ class BinaryBuilderPage:
                                 ui.separator()
 
                                 ## Placeholder chekcbox
+                                ui.markdown("## Additional Options")
+
                                 checkbox_01 = ui.checkbox("Add in random bullshit")
                                 checkbox_02 = ui.checkbox("Some Option")
-                                checkbox_03 = ui.checkbox("Some Option")
-                                checkbox_04 = ui.checkbox("Some Option")
+                                # checkbox_03 = ui.checkbox("Some Option")
+                                # checkbox_04 = ui.checkbox("Some Option")
 
                                 ui.button(
                                     "Queue for compilation",
@@ -377,19 +382,20 @@ class BinaryBuilderPage:
                                 )
 
                     with ui.card().classes("w-[25%] h-full flex flex-col"):
-                        ui.markdown("## Available Binaries")
+                        with ui.scroll_area().classes("h-full"):
+                            ui.markdown("## Available Binaries")
 
-                        for binary_name, _ in self.binaries.items():
-                            with ui.row().classes(
-                                "justify-between items-center w-full"
-                            ):
-                                ui.label(binary_name)
-                                ui.button(
-                                    "Download",
-                                    on_click=lambda name=binary_name: self.download_binary(
-                                        name
-                                    ),
-                                ).classes("ml-2")
+                            for binary_name, _ in self.binaries.items():
+                                with ui.row().classes(
+                                    "justify-between items-center w-full"
+                                ):
+                                    ui.label(binary_name)
+                                    ui.button(
+                                        "Download",
+                                        on_click=lambda name=binary_name: self.download_binary(
+                                            name
+                                        ),
+                                    ).classes("ml-2")
             except Exception as e:
                 logger.error(e)
                 ui.notify(f"An error occurred: {e}", type="negative")
