@@ -195,7 +195,10 @@ class BinaryBuilderPage:
             )
             self.description_text.set_content(payload.get("description", ""))
             self.language_text.set_content(f"Language: {payload.get('language', '')}")
-            self.shellcode_input.visible = self.selected_payload_type == "customs"
+            if self.selected_payload_type == "customs":
+                self.shellcode_input.visible = True
+                self.ip_input.visible = False
+                self.port_input.visible = False
         else:
             self.description_header.set_content("### Select a payload")
             self.description_text.set_content(
