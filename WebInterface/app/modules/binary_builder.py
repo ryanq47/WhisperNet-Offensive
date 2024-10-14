@@ -248,72 +248,115 @@ class BinaryBuilderPage:
                 # DO NOT CALL until logged in, as the login function sets the url & stuff
                 self.get_data()
 
+                with ui.tabs().classes("w-full") as tabs:
+                    one = ui.tab("Binary ...")
+                    two = ui.tab("Advanced Options")
+
                 with ui.row().classes("w-full h-[93vh] flex"):
                     with ui.card().classes("flex-1 h-full flex flex-col"):
                         ui.markdown("# Binary Builder")
+                        ui.separator()
 
-                        self.description_header = ui.markdown("### Select a payload")
-                        self.description_text = ui.markdown(
-                            "Select a payload from the dropdown to proceed."
-                        )
-                        self.language_text = ui.markdown("Language: ...")
+                        with ui.tab_panels(tabs, value=two).classes("w-full"):
+                            with ui.tab_panel(one):
+                                ## Binary Type
+                                with ui.row().classes("w-full"):
+                                    self.description_header = ui.markdown(
+                                        "### Select a binary type"
+                                    )
+                                    # put the dropdown on the right
+                                    ui.space()
+                                    payload_options = []
+                                    for payload_type in ["agents", "customs"]:
+                                        payload_dict = self.payload_data.get(
+                                            payload_type, {}
+                                        )
+                                        payload_options.extend(payload_dict.keys())
 
-                        payload_options = []
-                        for payload_type in ["agents", "customs"]:
-                            payload_dict = self.payload_data.get(payload_type, {})
-                            payload_options.extend(payload_dict.keys())
+                                    self.payload_select = ui.select(
+                                        payload_options,
+                                        with_input=True,
+                                        value=None,
+                                        label="Select a binary type",
+                                        on_change=lambda e: self.on_payload_select(
+                                            e.value
+                                        ),
+                                    )
 
-                        self.payload_select = ui.select(
-                            payload_options,
-                            value=None,
-                            label="Select a payload",
-                            on_change=lambda e: self.on_payload_select(e.value),
-                        )
+                                ui.markdown("#### Info N Stuff: ")
+                                self.description_text = ui.markdown(
+                                    "Select a binary type from the dropdown to proceed."
+                                )
 
-                        self.delivery_description_header = ui.markdown(
-                            "### Select a delivery method"
-                        )
-                        self.delivery_description_text = ui.markdown(
-                            "Select a delivery method from the dropdown to proceed."
-                        )
-                        self.delivery_language_text = ui.markdown("Language: ...")
+                                self.language_text = ui.markdown("Language: ...")
 
-                        delivery_options = []
-                        for delivery_method in ["droppers", "loaders"]:
-                            delivery_dict = self.delivery_data.get(delivery_method, {})
-                            delivery_options.extend(delivery_dict.keys())
+                                ui.separator()
 
-                        self.delivery_select = ui.select(
-                            delivery_options,
-                            value=None,
-                            label="Select a delivery method",
-                            on_change=lambda e: self.on_delivery_select(e.value),
-                        )
+                                ui.markdown("### Add in required options:")
+                                with ui.row().classes("space-x-4"):
+                                    self.ip_input = ui.input(
+                                        "IP Address", placeholder="Enter IP address"
+                                    )
+                                    self.port_input = ui.input(
+                                        "Port", placeholder="Enter port"
+                                    )
+                                    self.binary_name_input = ui.input(
+                                        "Binary Name", placeholder="Enter binary name"
+                                    )
 
-                        with ui.row().classes("space-x-4"):
-                            self.ip_input = ui.input(
-                                "IP Address", placeholder="Enter IP address"
-                            )
-                            self.port_input = ui.input("Port", placeholder="Enter port")
-                            self.binary_name_input = ui.input(
-                                "Binary Name", placeholder="Enter binary name"
-                            )
+                                self.shellcode_input = (
+                                    ui.textarea(
+                                        label="Shellcode (Hex)",
+                                        placeholder="0x00, 0x01, etc",
+                                        on_change=lambda e: self.validate_shellcode(
+                                            e.value
+                                        ),
+                                    )
+                                    .classes("w-full")
+                                    .style("max-height: 400px; overflow-y: auto;")
+                                    .props("clearable")
+                                )
+                                self.shellcode_input.visible = False
 
-                        self.shellcode_input = (
-                            ui.textarea(
-                                label="Shellcode (Hex)",
-                                placeholder="0x00, 0x01, etc",
-                                on_change=lambda e: self.validate_shellcode(e.value),
-                            )
-                            .classes("w-full")
-                            .style("max-height: 400px; overflow-y: auto;")
-                            .props("clearable")
-                        )
-                        self.shellcode_input.visible = False
+                            with ui.tab_panel(two):
 
-                        ui.button(
-                            "Queue for compilation", on_click=self.queue_compilation
-                        )
+                                ## Advanced Options
+                                with ui.row().classes("w-full"):
+
+                                    # put the dropdown on the right
+                                    # ui.space()
+
+                                    delivery_options = []
+                                    for delivery_method in ["droppers", "loaders"]:
+                                        delivery_dict = self.delivery_data.get(
+                                            delivery_method, {}
+                                        )
+                                        delivery_options.extend(delivery_dict.keys())
+
+                                    self.delivery_select = ui.select(
+                                        delivery_options,
+                                        value=None,
+                                        label="Select a delivery method",
+                                        on_change=lambda e: self.on_delivery_select(
+                                            e.value
+                                        ),
+                                    )
+
+                                ui.separator()
+                                self.delivery_description_header = ui.markdown(
+                                    "### Select a delivery method"
+                                )
+                                self.delivery_description_text = ui.markdown(
+                                    "Select a delivery method from the dropdown to proceed."
+                                )
+                                self.delivery_language_text = ui.markdown(
+                                    "Language: ..."
+                                )
+
+                                ui.button(
+                                    "Queue for compilation",
+                                    on_click=self.queue_compilation,
+                                )
 
                     with ui.card().classes("w-[25%] h-full flex flex-col"):
                         ui.markdown("## Available Binaries")

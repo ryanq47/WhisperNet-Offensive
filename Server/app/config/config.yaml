@@ -76,32 +76,32 @@ server:
         description: !!str "An x86 windows agent"
         language: !!str "rust"
 
-    droppers:
-      x64_windows_dropper: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
-        description: !!str "An x64 windows dropper"
-        language: !!str "rust"
+    # droppers:
+    #   x64_windows_dropper: 
+    #     buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
+    #     description: !!str "An x64 windows dropper"
+    #     language: !!str "rust"
 
-      x86_windows_dropper: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
-        description: "An x86 windows dropper"
-        language: !!str "rust"
+    #   x86_windows_dropper: 
+    #     buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+    #     description: "An x86 windows dropper"
+    #     language: !!str "rust"
 
     delivery:
       # loader/droppers can go here. basically the same thing
-      name_of_deliv_01: 
+      local_shellcode_execution: 
         #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
         type: !!str "loader"
-        description: !!str "An x64 windows dropper"
+        description: !!str "Loads shellcode into memory in the current process, executes it"
         language: !!str "rust"
-        source_code: !!str "agents/windows/loaders/test_01"
+        source_code: !!str "agents/windows/loaders/local_shellcode_execution"
 
-      name_of_deliv_02: 
-        type: !!str "dropper"
-        #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
-        source_code: str!! "agents/windows/."
-        description: "An x86 windows dropper"
-        language: !!str "rust"
+      # name_of_deliv_02: 
+      #   type: !!str "dropper" # or "loader"
+      #   #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+      #   source_code: str!! "agents/windows/."
+      #   description: "An x86 windows dropper"
+      #   language: !!str "rust"
 
     customs:
       x64_windows_custom: 
