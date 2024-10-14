@@ -199,6 +199,11 @@ class BinaryBuilderPage:
                 self.shellcode_input.visible = True
                 self.ip_input.visible = False
                 self.port_input.visible = False
+
+            elif self.selected_payload_type == "agents":
+                self.shellcode_input.visible = False
+                self.ip_input.visible = True
+                self.port_input.visible = True
         else:
             self.description_header.set_content("### Select a payload")
             self.description_text.set_content(
@@ -252,7 +257,7 @@ class BinaryBuilderPage:
                 self.get_data()
 
                 with ui.tabs().classes("w-full") as tabs:
-                    one = ui.tab("Binary ...")
+                    one = ui.tab("Options")
                     two = ui.tab("Advanced Options")
 
                 with ui.row().classes("w-full h-[93vh] flex"):
@@ -295,7 +300,7 @@ class BinaryBuilderPage:
 
                                 ui.separator()
 
-                                ui.markdown("### Add in required options:")
+                                ui.markdown("### Required options:")
                                 with ui.row().classes("space-x-4"):
                                     self.ip_input = ui.input(
                                         "IP Address", placeholder="Enter IP address"
@@ -328,6 +333,11 @@ class BinaryBuilderPage:
 
                                     # put the dropdown on the right
                                     # ui.space()
+                                    self.delivery_description_header = ui.markdown(
+                                        "### Select a delivery method"
+                                    )
+
+                                    ui.space()
 
                                     delivery_options = []
                                     for delivery_method in ["droppers", "loaders"]:
@@ -338,6 +348,7 @@ class BinaryBuilderPage:
 
                                     self.delivery_select = ui.select(
                                         delivery_options,
+                                        with_input=True,
                                         value=None,
                                         label="Select a delivery method",
                                         on_change=lambda e: self.on_delivery_select(
@@ -345,16 +356,20 @@ class BinaryBuilderPage:
                                         ),
                                     )
 
-                                ui.separator()
-                                self.delivery_description_header = ui.markdown(
-                                    "### Select a delivery method"
-                                )
                                 self.delivery_description_text = ui.markdown(
                                     "Select a delivery method from the dropdown to proceed."
                                 )
                                 self.delivery_language_text = ui.markdown(
                                     "Language: ..."
                                 )
+
+                                ui.separator()
+
+                                ## Placeholder chekcbox
+                                checkbox_01 = ui.checkbox("Add in random bullshit")
+                                checkbox_02 = ui.checkbox("Some Option")
+                                checkbox_03 = ui.checkbox("Some Option")
+                                checkbox_04 = ui.checkbox("Some Option")
 
                                 ui.button(
                                     "Queue for compilation",
