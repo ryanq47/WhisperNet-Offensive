@@ -1,4 +1,6 @@
 # Holds class def's for binaries. May need to rename from `binary_models` if that name is no longer appropriate
+import threading
+
 from modules.binary_constructor import Loader
 from modules.config import Config
 from modules.docker_builder import DockerBuilder
@@ -50,7 +52,11 @@ class Agent:
                 image_tag=self.payload_name,
             )
 
-            docker_instance.execute()
+            logger.debug("Starting thread for docker build")
+            docker_build_thread = threading.Thread(target=docker_instance.execute)
+            docker_build_thread.start()
+
+            # docker_instance.execute()
             return True
 
         except ValueError as ve:
@@ -186,7 +192,9 @@ class Custom:
                 image_tag=self.payload_name,
             )
 
-            docker_instance.execute()
+            logger.debug("Starting thread for docker build")
+            docker_build_thread = threading.Thread(target=docker_instance.execute)
+            docker_build_thread.start()
             return True
 
         except ValueError as ve:
