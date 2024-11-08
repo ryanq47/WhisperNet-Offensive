@@ -36,19 +36,19 @@ class Agent:
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
 
-            # build_args = {"BINARY_NAME": "URMOM.exe"}
-            build_args = {
-                "BINARY_NAME": self.binary_name,
-                "SERVER_ADDRESS": self.server_address,
-                "SERVER_PORT": self.server_port,
-            }
+            # # build_args = {"BINARY_NAME": "URMOM.exe"}
+            # build_args = {
+            #     "BINARY_NAME": self.binary_name,
+            #     "SERVER_ADDRESS": self.server_address,
+            #     "SERVER_PORT": self.server_port,
+            # }
 
             # build the binary
             docker_instance = DockerBuilder(
                 dockerfile_path=self.build_options.buildfile,
                 output_dir=self.output_dir,
                 build_context=self.build_context,
-                build_args=build_args,
+                # build_args=build_args,
                 image_tag=self.payload_name,
             )
 
@@ -176,19 +176,20 @@ class Custom:
 
             logger.debug("ADD IN OPTIONS FOR DOCKER CONTAINER HERE NOW")
 
-            # build_args = {"BINARY_NAME": "URMOM.exe"}
-            build_args = {
-                "BINARY_NAME": self.binary_name,
-                "SOURCE_CODE_PATH": str(temp_source_code_path),
-                # source_code: source_code_path_from_construct
-            }
+            # turn me into env args
+            # # build_args = {"BINARY_NAME": "URMOM.exe"}
+            # build_args = {
+            #     "BINARY_NAME": self.binary_name,
+            #     "SOURCE_CODE_PATH": str(temp_source_code_path),
+            #     # source_code: source_code_path_from_construct
+            # }
 
             # build the binary
             docker_instance = DockerBuilder(
                 dockerfile_path=self.build_options.buildfile,
                 output_dir=self.output_dir,
                 build_context=self.build_context,
-                build_args=build_args,
+                # build_args=build_args,
                 image_tag=self.payload_name,
             )
 

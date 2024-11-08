@@ -64,14 +64,14 @@ server:
   binaries:
     agents:
       x64_windows_agent: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_x86.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: str!! "agents/windows/."
         description: !!str "An x64 windows agent"
         language: !!str "rust"
         #source_code: !!str
 
       x86_windows_agent: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_x86.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: str!! "agents/windows/."
         description: !!str "An x86 windows agent"
         language: !!str "rust"
@@ -105,13 +105,13 @@ server:
 
     customs:
       x64_windows_custom: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_x64.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
         source_code: str!! "agents/windows/."
         description: !!str "An x64 windows dropper"
         language: !!str "rust"
 
       x86_windows_custom: 
-        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_x86.dockerfile"
+        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
         source_code: str!! "agents/windows/."
         description: "An x86 windows dropper"
         language: !!str "rust"

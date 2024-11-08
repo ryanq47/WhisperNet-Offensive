@@ -15,6 +15,7 @@ done
 
 echo "Found .toml file(s) in $WATCH_DIR. Proceeding with setup..."
 
+ls -lsa $WATCHDIR
 ## Done in dockerfile
 # Install both Windows targets for Rust (x86 and x64)
 # rustup target add i686-pc-windows-gnu x86_64-pc-windows-gnu
@@ -32,12 +33,14 @@ fi
 echo "Building for platform: $PLATFORM with target: $TARGET"
 
 # Run the build command for the specified platform
-#cargo build --release --target $TARGET
+cargo build --release --target $TARGET
 
 # Ensure the output directory exists
 mkdir -p /output
 
 # Copy the built binary to the output directory with the specified name
 cp target/$TARGET/release/*.exe /output/${BINARY_NAME}.exe
+
+ls -lsa /output
 
 echo "Build complete. Output located in /output/${BINARY_NAME}.exe"
