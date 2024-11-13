@@ -25,6 +25,9 @@ WORKDIR /usr/src/myapp
 # Copy the watch script into the container, which will wait for the code to be copied in before running
 COPY ./_docker/dockerfiles/watch_and_run.sh /usr/local/bin/watch_and_run.sh
 
+# create output dir
+RUN mkdir /output/
+
 # Make the script executable
 RUN chmod +x /usr/local/bin/watch_and_run.sh
 

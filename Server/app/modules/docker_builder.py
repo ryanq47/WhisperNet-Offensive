@@ -130,7 +130,9 @@ class DockerBuilder:
         try:
             # Ensure the output directory exists
             os.makedirs(self.output_dir, exist_ok=True)
-            logger.info("Copying compiled .exe files from container...")
+            logger.info(
+                f"Copying compiled .exe files from container into {self.output_dir}"
+            )
 
             # Get archive from the specified container directory
             tar_stream, _ = container.get_archive(src_path)
@@ -144,7 +146,11 @@ class DockerBuilder:
             # Extract only .exe files to the output directory
             with tarfile.open(tar_path) as tar:
                 for member in tar.getmembers():
+                    logger.debug(f"Found '{member.name}' in {self.output_dir}")
                     if member.name.endswith(".exe"):
+                        logger.debug(
+                            f"Copying out {member.name} from {self.output_dir}"
+                        )
                         # Rename the member to avoid directory structure
                         member.name = os.path.basename(member.name)
                         tar.extract(member, path=self.output_dir)
@@ -158,8 +164,7 @@ class DockerBuilder:
             logger.error(f"Error occurred while copying files from container: {e}")
             raise e
 
-    # use docker cp
-    # switch to class vars
+    # NOTE: files getting copied in successfully
     def copy_files_to_container(self, container):
         logger.info("Copying files into the container")
         target_dir = "/usr/src/myapp"
