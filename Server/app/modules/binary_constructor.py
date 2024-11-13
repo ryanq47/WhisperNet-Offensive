@@ -48,6 +48,7 @@ class Loader:
 
     def construct(self):
         try:
+            logger.warning("HACK IMPLEMENTED: ../ in filepath for agents. FIX")
             # Create a unique temp directory
             # will need to clean this up every so often.
             build_context_tmp_dir = Path("_docker/build_tmp") / str(uuid.uuid4())
@@ -56,6 +57,7 @@ class Loader:
             logger.debug(f"Loader being constructed in {str(build_context_tmp_dir)}")
 
             # Copy the source code to the temp directory
+            logger.debug(Path.cwd())
             logger.debug(
                 f"Copying {self.loader_source_code_path} to {build_context_tmp_dir}"
             )
@@ -67,7 +69,7 @@ class Loader:
                     build_context_tmp_dir,
                     dirs_exist_ok=True,
                 )
-                print(
+                logger.debug(
                     f"Copied contents of {self.loader_source_code_path} to {build_context_tmp_dir}"
                 )
             except Exception as e:

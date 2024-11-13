@@ -1,6 +1,8 @@
+import io
 import os
 import re
 import tarfile
+from pathlib import Path
 
 import docker
 from docker.errors import APIError, ImageNotFound, NotFound
@@ -31,6 +33,7 @@ class DockerBuilder:
         build_context: str,
         # build_args: dict,
         image_tag: str,
+        source_code_path: str,  # source code for executabel to build
     ):
         """
         Initializes the DockerBuilder class with paths and context.
@@ -47,6 +50,7 @@ class DockerBuilder:
         # self.build_args = build_args
         self.image_tag = image_tag
         self.container_name = None
+        self.source_code_path = source_code_path
 
     def build_image(self):
         """
@@ -156,34 +160,25 @@ class DockerBuilder:
 
     # use docker cp
     # switch to class vars
-    def copy_files_to_container(self, container, source_dir, target_dir):
-        # container = client.containers.get(container_name)
+    def copy_files_to_container(self, container):
+        logger.info("Copying files into the container")
+        target_dir = "/usr/src/myapp"
 
-        for root, dirs, files in os.walk(source_dir):
-            for directory in dirs:
-                # Create directories in the container
-                dir_path_in_container = os.path.join(
-                    target_dir,
-                    os.path.relpath(os.path.join(root, directory), source_dir),
-                )
-                container.exec_run(f'mkdir -p "{dir_path_in_container}"')
+        # Define source directory with Pathlib
+        source_dir = Path(self.source_code_path)
 
-            for file in files:
-                # Read file content
-                file_path = os.path.join(root, file)
-                with open(file_path, "rb") as f:
-                    file_data = f.read()
+        # Create a tarball in memory of the files to copy
+        tar_stream = io.BytesIO()
+        with tarfile.open(fileobj=tar_stream, mode="w") as tar:
+            for item in source_dir.rglob("*"):
+                arcname = item.relative_to(source_dir)  # Preserve relative paths
+                tar.add(item, arcname=str(arcname))
 
-                # Determine the target path inside the container
-                file_path_in_container = os.path.join(
-                    target_dir, os.path.relpath(file_path, source_dir)
-                )
+        tar_stream.seek(0)  # Reset stream position to the beginning
 
-                # Create the file in the container with the content
-                container.exec_run(f'touch "{file_path_in_container}"')
-                container.put_archive(
-                    os.path.dirname(file_path_in_container), file_data
-                )
+        # Upload the tarball to the container
+        container.put_archive(target_dir, tar_stream.getvalue())
+        logger.info("Files copied to container successfully")
 
     # probably fine as is
     def clean_up_container(self, container):
@@ -218,8 +213,9 @@ class DockerBuilder:
             self.copy_files_to_container(container)
             # get files OUT of it
             self.copy_files_from_container(container)
+            # prioblem - /output not being created. somethings off/script not wworking?
             # clean it up/del container
-            self.clean_up_container()
+            # self.clean_up_container(container)
 
         except Exception as e:
             logger.error(f"Execution failed: {e}")

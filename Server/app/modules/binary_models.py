@@ -28,6 +28,9 @@ class Agent:
         logger.debug(f"Compiled output directory: {self.output_dir}")
         logger.debug(f"Docker build Context: {self.build_context}")
         logger.debug(f"Dockerfile selected to be built: {self.build_options.buildfile}")
+        logger.debug(
+            f"Source code of binary to be built: {self.build_options.source_code}"
+        )
 
     def build(self):
         try:
@@ -50,6 +53,7 @@ class Agent:
                 build_context=self.build_context,
                 # build_args=build_args,
                 image_tag=self.payload_name,
+                source_code_path=self.build_options.source_code,
             )
 
             logger.debug("Starting thread for docker build")
@@ -167,11 +171,11 @@ class Custom:
             ## Construct src code
             # whatever = Loader().construct(args...)
 
+            logger.info("Constructing loader")
             loader = Loader(
                 loader_source_code_path=self.delivery_options.source_code,
                 shellcode=self.payload,
             )
-
             temp_source_code_path = loader.construct()
 
             logger.debug("ADD IN OPTIONS FOR DOCKER CONTAINER HERE NOW")
@@ -191,6 +195,7 @@ class Custom:
                 build_context=self.build_context,
                 # build_args=build_args,
                 image_tag=self.payload_name,
+                source_code_path=temp_source_code_path,
             )
 
             logger.debug("Starting thread for docker build")
