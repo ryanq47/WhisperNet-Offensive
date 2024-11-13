@@ -3,12 +3,18 @@ import os
 import re
 import tarfile
 from pathlib import Path
+from time import sleep
 
 import docker
 from docker.errors import APIError, ImageNotFound, NotFound
 from modules.log import log
 
 logger = log(__name__)
+
+## TODO NOW!
+
+# Pathify paths
+# cleanup + log + notes/doc
 
 
 def is_valid_binary_name(name: str) -> bool:
@@ -47,7 +53,6 @@ class DockerBuilder:
         self.output_dir = output_dir
         self.build_context = build_context
         self.client = docker.from_env()
-        # self.build_args = build_args
         self.image_tag = image_tag
         self.container_name = None
         self.source_code_path = source_code_path
@@ -118,86 +123,45 @@ class DockerBuilder:
             logger.error(f"Error occurred while creating container: {e}")
             raise e
 
-    # fine as is
-    def copy_files_from_container(self, container, src_path: str = "/output/"):
+    def run_container(self):
         """
-        Copies any .exe files from the container to the output directory.
-
-        Args:
-            container (Container): Docker container to copy files from.
-            src_path (str): Path in the container to copy files from.
+        Runs the container with specific environment variables and volume bindings.
         """
         try:
-            # Ensure the output directory exists
-            os.makedirs(self.output_dir, exist_ok=True)
-            logger.info(
-                f"Copying compiled .exe files from container into {self.output_dir}"
+            logger.info("Running the Docker container with specified arguments")
+
+            # # Define environment variables
+            # env_vars = {
+            #     "BINARY_NAME": "custom_binary_name",
+            #     "WATCH_DIR": "/usr/src/myapp",
+            #     "INTERVAL": "3",
+            #     "PLATFORM": "x64"
+            # }
+
+            # Define volume bindings
+            volume_bindings = {
+                os.path.abspath(self.source_code_path): {
+                    "bind": "/usr/src/myapp",
+                    "mode": "rw",
+                },
+                os.path.abspath(self.output_dir): {"bind": "/output", "mode": "rw"},
+            }
+
+            # Run the container
+            container = self.client.containers.run(
+                image=self.image_tag,
+                # environment=env_vars,
+                volumes=volume_bindings,
+                detach=True,  # Run in the background - DO NOT DO, need to copy runtime stuff in
+                remove=True,  # Automatically remove container after it stops
             )
 
-            # Get archive from the specified container directory
-            tar_stream, _ = container.get_archive(src_path)
-            tar_path = os.path.join(self.output_dir, "temp_output.tar")
+            logger.info("Container is running.")
+            logger.debug(container.logs())
+            return container
 
-            # Save the tar stream to a temporary tar file
-            with open(tar_path, "wb") as f:
-                for chunk in tar_stream:
-                    f.write(chunk)
-
-            # Extract only .exe files to the output directory
-            with tarfile.open(tar_path) as tar:
-                for member in tar.getmembers():
-                    logger.debug(f"Found '{member.name}' in {self.output_dir}")
-                    if member.name.endswith(".exe"):
-                        logger.debug(
-                            f"Copying out {member.name} from {self.output_dir}"
-                        )
-                        # Rename the member to avoid directory structure
-                        member.name = os.path.basename(member.name)
-                        tar.extract(member, path=self.output_dir)
-                        logger.info(f"Copied {member.name} to {self.output_dir}")
-
-            # Clean up the tar file after extraction
-            os.remove(tar_path)
-            logger.info("All .exe files copied successfully.")
-
-        except Exception as e:
-            logger.error(f"Error occurred while copying files from container: {e}")
-            raise e
-
-    # NOTE: files getting copied in successfully
-    def copy_files_to_container(self, container):
-        logger.info("Copying files into the container")
-        target_dir = "/usr/src/myapp"
-
-        # Define source directory with Pathlib
-        source_dir = Path(self.source_code_path)
-
-        # Create a tarball in memory of the files to copy
-        tar_stream = io.BytesIO()
-        with tarfile.open(fileobj=tar_stream, mode="w") as tar:
-            for item in source_dir.rglob("*"):
-                arcname = item.relative_to(source_dir)  # Preserve relative paths
-                tar.add(item, arcname=str(arcname))
-
-        tar_stream.seek(0)  # Reset stream position to the beginning
-
-        # Upload the tarball to the container
-        container.put_archive(target_dir, tar_stream.getvalue())
-        logger.info("Files copied to container successfully")
-
-    # probably fine as is
-    def clean_up_container(self, container):
-        """
-        Removes the specified container.
-
-        Args:
-            container (Container): Docker container to remove.
-        """
-        try:
-            logger.info("Removing container...")
-            container.remove()
-        except (APIError, NotFound, Exception) as e:
-            logger.error(f"Error occurred while removing container: {e}")
+        except (docker.errors.APIError, Exception) as e:
+            logger.error(f"Error occurred while running container: {e}")
             raise e
 
     # update when other methods are done
@@ -206,21 +170,11 @@ class DockerBuilder:
         Main execution method to build, create container, copy files, and clean up.
         """
         try:
-            # image = self.build_image()
-            # container = self.create_container(image.id)
-            # self.copy_files(container)
-            # self.clean_up_container(container)
-
-            image = self.build_image()
             # build if not exist
-            container = self.create_container(image)
-            # get files into it
-            self.copy_files_to_container(container)
-            # get files OUT of it
-            self.copy_files_from_container(container)
-            # prioblem - /output not being created. somethings off/script not wworking?
-            # clean it up/del container
-            # self.clean_up_container(container)
+            image = self.build_image()
+
+            # container = self.create_container(image)
+            container = self.run_container()
 
         except Exception as e:
             logger.error(f"Execution failed: {e}")

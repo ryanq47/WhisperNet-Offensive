@@ -1,20 +1,21 @@
+import redis
 from flask import jsonify
+from flask_jwt_extended import jwt_required
+from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
-from modules.redis_models import Client
-import redis
+from modules.redis_models import ActiveService, Client
 from modules.utils import api_response
-from modules.config import Config
 from redis_om import get_redis_connection
-from flask_jwt_extended import jwt_required
-from modules.redis_models import ActiveService
 
 logger = log(__name__)
 app = Instance().app
 
+
 class Info:
     name = "stats"
     author = "ryanq.47"
+
 
 redis = get_redis_connection(  # switch to config values
     host=Config().config.redis.bind.ip,
@@ -24,9 +25,10 @@ redis = get_redis_connection(  # switch to config values
 
 
 # hackily using redis instead of redis-om because of a weird index error
-@app.route('/stats/clients', methods=['GET'])
-@jwt_required()
+@app.route("/stats/clients", methods=["GET"])
+# @jwt_required()
 def clients():
+    logger.warning("UNAUTH ENDPOINT: Stats/clients")
     try:
         # Fetch all keys with the prefix 'client:' using SCAN for better performance
         client_keys = redis.scan_iter("client:*")
@@ -41,29 +43,27 @@ def clients():
             # Store the client data in the dictionary
             clients_dict[key] = client_data
         # Return the dictionary as a JSON response
-        return api_response(
-            data = clients_dict
-        )
+        return api_response(data=clients_dict)
     except Exception as e:
         logger.error(e)
-        return api_response(
-            status=500
-        )
+        return api_response(status=500)
 
-@app.route('/ping', methods=['GET'])
+
+@app.route("/ping", methods=["GET"])
 @jwt_required
 def ping():
     """
-        A super simple, basic upcheck ping endpoint
+    A super simple, basic upcheck ping endpoint
 
-        could also throw a jwt req'd, and use it to check if a token has expired.
-            Or... use a diff endopint and check like every 1 sec instead of constatly
+    could also throw a jwt req'd, and use it to check if a token has expired.
+        Or... use a diff endopint and check like every 1 sec instead of constatly
     """
     return "pong", 200
 
-@app.route('/stats/services', methods=['GET'])
+
+@app.route("/stats/services", methods=["GET"])
 def services():
-    '''returns json of plugins that are currently up/serving something'''
+    """returns json of plugins that are currently up/serving something"""
 
     prefix = "service:*"
     # Initialize the dictionary to store results
@@ -76,7 +76,7 @@ def services():
         for key in keys:
             # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
             service_data = redis.json().get(key)
-                # Append the fetched data to the list in the dictionary
+            # Append the fetched data to the list in the dictionary
             active_services["active_services"].append(service_data)
 
         if cursor == 0:
@@ -84,13 +84,12 @@ def services():
 
     # format into formj
     # send back
-    return api_response(
-        data=active_services
-    )
+    return api_response(data=active_services)
 
-@app.route('/stats/plugins', methods=['GET'])
+
+@app.route("/stats/plugins", methods=["GET"])
 def plugins():
-    '''returns json of plugins that are currently up/serving something'''
+    """returns json of plugins that are currently up/serving something"""
 
     prefix = "plugin:*"
     # Initialize the dictionary to store results
@@ -103,7 +102,7 @@ def plugins():
         for key in keys:
             # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
             plugin_data = redis.json().get(key)
-                # Append the fetched data to the list in the dictionary
+            # Append the fetched data to the list in the dictionary
             plugins_dict["plugins"].append(plugin_data)
 
         if cursor == 0:
@@ -111,13 +110,12 @@ def plugins():
 
     # format into formj
     # send back
-    return api_response(
-        data=plugins_dict
-    )
+    return api_response(data=plugins_dict)
 
-@app.route('/stats/containers', methods=['GET'])
+
+@app.route("/stats/containers", methods=["GET"])
 def containers():
-    '''returns json of plugins that are currently up/serving something'''
+    """returns json of plugins that are currently up/serving something"""
 
     prefix = "container:*"
     # Initialize the dictionary to store results
@@ -130,7 +128,7 @@ def containers():
         for key in keys:
             # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
             container_data = redis.json().get(key)
-                # Append the fetched data to the list in the dictionary
+            # Append the fetched data to the list in the dictionary
             container_dict["containers"].append(container_data)
 
         if cursor == 0:
@@ -138,7 +136,4 @@ def containers():
 
     # format into formj
     # send back
-    return api_response(
-        data=container_dict
-    )
-
+    return api_response(data=container_dict)
