@@ -65,11 +65,13 @@ class DockerBuilder:
         try:
             try:
                 image = self.client.images.get(self.image_tag)
-                logger.info(f"Image '{self.image_tag}' already exists. Skipping build.")
+                logger.debug(
+                    f"Image '{self.image_tag}' already exists. Skipping build."
+                )
                 return image
             except ImageNotFound:
                 logger.info(
-                    f"Image '{self.image_tag}' not found. Building the image..."
+                    f"Image '{self.image_tag}' not found. Building the image, please be patient..."
                 )
 
             image, build_logs = self.client.images.build(
@@ -85,37 +87,11 @@ class DockerBuilder:
             logger.error(f"Error occurred while building Docker image: {e}")
             raise e
 
-    # def create_container(self, image):
-    #     """
-    #     Creates a Docker container with environment variables for runtime.
-
-    #     Args:
-    #         image (Image): Docker image to create the container from.
-
-    #     Returns:
-    #         container (Container): Created Docker container.
-    #     """
-    #     try:
-    #         if isinstance(image, str):
-    #             image = self.client.images.get(image)
-
-    #         logger.info("Creating Docker container")
-    #         logger.debug(f"ImageID: {image.id}")
-
-    #         container = self.client.containers.create(image=image.id)
-    #         return container
-
-    #     except (docker.errors.APIError, Exception) as e:
-    #         logger.error(f"Error occurred while creating container: {e}")
-    #         raise e
-
     def run_container(self):
         """
         Runs the container with specific environment variables and volume bindings.
         """
         try:
-            logger.info("Running the Docker container with specified arguments")
-
             # Define volume bindings
             volume_bindings = {
                 str(self.source_code_path.resolve()): {
@@ -125,17 +101,17 @@ class DockerBuilder:
                 str(self.output_dir.resolve()): {"bind": "/output", "mode": "rw"},
             }
 
-            logger.debug(f"Env Args: {self.env_args}")
-
             container = self.client.containers.run(
                 image=self.image_tag,
                 volumes=volume_bindings,
-                detach=False,  # Run in the foreground to capture logs
+                detach=True,  # Run in the foreground to capture logs
                 remove=True,  # Automatically remove container after it stops
                 environment=self.env_args,  # pass in env args
             )
 
-            logger.info("Container is running.")
+            logger.info(f"Started container '{container.name}'")
+            logger.debug(f"Runtime/Env Args: '{self.env_args}'")
+
             # logger.debug(container.logs())
             return container
 
@@ -150,7 +126,7 @@ class DockerBuilder:
         try:
             image = self.build_image()
             container = self.run_container()
-            logger.debug("Container ran successfully")
+            logger.info(f"Container '{container.name}' ran successfully")
 
         except Exception as e:
             logger.error(f"Execution failed: {e}")

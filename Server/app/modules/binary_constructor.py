@@ -49,6 +49,7 @@ class Loader:
     def construct(self):
         try:
             logger.warning("HACK IMPLEMENTED: ../ in filepath for agents. FIX")
+            logger.info("Constructing source code")
             # Create a unique temp directory
             # will need to clean this up every so often.
             build_context_tmp_dir = Path("_docker/build_tmp") / str(uuid.uuid4())

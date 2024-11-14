@@ -164,6 +164,9 @@ class Custom:
     def build(self):
         try:
             logger.info(f"Building {self.payload_name}")
+            logger.info(
+                f"Binary Name: '{self.binary_name}' Binary Platform: 'x64' Delivery Method: '{self.delivery_name}'"
+            )
             # debug print items
             logger.debug(options for options in self.build_options.items())
             # make an async function or threaded so it can just be called.
