@@ -32,6 +32,7 @@ class DockerBuilder:
         build_context: str,
         image_tag: str,
         source_code_path: str,
+        env_args: dict,
     ):
         """
         Initializes the DockerBuilder class with paths and context.
@@ -52,6 +53,7 @@ class DockerBuilder:
         self.client = docker.from_env()
         self.image_tag = image_tag
         self.container_name = None
+        self.env_args = env_args
 
     def build_image(self):
         """
@@ -83,29 +85,29 @@ class DockerBuilder:
             logger.error(f"Error occurred while building Docker image: {e}")
             raise e
 
-    def create_container(self, image):
-        """
-        Creates a Docker container with environment variables for runtime.
+    # def create_container(self, image):
+    #     """
+    #     Creates a Docker container with environment variables for runtime.
 
-        Args:
-            image (Image): Docker image to create the container from.
+    #     Args:
+    #         image (Image): Docker image to create the container from.
 
-        Returns:
-            container (Container): Created Docker container.
-        """
-        try:
-            if isinstance(image, str):
-                image = self.client.images.get(image)
+    #     Returns:
+    #         container (Container): Created Docker container.
+    #     """
+    #     try:
+    #         if isinstance(image, str):
+    #             image = self.client.images.get(image)
 
-            logger.info("Creating Docker container")
-            logger.debug(f"ImageID: {image.id}")
+    #         logger.info("Creating Docker container")
+    #         logger.debug(f"ImageID: {image.id}")
 
-            container = self.client.containers.create(image=image.id)
-            return container
+    #         container = self.client.containers.create(image=image.id)
+    #         return container
 
-        except (docker.errors.APIError, Exception) as e:
-            logger.error(f"Error occurred while creating container: {e}")
-            raise e
+    #     except (docker.errors.APIError, Exception) as e:
+    #         logger.error(f"Error occurred while creating container: {e}")
+    #         raise e
 
     def run_container(self):
         """
@@ -123,11 +125,14 @@ class DockerBuilder:
                 str(self.output_dir.resolve()): {"bind": "/output", "mode": "rw"},
             }
 
+            logger.debug(f"Env Args: {self.env_args}")
+
             container = self.client.containers.run(
                 image=self.image_tag,
                 volumes=volume_bindings,
                 detach=False,  # Run in the foreground to capture logs
                 remove=True,  # Automatically remove container after it stops
+                environment=self.env_args,  # pass in env args
             )
 
             logger.info("Container is running.")

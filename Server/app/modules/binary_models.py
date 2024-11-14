@@ -139,7 +139,7 @@ class Agent:
 class Custom:
     def __init__(self, payload_name, binary_name, payload, delivery_name):
         self.payload_name = payload_name
-        self.binary_name = binary_name
+        self.binary_name = binary_name  # name of the compiled binary
         self.payload = payload
         self.delivery_name = delivery_name  # name of delivery_name method
         # get rid of absolute.
@@ -188,6 +188,10 @@ class Custom:
             #     # source_code: source_code_path_from_construct
             # }
 
+            logger.warning("Hardcoded platform - x64")
+
+            env_args = {"BINARY_NAME": str(self.binary_name), "PLATFORM": "x64"}
+
             # build the binary
             docker_instance = DockerBuilder(
                 dockerfile_path=self.build_options.buildfile,
@@ -196,6 +200,7 @@ class Custom:
                 # build_args=build_args,
                 image_tag=self.payload_name,
                 source_code_path=temp_source_code_path,
+                env_args=env_args,
             )
 
             logger.debug("Starting thread for docker build")
