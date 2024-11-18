@@ -66,14 +66,14 @@ server:
       x64_windows_agent: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: !!str "agents/windows/."
-        description: !!str "An x64 windows agent"
+        description: !!str "An file based x64 windows agent"
         language: !!str "rust"
         #source_code: !!str
 
       x86_windows_agent: 
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: !!str "agents/windows/."
-        description: !!str "An x86 windows agent"
+        description: !!str "An file based x86 windows agent"
         language: !!str "rust"
 
     delivery:
