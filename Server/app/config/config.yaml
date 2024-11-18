@@ -61,6 +61,51 @@ server:
     #  root_dir: !!str "ftp" # use relative path for putting it in server root, or an absolute path for anywhere on box
 
 
+  binaries:
+    agents:
+      x64_windows_agent: 
+        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
+        source_code: !!str "agents/windows/."
+        description: !!str "An file based x64 windows agent"
+        language: !!str "rust"
+        #source_code: !!str
+
+      x86_windows_agent: 
+        buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
+        source_code: !!str "agents/windows/."
+        description: !!str "An file based x86 windows agent"
+        language: !!str "rust"
+
+    delivery:
+      # loader/droppers can go here. basically the same thing
+      local_shellcode_execution: 
+        #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
+        type: !!str "loader"
+        description: !!str "Loads shellcode into memory in the current process, executes it"
+        language: !!str "rust"
+        # THISIS A HACK. change in the code later. Basically, the server runs out of server/app, and looks for the agents folder in that dir, intead of one up
+        source_code: !!str "agents/windows/loaders/local_shellcode_execution"
+
+      # name_of_deliv_02: 
+      #   type: !!str "dropper" # or "loader"
+      #   #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
+      #   source_code: str!! "agents/windows/."
+      #   description: "An x86 windows dropper"
+      #   language: !!str "rust"
+
+    customs:
+      x64_windows_custom: 
+        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
+        source_code: !!str "agents/windows/."
+        description: !!str "An x64 windows dropper"
+        language: !!str "rust"
+
+      x86_windows_custom: 
+        buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
+        source_code: !!str "agents/windows/."
+        description: "An x86 windows dropper"
+        language: !!str "rust"
+
 # https://medium.com/building-the-system/gunicorn-3-means-of-concurrency-efbb547674b7
 # Gunicorn Perf Optimization reference
 wsgi:

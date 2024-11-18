@@ -35,8 +35,11 @@ instance_path = launch_path / "instance"
 app = Flask(__name__, instance_path=instance_path)
 
 # the rest of the crap
+# DOC THESE
 # Config Singleton
 Config().launch_path = launch_path  # Adding custom launch_path attribute
+# project path is the root path of project
+Config().root_project_path = (Config().launch_path / "../")
 
 if not config_file.exists():
     exit("config.yaml file does not exist, cannot continue.")

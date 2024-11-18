@@ -16,6 +16,7 @@ def create_header():
                 ui.button('Home', on_click=lambda: ui.navigate.to('/home'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")  # Remove rounded corners, fixed width
                 ui.button('Clients', on_click=lambda: ui.navigate.to('/clients'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
                 ui.button('Plugins', on_click=lambda: ui.navigate.to('/plugins'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
+                ui.button('BinBuilder', on_click=lambda: ui.navigate.to('/binary-builder'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
                 ui.button('Help/About', on_click=lambda: ui.navigate.to('/help-about'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
                 ui.button('Log Out', on_click=lambda: ui.navigate.to('/logout'), color=Config().get_button_color()).classes("m-0 p-0 rounded-none w-24")
 

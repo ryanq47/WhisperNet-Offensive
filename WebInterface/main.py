@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(description="Run the NiceGUI app with optional 
 parser.add_argument(
     "--host", 
     type=str, 
-    default="127.0.0.1", 
-    help="The host IP address to run the app on. Default is '127.0.0.1'."
+    default="0.0.0.0", 
+    help="The host IP address to run the app on. Default is '0.0.0.0'."
 )
 parser.add_argument(
     "--port", 

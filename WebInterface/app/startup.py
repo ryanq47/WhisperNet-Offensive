@@ -8,6 +8,7 @@ import app.modules.login
 import app.modules.static
 import app.modules.plugins
 import app.modules.help_about
+import app.modules.binary_builder
 
 def startup() -> None:
     @ui.page('/')
