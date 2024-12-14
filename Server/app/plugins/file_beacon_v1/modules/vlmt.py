@@ -56,7 +56,7 @@ class VLMT:
             if self.server_socket:
                 self.server_socket.close()
 
-    # FIX AND CLEANUP
+    # CLEANUP
     def handle_client(self, client_socket):
         """
         Handle incoming client requests.

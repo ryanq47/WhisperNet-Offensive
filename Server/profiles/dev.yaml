@@ -1,0 +1,45 @@
+info:
+  template_name: "Testing Template"
+  template_author: "ryanq.47"
+
+# alias go here. These are effectively macros for running commands from the console
+alias:
+  local_user_enum: powershell "whoami /all; net users; net groups"
+
+# command templates, these are how each command is run/sent to the client
+template:
+  # insert powershel command into %%COMMAND%%
+  powershell: powershell iex bypass; powershell %%COMMAND%%
+### Alias to Client Workflow (Step-by-Step)
+
+# 1. User Input
+#    - The user types a command, e.g., `local_user_enum`.
+
+# 2. Command Translation
+#    - The input command is translated to its corresponding *console* command:
+#      ```
+#      powershell "whoami /all; net users; net groups"
+#      ```
+
+# 3. Command Parsing (Behind the Scenes)
+#    - The command undergoes parsing:
+#      - The leading `powershell` is stripped.
+#      - Only the arguments are saved for processing.
+#      - Example:
+#        - Input: `powershell "whoami /all; net users; net groups"`
+#        - Saved: `"whoami /all; net users; net groups"`
+
+# 4. Wrapping the Command in a Template
+#    - The parsed command is wrapped using a predefined PowerShell template:
+#      ```
+#      powershell iex bypass; powershell %%COMMAND%%
+#      ```
+#    - The placeholder `%%COMMAND%%` is replaced with the parsed arguments:
+#      ```
+#      powershell iex bypass; powershell "whoami /all; net users; net groups"
+#      ```
+
+# 5. Sending to the Client
+#    - The fully processed command is sent to the client for execution.
+
+# This isn't quite as good as Cobalt Strikes CNA & Malleable profiles, but does allow for some customization.
