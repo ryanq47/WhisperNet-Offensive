@@ -1,9 +1,11 @@
-import logging
 import signal
 import socket
 import struct
 
-logger = logging.getLogger(__name__)
+from modules.log import log
+from plugins.file_beacon_v1.modules.client import Client
+
+logger = log(__name__)
 
 
 class VLMT:
@@ -62,6 +64,8 @@ class VLMT:
         Handle incoming client requests.
         """
         try:
+            client_socket.settimeout(5)  # Set timeout in seconds
+
             # get message
             # Get length of message (8 bytes for the length prefix)
             length_prefix = client_socket.recv(8)
@@ -90,11 +94,23 @@ class VLMT:
 
             logger.info(f"Full message of size {message_length} recieved")
 
-            print(contents)
+            # print(contents)
+            logger.debug(contents)
 
-            # Decode the full message and return
+            c = Client(id="SOMEID")
+            # Spawn client class, and let it do its thing
+            # queue, dequue, register, etc?
+
+            # send appropriate message back
             client_socket.sendall("ok".encode("utf-8"))
-            return contents.decode("utf-8")
+
+            # with dequeue:
+            # client_socket.sendall(c.dequeue().encode("utf-8"))
+
+        except socket.timeout:
+            logger.error(f"Socket timed out after 5 seconds while receiving data.")
+            return None
 
         except Exception as e:
             logger.error(e)
+            raise e

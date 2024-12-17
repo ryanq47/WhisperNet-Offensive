@@ -14,17 +14,17 @@ server:
     tls_org: !!str "some-company"
     # country code for tls cert, 2 letters
     tls_country: !!str "AA"
-    # email for tls cert - if you feel like doxing yourself. 
+    # email for tls cert - if you feel like doxing yourself.
     tls_email: !!str "some@email.com"
     # How long before the cert expires
     tls_expire: !!int 180
 
   authentication:
     bcrypt:
-      rounds: !!int 14 # Rounds for Bcrpyt encryption. Up to 24, however the higher you go, the higher the computation time. 
+      rounds: !!int 14 # Rounds for Bcrpyt encryption. Up to 24, however the higher you go, the higher the computation time.
 
     jwt:
-      expiration: !!int  900 # Expiration time for tokens once generated, in seconds
+      expiration: !!int 900 # Expiration time for tokens once generated, in seconds
 
   endpoints: # endpoint settings
     enable_registration: !!bool True # enable/disable registration endpoint
@@ -32,7 +32,7 @@ server:
   audit: # audit settings
     log:
       max_file_size: !!int 1000000 # in Bytes
-      max_file_backups: !!int 10   # how many files to keep after rollover
+      max_file_backups: !!int 10 # how many files to keep after rollover
       file_name: !!str "audit.log"
 
   ftp:
@@ -41,7 +41,7 @@ server:
       port: !!int 21
 
     users:
-      anonymous: 
+      anonymous:
         enabled: !!bool False # Allow anonymous user
         permissions: !!str "w" # permissions for anonymous user
 
@@ -60,17 +60,16 @@ server:
     #config:
     #  root_dir: !!str "ftp" # use relative path for putting it in server root, or an absolute path for anywhere on box
 
-
   binaries:
     agents:
-      x64_windows_agent: 
+      x64_windows_agent:
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: !!str "agents/windows/."
         description: !!str "An file based x64 windows agent"
         language: !!str "rust"
         #source_code: !!str
 
-      x86_windows_agent: 
+      x86_windows_agent:
         buildfile: !!str "_docker/dockerfiles/debian_windows_agent_multi.dockerfile"
         source_code: !!str "agents/windows/."
         description: !!str "An file based x86 windows agent"
@@ -78,7 +77,7 @@ server:
 
     delivery:
       # loader/droppers can go here. basically the same thing
-      local_shellcode_execution: 
+      local_shellcode_execution:
         #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x64.dockerfile"
         type: !!str "loader"
         description: !!str "Loads shellcode into memory in the current process, executes it"
@@ -86,7 +85,7 @@ server:
         # THISIS A HACK. change in the code later. Basically, the server runs out of server/app, and looks for the agents folder in that dir, intead of one up
         source_code: !!str "agents/windows/loaders/local_shellcode_execution"
 
-      # name_of_deliv_02: 
+      # name_of_deliv_02:
       #   type: !!str "dropper" # or "loader"
       #   #buildfile: !!str "_docker/dockerfiles/debian_windows_dropper_x86.dockerfile"
       #   source_code: str!! "agents/windows/."
@@ -94,13 +93,13 @@ server:
       #   language: !!str "rust"
 
     customs:
-      x64_windows_custom: 
+      x64_windows_custom:
         buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
         source_code: !!str "agents/windows/."
         description: !!str "An x64 windows dropper"
         language: !!str "rust"
 
-      x86_windows_custom: 
+      x86_windows_custom:
         buildfile: !!str "_docker/dockerfiles/debian_windows_custom_multi.dockerfile"
         source_code: !!str "agents/windows/."
         description: "An x86 windows dropper"
@@ -114,7 +113,7 @@ wsgi:
     port: !!int 8081
     ip: !!str "0.0.0.0"
 
-  # Number of workers for WSGI. 
+  # Number of workers for WSGI.
   workers: !!int 4
 
 redis:

@@ -1,4 +1,4 @@
-from redis_om import get_redis_connection, Field, HashModel, JsonModel
+from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 redis = get_redis_connection(  # switch to config values
     host="localhost",
@@ -8,7 +8,7 @@ redis = get_redis_connection(  # switch to config values
 
 # for global redis models
 
-'''
+"""
 # Define a model
 class Product(HashModel):
     name: str = Field(index=True)
@@ -17,11 +17,12 @@ class Product(HashModel):
 
     class Meta:
         database = redis
-'''
+"""
 
-# client model 
+
+# client model
 class Client(HashModel):
-    client_id: str = Field(index=True, primary_key=True)  # Indexed field
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
     type: str = Field(index=True)  # Indexed field
     checkin: int = Field(index=True)  # Indexed field
 
@@ -29,54 +30,64 @@ class Client(HashModel):
         database = redis
         global_key_prefix = "client"  # Prefix for keys
 
+
 # Create the index explicitly after defining the model
-#Client.create_index()
+# Client.create_index()
+
 
 class ActiveService(JsonModel):
     # need to determine a prefix + a diff between each instance?
     # service:somestuff:<service_uuid>?
 
-    sid: str = Field(index=True, primary_key=True) # sid: server id
+    sid: str = Field(index=True, primary_key=True)  # sid: server id
     port: int
-    ip: str # ip/hostname, what it listends on
-    info: str # info of waht the server is
-    timestamp: str # time server is started?
-    name: str # name of service
+    ip: str  # ip/hostname, what it listends on
+    info: str  # info of waht the server is
+    timestamp: str  # time server is started?
+    name: str  # name of service
 
     class Meta:
         database = redis  # The Redis connection
         global_key_prefix = "service"
 
-class Plugin(JsonModel):
-    name: str = Field(index=True, primary_key=True) # name of plugin, make primary key so it doesnt repeat
 
+class Plugin(JsonModel):
+    name: str = Field(
+        index=True, primary_key=True
+    )  # name of plugin, make primary key so it doesnt repeat
 
     # optional fields for if the service has a start/stop componenet
-    start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
-    stop: str = Field(default="") # stop field, same as above but for stopping  
+    start: str = Field(
+        default=""
+    )  # start field, holds endpoint to start service, ex /ftp/start
+    stop: str = Field(default="")  # stop field, same as above but for stopping
     info: str = Field(default="No info provided")
 
     class Meta:
         database = redis  # The Redis connection
         global_key_prefix = "plugin"
 
+
 class Container(JsonModel):
-    name: str = Field(index=True, primary_key=True) # name of Container, make primary key so it doesnt repeat
-    #options: str # options field for options. not great but it works
+    name: str = Field(
+        index=True, primary_key=True
+    )  # name of Container, make primary key so it doesnt repeat
+    # options: str # options field for options. not great but it works
 
-
-    image: str   = Field(default="Container missing an Image name")  # Docker image name
-    volumes: str  = Field(default="Container has no Volumes")   # Volmes if any
-    hostname: str = Field(default="Container has no hostname")   # hostname of container
-    ports: str    = Field(default="Container has no exposed ports")   # exposed ports in container
+    image: str = Field(default="Container missing an Image name")  # Docker image name
+    volumes: str = Field(default="Container has no Volumes")  # Volmes if any
+    hostname: str = Field(default="Container has no hostname")  # hostname of container
+    ports: str = Field(
+        default="Container has no exposed ports"
+    )  # exposed ports in container
 
     # optional fields for if the service has a start/stop componenet
-    #start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
-    #stop: str = Field(default="") # stop field, same as above but for stopping  
-    
-    #info: str = Field(default="No info provided")
-    #ip: str # ip/hostname, what it listends on if it has a service on it
-    #port: int 
+    # start: str = Field(default="") # start field, holds endpoint to start service, ex /ftp/start
+    # stop: str = Field(default="") # stop field, same as above but for stopping
+
+    # info: str = Field(default="No info provided")
+    # ip: str # ip/hostname, what it listends on if it has a service on it
+    # port: int
 
     class Meta:
         database = redis  # The Redis connection
