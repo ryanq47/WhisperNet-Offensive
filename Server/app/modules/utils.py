@@ -1,14 +1,15 @@
 # NOTE! This is not the final resting place for functinos. These should all eventually end up in better described files/locations
 
-from modules.config import Config
-from modules.log import log
-from modules.instances import Instance
 import importlib
 import sys
+import time
+import uuid
+
 import flask
 from flask import jsonify
-import uuid
-import time
+from modules.config import Config
+from modules.instances import Instance
+from modules.log import log
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = log(__name__)
@@ -89,7 +90,7 @@ def api_response(
 
         # this is a stupid line, not in comlpiance iwth api standard
         # Remove data key if it has no useful content
-        #if not response["data"]:
+        # if not response["data"]:
         #    del response["data"]
 
         # Add any additional keyword arguments, excluding None values

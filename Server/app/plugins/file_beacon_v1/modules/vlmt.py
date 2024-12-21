@@ -102,10 +102,12 @@ class VLMT:
             # queue, dequue, register, etc?
 
             # send appropriate message back
-            client_socket.sendall("ok".encode("utf-8"))
+            # client_socket.sendall("ok".encode("utf-8"))
 
+            command = c.dequeue()
+            # some processing...
             # with dequeue:
-            # client_socket.sendall(c.dequeue().encode("utf-8"))
+            client_socket.sendall(command.encode("utf-8"))
 
         except socket.timeout:
             logger.error(f"Socket timed out after 5 seconds while receiving data.")

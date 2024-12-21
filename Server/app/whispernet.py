@@ -17,6 +17,7 @@ from modules.docker_handler import (
     container_exists,
     pull_and_run_container,
     start_container,
+    wait_for_container,
 )
 from modules.instances import Instance
 from modules.log import log
@@ -89,19 +90,31 @@ Instance().app = app
 
 ## Everything that relies on Instance stuff, goes AFTER this line
 
+
 # Spin up needed docker containers BEFORE loading plugins.
-# could probably toss this in a config file & loop over those values for each needed container
+# Could probably toss this in a config file & loop over those values for each needed container
+
 logger.info("Checking on docker containers...")
 ## redis
-if not container_exists("redis-stack-server"):
+container_name = "redis-stack-server"
+if not container_exists(container_name):
     pull_and_run_container(
         image_name="redis/redis-stack-server",
-        container_name="redis-stack-server",
+        container_name=container_name,
         ports={"6379/tcp": 6379},
     )
+    # After pulling and running, verify the container is up
+    if not wait_for_container(container_name, timeout=30):
+        logger.error(
+            f"Container '{container_name}' failed to start within the timeout period."
+        )
+        # Handle the failure as needed, e.g., retry, exit, etc.
 else:
-    start_container("redis-stack-server")
-
+    start_container(container_name)
+    # Verify the container is running
+    if not wait_for_container(container_name, timeout=10):
+        logger.error(f"Container '{container_name}' is not running as expected.")
+        # Handle the issue as needed
 
 # Plugin Loader
 logger.info("Loading Plugins...")
@@ -110,7 +123,7 @@ plugin_loader()
 # example listener spawn
 from plugins.file_beacon_v1.file_beacon_v1 import spawn
 
-spawn(9005, "0.0.0.0")
+spawn(9006, "0.0.0.0")
 
 # add default user if DB is empty
 # kinda fugly but it works

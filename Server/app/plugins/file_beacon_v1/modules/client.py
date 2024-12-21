@@ -10,7 +10,7 @@ class Client(BaseClient):
         self.register()
         print("ENQUEUING COMMANDS")
         self.enqueue(command="test")
-        self.dequeue()
+        # self.dequeue()
 
     # these are going to need to be redis based.
     # def enqueue(self):
@@ -24,3 +24,6 @@ class Client(BaseClient):
     #     Deques a command
     #     """
     #     ...
+
+    # Keep working on this
+    # docs

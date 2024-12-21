@@ -373,8 +373,8 @@ class BaseClient:
         """
         # example data
         task_data = {
-            "task_name": "example_task",
-            "priority": 1,
+            "command": command,
+            # "priority": 1,
             "timestamp": "SOMETIME",  # datetime.now().isoformat(),
             "rid": 1234,
         }
@@ -402,6 +402,8 @@ class BaseClient:
                 self.redis_client.xdel(
                     f"client:command_stream:{self.data.agent.id}", message_id
                 )  # Acknowledge and delete processed task
+
+        return "TEMPORARY_COMMAND_PLACEHOLDER"
 
 
 # ## Basic example of usage
