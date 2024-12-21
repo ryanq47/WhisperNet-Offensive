@@ -93,7 +93,6 @@ Instance().app = app
 
 # Spin up needed docker containers BEFORE loading plugins.
 # Could probably toss this in a config file & loop over those values for each needed container
-
 logger.info("Checking on docker containers...")
 ## redis
 container_name = "redis-stack-server"
@@ -123,7 +122,7 @@ plugin_loader()
 # example listener spawn
 from plugins.file_beacon_v1.file_beacon_v1 import spawn
 
-spawn(9006, "0.0.0.0")
+spawn(9007, "0.0.0.0")
 
 # add default user if DB is empty
 # kinda fugly but it works

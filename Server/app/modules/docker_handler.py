@@ -40,12 +40,12 @@ def start_container(container_name):
         container = client.containers.get(container_name)
         container.start()
 
+        # checks if redis is even up, as this function relies on redis models to hold containers that are running
         if container_name == "redis-stack-server":
             if not redis_ping():
                 logger.error("Redis did not become available in time.")
                 return  # Exit or handle accordingly
 
-        # dipshit... this is trying to write to redis when you JUST STARTED THE CONTAINER
         c = Container(
             name=container_name,
             # options=str(kwargs)

@@ -38,6 +38,8 @@ class VLMT:
         try:
             # Create and bind the socket
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # allow socket reuse
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)  # Listen for up to 5 connections
             logger.info(
@@ -116,3 +118,6 @@ class VLMT:
         except Exception as e:
             logger.error(e)
             raise e
+
+        finally:
+            client_socket.close()
