@@ -5,7 +5,9 @@ import socket
 import struct
 from multiprocessing import Process
 
-from modules.redis_models import ActiveService
+from modules.listener import BaseListener
+
+# from modules.redis_models import ActiveService
 from modules.utils import generate_timestamp, generate_unique_id
 from plugins.file_beacon_v1.modules.vlmt import VLMT
 
@@ -30,30 +32,54 @@ class Info:
     author = "ryanq.47"
 
 
-# Socket-based server/Listener
-def spawn(port=8082, host="0.0.0.0", nickname=None):
-    """
-    Start a socket server for file-based beacon communication.
-    """
-    # Save listener details
-    r_listener = ActiveService(
-        sid=generate_unique_id(),
-        port=port,
-        ip=host,
-        info="file_beacon_v1 service/listener",
-        timestamp=str(generate_timestamp()),
-        name="file_beacon_v1",
-    )
-    r_listener.save()
+# does this need its own listener .py?
+class Listener(BaseListener):
 
-    # Spawn a new process for the server
-    a = VLMT(port, host, nickname)
-    process = Process(target=a.socket_server, daemon=False)
-    process.start()
-    logger.info(
-        f"Spawned socket server for file-beacon-v1 on {host}:{port} with PID {process.pid}"
-    )
-    return process
+    def __init__(self, port, host, id=None):
+        ...
+
+        # be less stupid, figure out the id thingy
+        # listeners can auto geneate its own id. clients need to be told it.
+        if id == None:
+            _id = "SOMELISTENERID"  # UUID
+            logger.debug(f"No ID provided, generating one: {_id}")
+        else:
+            _id = id
+
+        # init super
+        super().__init__(_id)
+        self.data.network.port = port
+        self.data.network.address = host
+        self.data.listener.id = _id
+
+        # auto call listener spawn? Should really only be called once
+        # self.spawn()
+
+    # Socket-based server/Listener
+    def spawn(self):
+        """
+        Start a socket server for file-based beacon communication.
+        """
+        # handled by base client
+        # # Save listener details
+        # r_listener = ActiveService(
+        #     sid=generate_unique_id(),
+        #     port=port,
+        #     ip=host,
+        #     info="file_beacon_v1 service/listener",
+        #     timestamp=str(generate_timestamp()),
+        #     name="file_beacon_v1",
+        # )
+        # r_listener.save()
+
+        # Spawn a new process for the server
+        a = VLMT(self.data.network.port, self.data.network.address, self)
+        process = Process(target=a.socket_server, daemon=False)
+        process.start()
+        logger.info(
+            f"Spawned socket server for file-beacon-v1 on {self.data.network.address}:{self.data.network.port} with PID {process.pid}"
+        )
+        return process
 
 
 # # class this?

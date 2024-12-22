@@ -145,27 +145,8 @@ class BaseListener:
             with open(config_file_path, "r") as file:
                 data = yaml.safe_load(file)
 
-            # maybe use
-            template_dict = data.get("template", None)
-            alias_dict = data.get("alias", None)
+            # not doing anything with config at the moment
 
-            if template_dict is None:
-                logger.error("Missing 'template' section in configuration.")
-                raise ValueError("Configuration must include a 'template' section.")
-
-            if alias_dict is None:
-                logger.error("Missing 'alias' section in configuration.")
-                raise ValueError("Configuration must include an 'alias' section.")
-
-            # load in specific items from config file
-            self._load_alias(alias_dict)
-            self._load_template(template_dict)
-            # self.loaded = True # a check to make sure this happens?
-
-            # Next...
-            # loop over each key and
-            # >  parse and add alias to valid commands (user sees these)
-            # >  parse add template to template settings/however those are handled
         except FileNotFoundError as fnfe:
             logger.error(f"Configuration file not found: {config_file_path}")
             logger.error(fnfe)
