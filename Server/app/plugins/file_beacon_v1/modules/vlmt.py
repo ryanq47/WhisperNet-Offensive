@@ -39,6 +39,7 @@ class VLMT:
             # Create and bind the socket
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # allow socket reuse
+            logger.warning(f"Socket reuse enabled for vlmt.py, on port {self.port}")
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)  # Listen for up to 5 connections
