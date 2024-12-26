@@ -21,7 +21,7 @@ class Product(HashModel):
 
 
 # client model
-class Client(HashModel):
+class Client(HashModel):  # swich to JsonModel?
     agent_id: str = Field(index=True, primary_key=True)  # Indexed field
     type: str = Field(index=True)  # Indexed field
     checkin: int = Field(index=True)  # Indexed field
@@ -33,6 +33,20 @@ class Client(HashModel):
 
 # Create the index explicitly after defining the model
 # Client.create_index()
+
+# question - store data in one model, or just use one for reg, and one for
+# data?
+# For now, split. Need to still figure out how to get json directly into redis.
+
+
+class Listener(HashModel):
+    listener_id: str = Field(index=True, primary_key=True)  # Indexed field
+    name: str = Field()
+    type: str = Field(index=True)  # Indexed field
+
+    class Meta:
+        database = redis
+        global_key_prefix = "client"  # Prefix for keys
 
 
 class ActiveService(JsonModel):

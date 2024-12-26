@@ -6,7 +6,7 @@ import redis
 import yaml
 from modules.config import Config
 from modules.log import log
-from modules.redis_models import Client
+from modules.redis_models import Listener
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 logger = log(__name__)
@@ -223,8 +223,10 @@ class BaseListener:
         # redis save...
         logger.info(f"Registering listener: {self.data.listener.id}")
 
-        # client_model = Client(agent_id=self.data.listener.id, type="TYPE", checkin=1234)
-        # client_model.save()
+        listener_model = Listener(
+            agent_id=self.data.listener.id, name=self.data.listener.name
+        )
+        listener_model.save()
         # change to listener agent
 
     def unregister(self):
