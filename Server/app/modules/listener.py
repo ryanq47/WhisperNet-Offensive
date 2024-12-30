@@ -245,7 +245,12 @@ class BaseListener:
         """
         Unregister the client
         """
-        ...
+        logger.debug(
+            f"Unregistering listener '{self.data.listener.name}', with ID:'{self.data.listener.id}'"
+        )
+        # not the most clear, but this takes in (I think) the prim key, and then deletes the entry based on it
+        # It seems to be passed directly to the redis.delete function through redis_om
+        Listener.delete(self.data.listener.id)
 
     def load_data(self):
         """

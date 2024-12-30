@@ -330,7 +330,10 @@ class BaseClient:
         """
         Unregister the client
         """
-        ...
+        logger.debug(f"Unregistering agent with ID:'{self.data.agent.id}'")
+        # not the most clear, but this takes in (I think) the prim key, and then deletes the entry based on it
+        # It seems to be passed directly to the redis.delete function through redis_om
+        Client.delete(self.data.agent.id)
 
     def load_data(self):
         """

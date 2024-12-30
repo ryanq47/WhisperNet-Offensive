@@ -124,6 +124,7 @@ from plugins.file_beacon_v1.file_beacon_v1 import Listener
 
 l = Listener(9007, "0.0.0.0")
 l.spawn()
+l.unregister()
 
 # add default user if DB is empty
 # kinda fugly but it works
