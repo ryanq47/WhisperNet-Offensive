@@ -7,6 +7,7 @@ import yaml
 from modules.config import Config
 from modules.log import log
 from modules.redis_models import Listener
+from modules.utils import generate_mashed_name, generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 logger = log(__name__)
@@ -17,7 +18,7 @@ class BaseListener:
     A base class that provides common functionality for all models.
     """
 
-    def __init__(self, listener_id, **kwargs):
+    def __init__(self, listener_id=None, **kwargs):
         # connect to redis
         self.redis_client = get_redis_connection(  # switch to config values
             host=Config().config.redis.bind.ip,
@@ -73,23 +74,34 @@ class BaseListener:
             }
         )
 
-        # Load data from Redis if agent_id is provided
+        # Load data from Redis if listener_id is provided
         if self.data.listener.id:
             self._load_data_from_redis(self.data.listener.id)
+
+        elif listener_id == None:
+            uuid = generate_unique_id()
+            logger.warning(f"No listener ID provided, settings as: {uuid}")
+            self.data.listener.id = uuid  ## UUID generate
+
+        # Check if name is provided
+        if self.data.listener.name == None:
+            name = generate_mashed_name()
+            logger.warning(f"No name provided, setting as '{name}'")
+            self.data.listener.name = name
 
     def _load_data_from_redis(self, listener_id):
         """Internal: Load client data from Redis."""
         try:
             # get data from redis
-            data = self.redis_client.get(f"client:{self.data.listener.id}")
+            data = self.redis_client.get(f"listener:{self.data.listener.id}")
             if data:
                 self._data = munch.munchify(json.loads(data))
                 logger.debug(
-                    f"Loaded client data for {self.data.listener.id} from Redis."
+                    f"Loaded listener data for {self.data.listener.id} from Redis."
                 )
             else:
                 logger.debug(
-                    f"No data found in Redis for client: {self.data.listener.id}"
+                    f"No data found in Redis for listener: {self.data.listener.id}"
                 )
                 # call register
         except Exception as e:
@@ -224,7 +236,7 @@ class BaseListener:
         logger.info(f"Registering listener: {self.data.listener.id}")
 
         listener_model = Listener(
-            agent_id=self.data.listener.id, name=self.data.listener.name
+            listener_id=self.data.listener.id, name=self.data.listener.name
         )
         listener_model.save()
         # change to listener agent

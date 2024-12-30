@@ -1,6 +1,7 @@
 # NOTE! This is not the final resting place for functinos. These should all eventually end up in better described files/locations
 
 import importlib
+import random
 import sys
 import time
 import uuid
@@ -122,3 +123,53 @@ def generate_timestamp() -> int:
         int: The current timestamp in seconds since the epoch.
     """
     return int(time.time())
+
+
+def generate_mashed_name():
+    """
+    Generates a mashed name by randomly selecting one adjective and one noun,
+    then concatenating them with an underscore.
+
+    Returns:
+        str: The mashed name in uppercase, e.g., "MIGHTY_LION"
+    """
+    # Define two lists of words
+    ADJECTIVES = [
+        "Swift",
+        "Silent",
+        "Mighty",
+        "Brave",
+        "Clever",
+        "Fierce",
+        "Gentle",
+        "Happy",
+        "Jolly",
+        "Kind",
+        "Lucky",
+        "Nimble",
+        "Quick",
+        "Wise",
+        "Zealous",
+    ]
+
+    NOUNS = [
+        "Lion",
+        "Tiger",
+        "Eagle",
+        "Shark",
+        "Wolf",
+        "Bear",
+        "Falcon",
+        "Panther",
+        "Leopard",
+        "Dragon",
+        "Phoenix",
+        "Hawk",
+        "Dolphin",
+        "Cobra",
+        "Viper",
+    ]
+    adjective = random.choice(ADJECTIVES)
+    noun = random.choice(NOUNS)
+    mashed_name = f"{adjective}_{noun}".upper()
+    return mashed_name

@@ -120,9 +120,10 @@ logger.info("Loading Plugins...")
 plugin_loader()
 
 # example listener spawn
-from plugins.file_beacon_v1.file_beacon_v1 import spawn
+from plugins.file_beacon_v1.file_beacon_v1 import Listener
 
-spawn(9007, "0.0.0.0")
+l = Listener(9007, "0.0.0.0")
+l.spawn()
 
 # add default user if DB is empty
 # kinda fugly but it works

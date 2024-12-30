@@ -2,16 +2,18 @@ from modules.config import Config
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 # fix this
-# redis = get_redis_connection(  # switch to config values
-#     host="localhost",
-#     port=6379,
-#     decode_responses=True,  # Ensures that strings are not returned as bytes
-# )
 redis = get_redis_connection(  # switch to config values
-    host=Config().config.redis.bind.ip,
-    port=Config().config.redis.bind.port,
+    host="localhost",
+    port=6379,
     decode_responses=True,  # Ensures that strings are not returned as bytes
 )
+
+## Problem: Config is not loaded by the time this is first called.
+# redis = get_redis_connection(  # switch to config values
+#     host=Config().config.redis.bind.ip,
+#     port=Config().config.redis.bind.port,
+#     decode_responses=True,  # Ensures that strings are not returned as bytes
+# )
 
 # for global redis models
 
@@ -49,7 +51,7 @@ class Client(HashModel):  # swich to JsonModel?
 class Listener(HashModel):
     listener_id: str = Field(index=True, primary_key=True)  # Indexed field
     name: str = Field()
-    type: str = Field(index=True)  # Indexed field
+    # type: str = Field(index=True)  # Indexed field
 
     class Meta:
         database = redis

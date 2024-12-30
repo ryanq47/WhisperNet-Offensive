@@ -1,18 +1,18 @@
 import json
-import logging
 import signal
 import socket
 import struct
 from multiprocessing import Process
 
 from modules.listener import BaseListener
+from modules.log import log
 
 # from modules.redis_models import ActiveService
 from modules.utils import generate_timestamp, generate_unique_id
 from plugins.file_beacon_v1.modules.vlmt import VLMT
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = log(__name__)
+
 
 """
 Plan: 
@@ -35,22 +35,11 @@ class Info:
 # does this need its own listener .py?
 class Listener(BaseListener):
 
-    def __init__(self, port, host, id=None):
-        ...
-
-        # be less stupid, figure out the id thingy
-        # listeners can auto geneate its own id. clients need to be told it.
-        if id == None:
-            _id = "SOMELISTENERID"  # UUID
-            logger.debug(f"No ID provided, generating one: {_id}")
-        else:
-            _id = id
-
+    def __init__(self, port, host):
         # init super
-        super().__init__(_id)
+        super().__init__()  # can give listener_id if there is one that needs to be respawned from redis data
         self.data.network.port = port
         self.data.network.address = host
-        self.data.listener.id = _id
 
         # auto call listener spawn? Should really only be called once
         # self.spawn()
@@ -60,6 +49,9 @@ class Listener(BaseListener):
         """
         Start a socket server for file-based beacon communication.
         """
+        # register listener into redis, using register method in inhereted class
+        self.register()
+
         # handled by base client
         # # Save listener details
         # r_listener = ActiveService(
