@@ -1,8 +1,15 @@
+from modules.config import Config
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
+# fix this
+# redis = get_redis_connection(  # switch to config values
+#     host="localhost",
+#     port=6379,
+#     decode_responses=True,  # Ensures that strings are not returned as bytes
+# )
 redis = get_redis_connection(  # switch to config values
-    host="localhost",
-    port=6379,
+    host=Config().config.redis.bind.ip,
+    port=Config().config.redis.bind.port,
     decode_responses=True,  # Ensures that strings are not returned as bytes
 )
 
@@ -46,7 +53,7 @@ class Listener(HashModel):
 
     class Meta:
         database = redis
-        global_key_prefix = "client"  # Prefix for keys
+        global_key_prefix = "listener"  # Prefix for keys
 
 
 class ActiveService(JsonModel):
