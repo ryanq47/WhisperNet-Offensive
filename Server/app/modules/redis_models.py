@@ -32,12 +32,13 @@ class Product(HashModel):
 # client model
 class Client(HashModel):  # swich to JsonModel?
     agent_id: str = Field(index=True, primary_key=True)  # Indexed field
-    type: str = Field(index=True)  # Indexed field
-    checkin: int = Field(index=True)  # Indexed field
+    # type: str = Field(index=True)  # Indexed field
+    # checkin: int = Field(index=True)  # Indexed field
 
     class Meta:
+        model_key_prefix = "client"
         database = redis
-        global_key_prefix = "client"  # Prefix for keys
+        global_key_prefix = "whispernet"  # Prefix for keys
 
 
 # Create the index explicitly after defining the model
@@ -54,8 +55,10 @@ class Listener(HashModel):
     # type: str = Field(index=True)  # Indexed field
 
     class Meta:
+        # swap model_key and global_key... yay
+        model_key_prefix = "listener"
         database = redis
-        global_key_prefix = "listener"  # Prefix for keys
+        global_key_prefix = "whispernet"  # Prefix for keys
 
 
 class ActiveService(JsonModel):
@@ -70,8 +73,9 @@ class ActiveService(JsonModel):
     name: str  # name of service
 
     class Meta:
-        database = redis  # The Redis connection
-        global_key_prefix = "service"
+        model_key_prefix = "service"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
 
 
 class Plugin(JsonModel):
@@ -87,8 +91,9 @@ class Plugin(JsonModel):
     info: str = Field(default="No info provided")
 
     class Meta:
-        database = redis  # The Redis connection
-        global_key_prefix = "plugin"
+        model_key_prefix = "plugin"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
 
 
 class Container(JsonModel):
@@ -113,5 +118,6 @@ class Container(JsonModel):
     # port: int
 
     class Meta:
-        database = redis  # The Redis connection
-        global_key_prefix = "container"
+        model_key_prefix = "container"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys

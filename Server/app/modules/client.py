@@ -321,19 +321,9 @@ class BaseClient:
         Can be whatever we need
 
         """
-        # self.redis
-
-        # set self.registered to true?
-
-        # redis con setup...
-
-        # redis model ...
-
-        # redis save...
-        ...
         logger.info(f"Registering agent: {self.data.agent.id}")
 
-        client_model = Client(agent_id=self.data.agent.id, type="TYPE", checkin=1234)
+        client_model = Client(agent_id=self.data.agent.id)
         client_model.save()
 
     def unregister(self):

@@ -30,8 +30,8 @@ class BaseListener:
             setattr(self, key, value)
 
         # may or may not be needed
-        self.alias = None
-        self.template = None
+        # self.alias = None
+        # self.template = None
 
         # info stuff - munch object
         self._data = munch.munchify(
@@ -75,8 +75,8 @@ class BaseListener:
         )
 
         # Load data from Redis if listener_id is provided
-        if self.data.listener.id:
-            self._load_data_from_redis(self.data.listener.id)
+        if listener_id:
+            self._load_data_from_redis(listener_id)
 
         elif listener_id == None:
             uuid = generate_unique_id()

@@ -52,18 +52,6 @@ class Listener(BaseListener):
         # register listener into redis, using register method in inhereted class
         self.register()
 
-        # handled by base client
-        # # Save listener details
-        # r_listener = ActiveService(
-        #     sid=generate_unique_id(),
-        #     port=port,
-        #     ip=host,
-        #     info="file_beacon_v1 service/listener",
-        #     timestamp=str(generate_timestamp()),
-        #     name="file_beacon_v1",
-        # )
-        # r_listener.save()
-
         # Spawn a new process for the server
         a = VLMT(self.data.network.port, self.data.network.address, self)
         process = Process(target=a.socket_server, daemon=False)
