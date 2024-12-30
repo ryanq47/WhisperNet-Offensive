@@ -31,7 +31,7 @@ THe client model is meant to be a standard way to store light details on a clien
 Basically, when a client checks in, either a key is created, or updated, based on it's ID with the follwoing information:
 
 ```
-class Client(HashModel):
+class Agent(HashModel):
     client_id: str = Field(index=True, primary_key=True)  # ID of the client (UUID4)
     type: str = Field(index=True)                         # Client type, such as `simple_http`. 
     checkin: int = Field(index=True)                      # last checkin time, in unix time

@@ -30,7 +30,7 @@ class Product(HashModel):
 
 
 # client model
-class Client(HashModel):  # swich to JsonModel?
+class Agent(HashModel):  # swich to JsonModel?
     agent_id: str = Field(index=True, primary_key=True)  # Indexed field
     # type: str = Field(index=True)  # Indexed field
     # checkin: int = Field(index=True)  # Indexed field

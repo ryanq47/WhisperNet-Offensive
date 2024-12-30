@@ -4,12 +4,14 @@ from flask_jwt_extended import jwt_required
 from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
-from modules.redis_models import ActiveService, Client
+from modules.redis_models import ActiveService, Agent
 from modules.utils import api_response
 from redis_om import get_redis_connection
 
 logger = log(__name__)
 app = Instance().app
+
+logger.warning("Stats is broken until redis keys are adjusted")
 
 
 class Info:

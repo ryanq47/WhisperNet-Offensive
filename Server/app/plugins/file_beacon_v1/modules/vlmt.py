@@ -3,7 +3,7 @@ import socket
 import struct
 
 from modules.log import log
-from plugins.file_beacon_v1.modules.client import Client
+from modules.redis_models import Agent
 
 logger = log(__name__)
 

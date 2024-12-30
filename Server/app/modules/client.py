@@ -6,7 +6,7 @@ import redis
 import yaml
 from modules.config import Config
 from modules.log import log
-from modules.redis_models import Client
+from modules.redis_models import Agent
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 logger = log(__name__)
@@ -323,7 +323,7 @@ class BaseClient:
         """
         logger.info(f"Registering agent: {self.data.agent.id}")
 
-        client_model = Client(agent_id=self.data.agent.id)
+        client_model = Agent(agent_id=self.data.agent.id)
         client_model.save()
 
     def unregister(self):
@@ -400,7 +400,7 @@ class BaseClient:
 
 
 # ## Basic example of usage
-# client = Client()
+# client = Agent()
 # ## load config - NEEDS to be called first
 # client.load_config(config_file_path="example.yaml")
 
@@ -428,7 +428,7 @@ class BaseClient:
 # print(client.data.system.second_os)
 
 # # ## Basic example of usage
-# client = Client()
+# client = Agent()
 # # ## load config - NEEDS to be called first
 # client.load_config(config_file_path="example.yaml")
 

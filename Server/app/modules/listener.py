@@ -307,7 +307,7 @@ class BaseListener:
 
 
 # ## Basic example of usage
-# client = Client()
+# client = Agent()
 # ## load config - NEEDS to be called first
 # client.load_config(config_file_path="example.yaml")
 
@@ -335,7 +335,7 @@ class BaseListener:
 # print(client.data.system.second_os)
 
 # # ## Basic example of usage
-# client = Client()
+# client = Agent()
 # # ## load config - NEEDS to be called first
 # client.load_config(config_file_path="example.yaml")
 

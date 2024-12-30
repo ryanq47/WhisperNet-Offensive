@@ -1,7 +1,7 @@
 from modules.client import BaseClient
 
 
-class Client(BaseClient):
+class Agent(BaseClient):
     def __init__(self, id):
         super().__init__(id)  # Ensure BaseClient is properly initialized
 

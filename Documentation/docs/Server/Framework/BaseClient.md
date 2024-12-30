@@ -25,7 +25,7 @@ The `BaseClient` class:
 You can use it in a class as such:
 
 ```
-class Client(BaseClient):
+class Agent(BaseClient):
     def __init__(self, id):
         super().__init__(id)
 ```
