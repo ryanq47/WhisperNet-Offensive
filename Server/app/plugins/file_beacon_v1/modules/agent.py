@@ -1,9 +1,9 @@
-from modules.client import BaseClient
+from modules.client import BaseAgent
 
 
-class Agent(BaseClient):
+class Agent(BaseAgent):
     def __init__(self, id):
-        super().__init__(id)  # Ensure BaseClient is properly initialized
+        super().__init__(id)  # Ensure BaseAgent is properly initialized
 
         # on creation, attempt to load from id
 

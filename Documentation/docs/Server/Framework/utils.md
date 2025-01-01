@@ -1,4 +1,4 @@
-# Utils Documentation
+# Utils
 
 A set of random functions/utility functions.
 

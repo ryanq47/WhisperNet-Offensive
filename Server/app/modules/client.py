@@ -12,7 +12,7 @@ from redis_om import Field, HashModel, JsonModel, get_redis_connection
 logger = log(__name__)
 
 
-class BaseClient:
+class BaseAgent:
     """
     A base class that provides common functionality for all models.
     """
@@ -87,15 +87,15 @@ class BaseClient:
             self._load_data_from_redis(self.data.agent.id)
 
     def _load_data_from_redis(self, agent_id):
-        """Internal: Load client data from Redis."""
+        """Internal: Load agent data from Redis."""
         try:
             # get data from redis
-            data = self.redis_client.get(f"client:{self.data.agent.id}")
+            data = self.redis_client.get(f"agent:{self.data.agent.id}")
             if data:
                 self._data = munch.munchify(json.loads(data))
-                logger.debug(f"Loaded client data for {self.data.agent.id} from Redis.")
+                logger.debug(f"Loaded agent data for {self.data.agent.id} from Redis.")
             else:
-                logger.debug(f"No data found in Redis for client: {self.data.agent.id}")
+                logger.debug(f"No data found in Redis for agent: {self.data.agent.id}")
                 # call register
         except Exception as e:
             logger.error(f"Error loading data from Redis: {e}")
@@ -183,7 +183,7 @@ class BaseClient:
     def _load_alias(self, alias_dict: dict):
         """
         Internal
-        Loads alias into client.
+        Loads alias into agent.
 
         Seperate method for future handling/standard way of handling
         """
@@ -205,7 +205,7 @@ class BaseClient:
     def _load_template(self, template_dict: dict):
         """
         Internal
-        Loads alias into client.
+        Loads alias into agent.
 
         Seperate method for future handling/standard way of handling
 
@@ -315,7 +315,7 @@ class BaseClient:
 
     def register(self):
         """
-        Registers a client to ...
+        Registers a agent to ...
             - redis?
 
         Can be whatever we need
@@ -323,17 +323,17 @@ class BaseClient:
         """
         logger.info(f"Registering agent: {self.data.agent.id}")
 
-        client_model = Agent(agent_id=self.data.agent.id)
-        client_model.save()
+        agent_model = Agent(agent_id=self.data.agent.id)
+        agent_model.save()
 
     def unregister(self):
         """
-        Unregister the client
+        Unregister the agent
         """
         logger.debug(f"Unregistering agent with ID:'{self.data.agent.id}'")
         # not the most clear, but this takes in (I think) the prim key, and then deletes the entry based on it
         # It seems to be passed directly to the redis.delete function through redis_om
-        Client.delete(self.data.agent.id)
+        Agent.delete(self.data.agent.id)
 
     def load_data(self):
         """
@@ -358,7 +358,7 @@ class BaseClient:
     # Command Queues
     ########
 
-    # name of redis key" client:command_stream:clientid
+    # name of redis key" agent:command_stream:agentid?
 
     def enqueue(self, command):
         """
@@ -372,7 +372,7 @@ class BaseClient:
             "rid": 1234,
         }
         self.redis_client.xadd(
-            f"client:command_stream:{self.data.agent.id}",
+            f"agent:command_stream:{self.data.agent.id}",
             {"data": json.dumps(task_data)},
         )
 
@@ -384,7 +384,7 @@ class BaseClient:
         """
         # Read tasks from the stream
         tasks = self.redis_client.xread(
-            {f"client:command_stream:{self.data.agent.id}": "0"}, count=5, block=5000
+            {f"agent:command_stream:{self.data.agent.id}": "0"}, count=5, block=5000
         )
 
         # Process tasks
@@ -393,22 +393,22 @@ class BaseClient:
                 task = json.loads(data["data"])
                 print(f"Processing Task: {task}")
                 self.redis_client.xdel(
-                    f"client:command_stream:{self.data.agent.id}", message_id
+                    f"agent:command_stream:{self.data.agent.id}", message_id
                 )  # Acknowledge and delete processed task
 
         return "TEMPORARY_COMMAND_PLACEHOLDER"
 
 
 # ## Basic example of usage
-# client = Agent()
+# agent = Agent()
 # ## load config - NEEDS to be called first
-# client.load_config(config_file_path="example.yaml")
+# agent.load_config(config_file_path="example.yaml")
 
 # ## make sure to run this every time before command gets sent off
 # ## LOG the before & after as well, in action log or something
-# client.format_command(command="powershell", arguments="whoami")
+# agent.format_command(command="powershell", arguments="whoami")
 
-# print(client.validate_config(config_file_path="example.yaml"))
+# print(agent.validate_config(config_file_path="example.yaml"))
 
 # access data in the data model
 # Categories:
@@ -419,29 +419,29 @@ class BaseClient:
 #  - security
 #  - geo
 
-# client.data.system.os = "SOMEOS"
-# client_os = client.data.system.os
-# print(client.data.system.os) or print(client_os)
+# agent.data.system.os = "SOMEOS"
+# client_os = agent.data.system.os
+# print(agent.data.system.os) or print(client_os)
 
 # if you want to do custom options you can too:
-# client.data.system.second_os = "SOMEOS2"
-# print(client.data.system.second_os)
+# agent.data.system.second_os = "SOMEOS2"
+# print(agent.data.system.second_os)
 
 # # ## Basic example of usage
-# client = Agent()
+# agent = Agent()
 # # ## load config - NEEDS to be called first
-# client.load_config(config_file_path="example.yaml")
+# agent.load_config(config_file_path="example.yaml")
 
 # # ## make sure to run this every time before command gets sent off
 # # ## LOG the before & after as well, in action log or something
-# client.format_command(command="powershell", arguments="whoami")
+# agent.format_command(command="powershell", arguments="whoami")
 
-# print(client.validate_config(config_file_path="example.yaml"))
-# client.data.system.os = "SOMEOS"
-# print(client.data.system.os)
+# print(agent.validate_config(config_file_path="example.yaml"))
+# agent.data.system.os = "SOMEOS"
+# print(agent.data.system.os)
 
-# client.data.system.urmom = "SOMEOS2"
-# print(client.data.system.urmom)
+# agent.data.system.urmom = "SOMEOS2"
+# print(agent.data.system.urmom)
 
 """
 Then like

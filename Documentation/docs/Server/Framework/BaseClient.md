@@ -1,6 +1,6 @@
-# BaseClient Class Documentation
+# BaseAgent Class Documentation
 
-The `BaseClient` class provides a foundation for client interaction in a Redis-backed system, supporting configuration loading, command queuing, data management, and interaction via templates and aliases.
+The `BaseAgent` class provides a foundation for client interaction in a Redis-backed system, supporting configuration loading, command queuing, data management, and interaction via templates and aliases.
 
 Any plugin that has C2 capability, should use this for handling a lot of the backend BS.
 
@@ -9,7 +9,7 @@ Any plugin that has C2 capability, should use this for handling a lot of the bac
 ---
 
 ## Class Overview
-The `BaseClient` class:
+The `BaseAgent` class:
 
 - Connects to a Redis backend to store and retrieve data.
 
@@ -25,7 +25,7 @@ The `BaseClient` class:
 You can use it in a class as such:
 
 ```
-class Agent(BaseClient):
+class Agent(BaseAgent):
     def __init__(self, id):
         super().__init__(id)
 ```
@@ -106,7 +106,7 @@ As this is a munch object, you can access `self.data` items using dot notation: 
 
 ### Initialization
 #### `__init__(self, agent_id, **kwargs)`
-Initializes a `BaseClient` instance:
+Initializes a `BaseAgent` instance:
 - Connects to Redis.
 - Sets dynamic attributes via `kwargs`.
 - Prepares the `self._data` structure.
