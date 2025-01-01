@@ -315,10 +315,7 @@ class BaseAgent:
 
     def register(self):
         """
-        Registers a agent to ...
-            - redis?
-
-        Can be whatever we need
+        Registers an agent to  redis
 
         """
         logger.info(f"Registering agent: {self.data.agent.id}")
@@ -360,43 +357,75 @@ class BaseAgent:
 
     # name of redis key" agent:command_stream:agentid?
 
-    def enqueue(self, command):
-        """
-        Enqueues a command
-        """
-        # example data
-        task_data = {
-            "command": command,
-            # "priority": 1,
-            "timestamp": "SOMETIME",  # datetime.now().isoformat(),
-            "rid": 1234,
-        }
-        self.redis_client.xadd(
-            f"agent:command_stream:{self.data.agent.id}",
-            {"data": json.dumps(task_data)},
-        )
+    # def enqueue(self, command):
+    #     """
+    #     Enqueues a command
+    #     """
+    #     # example data
+    #     task_data = {
+    #         "command": command,
+    #         # "priority": 1,
+    #         "timestamp": "SOMETIME",  # datetime.now().isoformat(),
+    #         "rid": 1234,
+    #     }
+    #     self.redis_client.xadd(
+    #         f"agent:command_stream:{self.data.agent.id}",
+    #         {"data": json.dumps(task_data)},
+    #     )
 
-    def dequeue(self):
+    # def dequeue(self):
+    #     """
+    #     Deques a command
+
+    #     [not impl] return false on no command
+    #     """
+    #     # Read tasks from the stream
+    #     tasks = self.redis_client.xread(
+    #         {f"agent:command_stream:{self.data.agent.id}": "0"}, count=5, block=5000
+    #     )
+
+    #     # Process tasks
+    #     for stream_name, messages in tasks:
+    #         for message_id, data in messages:
+    #             task = json.loads(data["data"])
+    #             print(f"Processing Task: {task}")
+    #             self.redis_client.xdel(
+    #                 f"agent:command_stream:{self.data.agent.id}", message_id
+    #             )  # Acknowledge and delete processed task
+
+    #     return "TEMPORARY_COMMAND_PLACEHOLDER"
+
+    # queue name should be agent id
+    # need to test & rename consume_commands to return none or something on no command,
+    # so a "no command" state can be implemented.
+
+    # NOTE! queue is right to left
+    # POP <-- item1 <-- item2 <-- item3 <-- push
+
+    def enqueue_command(self, command: str):  # , queue_name: str = "c2_queue"):
         """
-        Deques a command
-
-        [not impl] return false on no command
+        Adds a command (string) to the Redis list (queue).
         """
-        # Read tasks from the stream
-        tasks = self.redis_client.xread(
-            {f"agent:command_stream:{self.data.agent.id}": "0"}, count=5, block=5000
-        )
+        r.rpush(self.data.agent.id, command)
 
-        # Process tasks
-        for stream_name, messages in tasks:
-            for message_id, data in messages:
-                task = json.loads(data["data"])
-                print(f"Processing Task: {task}")
-                self.redis_client.xdel(
-                    f"agent:command_stream:{self.data.agent.id}", message_id
-                )  # Acknowledge and delete processed task
+    def consume_commands(self):  # queue_name: str = "c2_queue"):
+        """
+        Continuously pops commands off the queue from the left side (head).
+        """
+        while True:
+            # BLPOP returns a tuple: (queue_name, command)
+            # It blocks until a value is available.
+            result = r.blpop(self.data.agent.id)
 
-        return "TEMPORARY_COMMAND_PLACEHOLDER"
+            if result:
+                queue, command = result
+                # queue == b'c2_queue' (bytes)
+                # command == b'list_system_users' (bytes)
+                command_str = command.decode("utf-8")
+                print("Received command:", command_str)
+
+                # Process the command
+                # ...
 
 
 # ## Basic example of usage
