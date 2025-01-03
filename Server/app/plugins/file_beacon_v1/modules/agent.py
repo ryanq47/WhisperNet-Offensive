@@ -2,28 +2,12 @@ from modules.client import BaseAgent
 
 
 class Agent(BaseAgent):
-    def __init__(self, id):
-        super().__init__(id)  # Ensure BaseAgent is properly initialized
+    def __init__(self, agent_id):
+        super().__init__(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
 
         # on creation, attempt to load from id
 
         self.register()
         print("ENQUEUING COMMANDS")
-        self.enqueue(command="test")
+        self.enqueue_command(command="test")
         # self.dequeue()
-
-    # these are going to need to be redis based.
-    # def enqueue(self):
-    #     """
-    #     Enqueues a command
-    #     """
-    #     ...
-
-    # def dequeue(self):
-    #     """
-    #     Deques a command
-    #     """
-    #     ...
-
-    # Keep working on this
-    # docs

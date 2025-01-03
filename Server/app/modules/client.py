@@ -354,47 +354,6 @@ class BaseAgent:
     #########
     # Command Queues
     ########
-
-    # name of redis key" agent:command_stream:agentid?
-
-    # def enqueue(self, command):
-    #     """
-    #     Enqueues a command
-    #     """
-    #     # example data
-    #     task_data = {
-    #         "command": command,
-    #         # "priority": 1,
-    #         "timestamp": "SOMETIME",  # datetime.now().isoformat(),
-    #         "rid": 1234,
-    #     }
-    #     self.redis_client.xadd(
-    #         f"agent:command_stream:{self.data.agent.id}",
-    #         {"data": json.dumps(task_data)},
-    #     )
-
-    # def dequeue(self):
-    #     """
-    #     Deques a command
-
-    #     [not impl] return false on no command
-    #     """
-    #     # Read tasks from the stream
-    #     tasks = self.redis_client.xread(
-    #         {f"agent:command_stream:{self.data.agent.id}": "0"}, count=5, block=5000
-    #     )
-
-    #     # Process tasks
-    #     for stream_name, messages in tasks:
-    #         for message_id, data in messages:
-    #             task = json.loads(data["data"])
-    #             print(f"Processing Task: {task}")
-    #             self.redis_client.xdel(
-    #                 f"agent:command_stream:{self.data.agent.id}", message_id
-    #             )  # Acknowledge and delete processed task
-
-    #     return "TEMPORARY_COMMAND_PLACEHOLDER"
-
     # queue name should be agent id
     # need to test & rename consume_commands to return none or something on no command,
     # so a "no command" state can be implemented.
@@ -406,26 +365,35 @@ class BaseAgent:
         """
         Adds a command (string) to the Redis list (queue).
         """
-        r.rpush(self.data.agent.id, command)
+        logger.debug(f"Enqueing command: '{command}'")
+        self.redis_client.rpush(self.data.agent.id, command)
 
-    def consume_commands(self):  # queue_name: str = "c2_queue"):
+    def dequeue_command(self):  # queue_name: str = "c2_queue"):
         """
         Continuously pops commands off the queue from the left side (head).
+
+
+        if a command exists, returns the command (str), else returns False (bool)
+
         """
-        while True:
-            # BLPOP returns a tuple: (queue_name, command)
-            # It blocks until a value is available.
-            result = r.blpop(self.data.agent.id)
+        # while True:
+        # BLPOP returns a tuple: (queue_name, command)
+        # It blocks until a value is available.
 
-            if result:
-                queue, command = result
-                # queue == b'c2_queue' (bytes)
-                # command == b'list_system_users' (bytes)
-                command_str = command.decode("utf-8")
-                print("Received command:", command_str)
+        # changed up to if not a command, reutrn false
+        result = self.redis_client.blpop(self.data.agent.id)
 
-                # Process the command
-                # ...
+        if result:
+            queue, command = result
+            # queue == b'c2_queue' (bytes)
+            # command == b'list_system_users' (bytes)
+            command_str = command  # .decode("utf-8")
+            logger.debug(f"dequed command: {command_str}")
+            return command_str
+            # Process the command
+            # ...
+        else:
+            return False
 
 
 # ## Basic example of usage

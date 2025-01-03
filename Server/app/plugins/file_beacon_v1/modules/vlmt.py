@@ -3,7 +3,9 @@ import socket
 import struct
 
 from modules.log import log
-from modules.redis_models import Agent
+
+# from modules.redis_models import Agent
+from plugins.file_beacon_v1.modules.agent import Agent
 
 logger = log(__name__)
 
@@ -100,17 +102,22 @@ class VLMT:
             # print(contents)
             logger.debug(contents)
 
-            c = Client(id="SOMEID")
-            # Spawn client class, and let it do its thing
+            # c = Agent(agent_id="SOMEID")
+            # Spawn agent class, and let it do its thing
             # queue, dequue, register, etc?
-
+            agent_class = Agent(agent_id="SOMEID_1")
             # send appropriate message back
             # client_socket.sendall("ok".encode("utf-8"))
 
-            command = c.dequeue()
+            # crapy logic
+
+            command = agent_class.dequeue_command()
             # some processing...
             # with dequeue:
-            client_socket.sendall(command.encode("utf-8"))
+            if command:
+                client_socket.sendall(command.encode("utf-8"))
+            else:
+                client_socket.sendall("sleep".encode("utf-8"))
 
         except socket.timeout:
             logger.error(f"Socket timed out after 5 seconds while receiving data.")
