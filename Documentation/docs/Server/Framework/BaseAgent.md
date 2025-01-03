@@ -23,7 +23,7 @@ This class is meant to be inhereted.
 
 Requirements: 
 
-- agent_id: A _unique_ ID, used to track the agent accross the platform. For example, a UUID4. 
+- `agent_id`: A _unique_ ID, used to track the agent accross the platform. For example, a UUID4. 
 
 You can use it in your own class as such:
 
@@ -131,7 +131,7 @@ MyClass(BaseAgent):
 
 ### Initialization
 
-#### `__init__(self, agent_id, **kwargs)`
+#### [X] `__init__(self, agent_id, **kwargs)`
 
 Initializes a `BaseAgent` instance:
 
@@ -148,25 +148,25 @@ Initializes a `BaseAgent` instance:
 
 Loads client data from Redis into `self.data`.
 
-#### `register(self)`
+#### [X] `register(self)`
 
 Registers an agent in the system and stores it in Redis using the `Agent` model from `modules.redis_models`. The agent is uniquely identified by `self.data.agent.id`.
 
-#### `unregister(self)`
+#### [X] `unregister(self)`
 
 Removes the agent from the system by calling the `Agent` model from `modules.redis_models`, using `self.data.agent.id` for identification.
 
-#### `load_data(self)`
+#### `load_data(self)`  - Not Implemented
 
 Loads client data from Redis into the class instance.
 
-#### `unload_data(self)`
+#### `unload_data(self)` - Not Implemented
 
 Saves class data back to Redis.
 
 ---
 
-### Configuration Management
+### [X] Configuration Management
 
 Config files (or "templates") let you quickly change an agent’s functionality. Similar to Cobalt Strike’s malleable profiles—but simpler—they are YAML-based and rely on macros to replace values.
 
@@ -225,7 +225,7 @@ template:
 
 ```
 
-#### `load_config(self, config_file_path)`
+#### [X] `load_config(self, config_file_path)`
 
 `config_file_path`: Either a string path, or a `pathlib.Path` object
 
@@ -244,17 +244,20 @@ class Agent(BaseAgent):
 				self.load_config("./myconfig.yaml")
 ```
 
-#### `_load_alias(self, alias_dict)`
+#### [X] `_load_alias(self, alias_dict)`
 
 Loads aliases from a dictionary into `self.alias`. Internal function, do not use
 
-#### `_load_template(self, template_dict)`
+#### [X] `_load_template(self, template_dict)`
 
 Loads templates from a dictionary into `self.template`. Internal function, do not use
 
-#### `validate_config(config_file_path)`
+#### [X] `validate_config(config_file_path)`
 
 Static method to validate the structure of a YAML configuration file.
+
+- On success: (Bool): Returns `True`
+- On Failure: (Bool): Returns `False`
 
 This checks that the following items are in the template:
 
@@ -264,9 +267,9 @@ This checks that the following items are in the template:
 
 ---
 
-### [ ] Command Handling
+### [X] Command Handling
 
-#### `format_command(self, command, arguments)`
+#### [X] `format_command(self, command, arguments)`
 
 Formats a command based on its template. This is meant to be called when a command comes in, and needs to be formatted to the current template.
 
@@ -361,18 +364,5 @@ Class method to create an instance from a dictionary.
 Class method to create an instance from a JSON string.
 
 ---
-
-### Properties
-
-#### `data`
-
-Provides access to the `self._data` attribute, a structured `munch` object for client state.
-
-**Example:**
-
-```python
-hostname = client.data.system.hostname
-client.data.network.internal_ip = "192.168.1.10"
-```
 
 ---
