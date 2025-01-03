@@ -25,8 +25,8 @@ class BaseAgent:
             decode_responses=True,  # Ensures that strings are not returned as bytes
         )
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # for key, value in kwargs.items():
+        #     setattr(self, key, value)
 
         # may or may not be needed
         self.alias = None
@@ -81,10 +81,12 @@ class BaseAgent:
                 },
             }
         )
+        self.data.agent.id = agent_id
 
+        # change this to check if agent id key exists.
         # Load data from Redis if agent_id is provided
-        if self.data.agent.id:
-            self._load_data_from_redis(self.data.agent.id)
+        # if self.data.agent.id:
+        #    self._load_data_from_redis(self.data.agent.id)
 
     def _load_data_from_redis(self, agent_id):
         """Internal: Load agent data from Redis."""
@@ -315,21 +317,20 @@ class BaseAgent:
 
     def register(self):
         """
-        Registers an agent to  redis
-
+        Registers an agent in the system and stores it in Redis.
+        Uses the Agent model from `modules.redis_models` and `self.data.agent.id` to ensure unique keys.
         """
         logger.info(f"Registering agent: {self.data.agent.id}")
-
         agent_model = Agent(agent_id=self.data.agent.id)
         agent_model.save()
 
     def unregister(self):
         """
-        Unregister the agent
+        Deletes the agent from the system using the Agent model from `modules.redis_models`.
+        The agent is identified and removed by `self.data.agent.id`.
         """
-        logger.debug(f"Unregistering agent with ID:'{self.data.agent.id}'")
-        # not the most clear, but this takes in (I think) the prim key, and then deletes the entry based on it
-        # It seems to be passed directly to the redis.delete function through redis_om
+        logger.debug(f"Unregistering agent with ID: '{self.data.agent.id}'")
+        # Deletion is handled by passing `self.data.agent.id` to the `redis.delete` function through `redis_om`
         Agent.delete(self.data.agent.id)
 
     def load_data(self):
