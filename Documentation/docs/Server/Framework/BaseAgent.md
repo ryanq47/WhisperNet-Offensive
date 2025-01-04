@@ -25,7 +25,7 @@ This class is meant to be inhereted.
 
 Requirements: 
 
-- `agent_id`: A _unique_ ID, used to track the agent accross the platform. For example, a UUID4. 
+- `agent_id`: A _unique_ ID, used to track the agent across the platform. For example, a UUID4. 
 
 You can use it in your own class as such:
 
@@ -40,7 +40,7 @@ class Agent(BaseAgent):
 ## [X]Attributes
 
 - **self.redis_client**: Redis client for database interactions.
-    - NOTE! `decode_responses` is enabled, so all respones will come back as strings. 
+    - NOTE! `decode_responses` is enabled, so all responses will come back as strings. 
 - **self.alias**: Stores aliases loaded from a config file.
 - **self.template**: Stores templates for commands loaded from a config file.
 - **self._data**: A `dict` object holding structured client data. See the "Data Model Breakdown" as to how to use this
@@ -55,7 +55,7 @@ As this is a munch object, you can access `self.data` items using dot notation: 
 
 #### Data Model Structure:
 
-Below is the base structure of the data. The only field that is not `None` at initilization, is `agent.id`. This value is supplied from the `agent_id` arguement in `init`.
+Below is the base structure of the data. The only field that is not `None` at init, is `agent.id`. This value is supplied from the `agent_id` argument in `init`.
 
 ```
 {
@@ -145,25 +145,37 @@ Loads client data from Redis into `self.data`.
 
 Registers an agent in the system and stores it in Redis using the `Agent` model from `modules.redis_models`. The agent is uniquely identified by `self.data.agent.id`.
 
+Keys look like: `whispernet:client:UNIQUE_ID`
+
 #### [X] `unregister(self)`
 
 Removes the agent from the system by calling the `Agent` model from `modules.redis_models`, using `self.data.agent.id` for identification.
 
-#### `load_data(self)`  
+Keys look like: `whispernet:client:UNIQUE_ID`
+
+### [X] Class Management:
+
+These functions provide persistent data storage to maintain state across reboots and disconnections. Instead of relying on in-memory Python objects or serialized data—which can pose security risks (i.e. RCE serialization)—Redis is used for reliably tracking and storing client data.
+
+DEV: Maybe add an auto unload_data at class init so data stays up to date? something to think about
+
+#### [X] load_data(self)  
 
 Loads client data (`self.data`) from Redis into the class instance.
 
 - On success: (Bool): Returns `True`
-- On Failure/Error: (Bool): Returns `Exception`
+- On Failure/Error: (Bool): Raises `Exception`
 
-#### `unload_data(self)` 
+Keys look like: `whispernet:client:data:UNIQUE_ID`
+
+#### [X] `unload_data(self)` 
 
 Unloads client data (`self.data`) into Redis from the class instance.
 
 - On success: (Bool): Returns `True`
-- On Failure/Error: (Bool): Returns `Exception`
+- On Failure/Error: (Bool): Raises `Exception`
 
-
+Keys look like: `whispernet:client:data:UNIQUE_ID`
 
 ---
 
@@ -285,7 +297,7 @@ Example Scenario:
 - Function returns: `powershell iex bypass; powershell whoami`
 - This command is then queued into redis
 
-Psuedo Code:
+Pseudo Code:
 
 ```
 command = "execute:powershell:whoami"
@@ -311,7 +323,7 @@ Both have pros/cons, either are valid options.
 
 #### [X] `Queue info`
 
-Redis Queue's are used to hold commands to be run. This is acheived with redis's `rpush`, and `blpop` functions. 
+Redis Queue's are used to hold commands to be run. This is achieved with redis's `rpush`, and `blpop` functions. 
 
 Each queue item is put into the redis DB as such: `whispernet:client:id_of_client`. 
 
