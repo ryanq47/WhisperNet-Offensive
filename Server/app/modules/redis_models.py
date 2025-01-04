@@ -41,6 +41,17 @@ class Agent(HashModel):  # swich to JsonModel?
         global_key_prefix = "whispernet"  # Prefix for keys
 
 
+# client model
+class AgentData(HashModel):  # swich to JsonModel?
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
+    json_blob: str
+
+    class Meta:
+        model_key_prefix = "agent:data"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+
+
 # Create the index explicitly after defining the model
 # Client.create_index()
 

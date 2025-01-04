@@ -11,3 +11,5 @@ class Agent(BaseAgent):
         print("ENQUEUING COMMANDS")
         self.enqueue_command(command="test")
         # self.dequeue()
+        # self.unload_data()
+        self.load_data()

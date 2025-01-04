@@ -6,7 +6,7 @@ import redis
 import yaml
 from modules.config import Config
 from modules.log import log
-from modules.redis_models import Agent
+from modules.redis_models import Agent, AgentData
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 logger = log(__name__)
@@ -118,23 +118,13 @@ class BaseAgent:
         """
         return self._data
 
-    def to_dict(self):
-        """Convert the model's attributes to a dictionary."""
-        return {key: getattr(self, key) for key in vars(self)}
-
-    def to_json(self):
-        """Convert the model to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create an instance from a dictionary."""
-        return cls(**data)
-
-    @classmethod
-    def from_json(cls, json_data):
-        """Create an instance from a JSON string."""
-        return cls.from_dict(json.loads(json_data))
+    @data.setter
+    def data(self, value):
+        # Dev Note: Setting as munch object on SET, which is less common that retrieval.
+        # This theoretically should be more efficent
+        if not isinstance(value, munch.Munch):
+            value = munch.munchify(value)
+        self._data = value
 
     ##########
     # Script Options
@@ -333,24 +323,83 @@ class BaseAgent:
         # Deletion is handled by passing `self.data.agent.id` to the `redis.delete` function through `redis_om`
         Agent.delete(self.data.agent.id)
 
-    def load_data(self):
-        """
-        Loads data from redis.
-        """
-        # create a redis model for this
-
-        # have it be created at register
-
-        # this class is meant to load from redis after/on checkin, to re create the class
-
-        # might be able to pull off in the init as well
-        ...
-
     def unload_data(self):
         """
-        Unload data to redis
+        Store the given self.data in Redis under self.data.agent.id.
         """
-        ...
+        try:
+            logger.debug(f"Unloading data for agent {self.data.agent.id} to redis")
+            agent_data = AgentData(
+                agent_id=self.data.agent.id, json_blob=json.dumps(self.data)
+            )
+            agent_data.save()
+        except Exception as e:
+            logger.error(f"Could not unload data to redis, error occured: {e}")
+            raise e
+
+    def load_data(self) -> dict:
+        """
+        Fetch and return the data dict from Redis by self.data.agent.id.
+        """
+        try:
+            logger.debug(f"Loading data for agent {self.data.agent.id} from redis")
+            fetched_instance = AgentData.get(self.data.agent.id)
+            # JSON blob is stored as a json string in redis, need to convert back to dict
+            new_dict = json.loads(fetched_instance.json_blob)
+            self.data = new_dict
+        except JSONDecodeError as jde:
+            logger.error(
+                f"Error decoding JSON blob from redis. May be invalid: {fetched_instance.json_blob}"
+            )
+            raise e
+        except Exception as e:
+            logger.error(f"Could not load data from redis, error occured: {e}")
+            raise e
+
+    # def load_data(self):
+    #     """
+    #     Fetch and set the data (as a dict) from Redis by self.data.agent.id, into self._data
+    #     """
+    #     # note, the function is set to NOT overwrite self._data if it can't load data,
+    #     # can eithe rdo this, or make a fucntion that sets self._data to the blank dict, instead of
+    #     # doing it in init.
+
+    #     agent_id = self.data.agent.id
+    #     logger.debug(f"Attempting to load data for agent ID: {agent_id} from Redis.")
+
+    #     try:
+    #         fetched_instance = AgentData.get(
+    #             agent_id
+    #         )  # This should return a JSON string or None
+    #         if not fetched_instance:
+    #             logger.warning(f"No data found for agent ID: {agent_id}")
+    #             # self._data = {} # DO NOT overwrite default dict if empty.
+    #             return
+
+    #         try:
+    #             new_dict = json.loads(fetched_instance)
+    #             if not isinstance(new_dict, dict):
+    #                 logger.warning(
+    #                     f"Data returned for agent ID: {agent_id} is not a dict. "
+    #                 )
+    #                 # self._data = {} # DO NOT overwrite default dict if empty.
+    #             else:
+    #                 self._data = new_dict
+    #                 logger.info(f"Successfully loaded data for agent ID: {agent_id}.")
+    #             return self._data
+
+    #         except json.JSONDecodeError:
+    #             logger.error(f"Invalid JSON data returned for agent ID: {agent_id}. ")
+    #             # self._data = {} # DO NOT overwrite default dict if empty.
+    #             return self._data
+
+    #     except Exception as exc:
+    #         logger.error(
+    #             f"Unexpected error occurred while retrieving data for "
+    #             f"agent ID: {agent_id}: {exc}"
+    #         )
+    #         self._data = {}
+    #         return self._data
 
     #########
     # Command Queues
@@ -382,6 +431,8 @@ class BaseAgent:
         # It blocks until a value is available.
 
         # changed up to if not a command, reutrn false
+        logger.debug("Dequeuing command")
+        print(self.data.agent)
         result = self.redis_client.blpop(self.data.agent.id)
 
         if result:

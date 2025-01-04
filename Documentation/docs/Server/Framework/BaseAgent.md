@@ -1,5 +1,7 @@
 # BaseAgent Class Documentation
 
+Last Update: 01/03/2025
+
 The `BaseAgent` class provides a foundation for client interaction in a Redis-backed system, supporting configuration loading, command queuing, data management, and interaction via templates and aliases.
 
 Any plugin that has C2 capability, should use this for handling a lot of the backend BS.
@@ -50,15 +52,6 @@ class Agent(BaseAgent):
 Here are the current default data items in the datamodel.
 
 As this is a munch object, you can access `self.data` items using dot notation: `self.data.system.hostname`.
-
-Additionally, if you want to access as a raw dictonary, use `self._data`. 
-
-#### self.data vs self._data:
-
-| Attribute    | Type             | Example Access      |
-| ------------ | ---------------- | ------------------- |
-| `self._data` | **Python dict**  | `self._data["key"]` |
-| `self.data`  | **Munch object** | `self.data.key`     |
 
 #### Data Model Structure:
 
@@ -113,7 +106,7 @@ Below is the base structure of the data. The only field that is not `None` at in
 }
 ```
 
-These values can *only* be accessed/set with either `self.data`, or `self._data`, they *cannot* be set at the class initilazation.
+These values can *only* be accessed/set with `self.data`, they *cannot* be set at the class initilazation. 
 
 Example Usage:
 
@@ -127,7 +120,7 @@ MyClass(BaseAgent):
 
 ---
 
-## Methods
+## [X] Methods
 
 ### Initialization
 
@@ -142,9 +135,9 @@ Initializes a `BaseAgent` instance:
 
 ---
 
-### Redis Data Management
+### [X] Redis Data Management
 
-#### `_load_data_from_redis(self, agent_id)`
+#### `_load_data_from_redis(self, agent_id)` - Not Implemented
 
 Loads client data from Redis into `self.data`.
 
@@ -156,13 +149,21 @@ Registers an agent in the system and stores it in Redis using the `Agent` model 
 
 Removes the agent from the system by calling the `Agent` model from `modules.redis_models`, using `self.data.agent.id` for identification.
 
-#### `load_data(self)`  - Not Implemented
+#### `load_data(self)`  
 
-Loads client data from Redis into the class instance.
+Loads client data (`self.data`) from Redis into the class instance.
 
-#### `unload_data(self)` - Not Implemented
+- On success: (Bool): Returns `True`
+- On Failure/Error: (Bool): Returns `Exception`
 
-Saves class data back to Redis.
+#### `unload_data(self)` 
+
+Unloads client data (`self.data`) into Redis from the class instance.
+
+- On success: (Bool): Returns `True`
+- On Failure/Error: (Bool): Returns `Exception`
+
+
 
 ---
 
@@ -345,24 +346,17 @@ print(f"The dequeued command is: {command}")
 
 ---
 
-### Data Conversion - Not Implemented
-
-#### `to_dict(self)`
-
-Converts the class instance's attributes into a dictionary.
-
-#### `to_json(self)`
-
-Converts the class instance into a JSON string.
-
-#### `from_dict(cls, data)`
-
-Class method to create an instance from a dictionary.
-
-#### `from_json(cls, json_data)`
-
-Class method to create an instance from a JSON string.
-
 ---
 
 ---
+
+## [X] Misc/Redis Commands
+
+Just some helpful redis commands to view the keys/contents of the keys, from within `redis-cli`
+
+| **Action**                 | **Command**                      | **Example**                       |
+| -------------------------- | -------------------------------- | --------------------------------- |
+| **View Agent Keys**        | `KEYS "whispernet:agent:*"`      | `KEYS "whispernet:agent:*"`       |
+| **View Data Keys**         | `KEYS "whispernet:agent:data:*"` | `KEYS "whispernet:agent:data:*"`  |
+| **View All Keys**          | `KEYS *`                         | `KEYS *`                          |
+| **View Contents of a Key** | `HGETALL "KEYNAME"`              | `HGETALL "whispernet:agent:1234"` |
