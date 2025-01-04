@@ -42,7 +42,7 @@ class Agent(HashModel):  # swich to JsonModel?
 
 
 # client model
-class AgentData(HashModel):  # swich to JsonModel?
+class AgentData(HashModel):
     agent_id: str = Field(index=True, primary_key=True)  # Indexed field
     json_blob: str
 

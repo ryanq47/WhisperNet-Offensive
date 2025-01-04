@@ -347,6 +347,8 @@ class BaseAgent:
             # JSON blob is stored as a json string in redis, need to convert back to dict
             new_dict = json.loads(fetched_instance.json_blob)
             self.data = new_dict
+            return True
+
         except JSONDecodeError as jde:
             logger.error(
                 f"Error decoding JSON blob from redis. May be invalid: {fetched_instance.json_blob}"

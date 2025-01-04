@@ -14,7 +14,10 @@ To use these models, follow the redis-om docs: https://redis.io/docs/latest/inte
 
 If you don't want to dig through those, a basic example to save to the redis db is as such:
 
-```
+```py
+#import the class
+from modules.redis_models import SomeModel
+
 #Init the class
 c = SomeModel(
         name=container_name,
@@ -25,9 +28,63 @@ c = SomeModel(
 c.save()
 ```
 
+## [X] Agent Model
 
-## Client model
+The agent model is used for registering agents/tracking that them exist
+
+`agent_id`: The unique field used to distinguish Agents. Needs to be *UNIQUE* or you may run into collission issues.
+
+```py
+class Agent(HashModel):
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
+
+    class Meta:
+        model_key_prefix = "client"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+### Example Usage
+
+```py
+redis_agent_class = Agent(agent_id="SOMEID")
+redis_agent_class.save()
+```
+
+## [X] AgentData Model
+
+The AgentData model is used to store data for agents. 
+
+`agent_id`: The unique field used to distinguish Agents. Should be the same as the one used in the Agent Model if the Agents are the same.
+
+`json_blob`: The json string with data from the class. If using `BaseAgent`, the `unload_data` function does this.
+
+```py
+class AgentData(HashModel):
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
+    json_blob: str
+
+    class Meta:
+        model_key_prefix = "agent:data"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+### Example Usage
+
+```py
+mydict = {"key":"value"}
+json_blob = json.dumps(mydict)
+redis_agent_class = AgentData(agent_id="SOMEID", json_blob=json_blob)
+redis_agent_class.save()
+```
+
+## [ ] Listener Model
+
+## DEPRECATED Client model
+
 THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
+
 Basically, when a client checks in, either a key is created, or updated, based on it's ID with the follwoing information:
 
 ```
@@ -78,7 +135,6 @@ Together, all these keys make up the contents of the `/clients` endpoint, which 
 
 ```
 
-
 ## Active Service Model
 
 The active service model is used to store the current active services on the server. It's primarily used by the stats plugin to allow the WebClient to view the current active Services. This is different than Plugin/Container models, as this only holds data of the *service*, not the method it's being run with. 
@@ -120,7 +176,6 @@ class Plugin(JsonModel):
         database = redis                            # The Redis connection
         global_key_prefix = "plugin"                # Prefix of key
 ```
-
 
 ## Container Model
 

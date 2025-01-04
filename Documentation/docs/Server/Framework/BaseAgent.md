@@ -40,7 +40,7 @@ class Agent(BaseAgent):
 ## [X]Attributes
 
 - **self.redis_client**: Redis client for database interactions.
-    - NOTE! `decode_responses` is enabled, so all responses will come back as strings. 
+    - NOTE! `decode_responses` is enabled, so all responses will come back as strings. (in this case, json strings)
 - **self.alias**: Stores aliases loaded from a config file.
 - **self.template**: Stores templates for commands loaded from a config file.
 - **self._data**: A `dict` object holding structured client data. See the "Data Model Breakdown" as to how to use this

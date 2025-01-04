@@ -1,4 +1,4 @@
-# XXX Class Documentation
+# TEMPLATE Class Documentation
 
 Last Update: 
 
@@ -6,14 +6,10 @@ Last Update:
 
 ## [ ] Class Overview
 
-
-
 This class does ...
 
 - ...
 - ...
-
----
 
 ---
 
@@ -29,18 +25,12 @@ This class does ...
 
 ## [ ] Methods
 
-
-
 ### [ ] Similar/Grouped Methods #1
 
 #### [X] `somemethod(self)`
 
-
-
 ### [ ] Similar/Grouped Methods #2
 
 #### [X] `somemethod(self)`
-
-
 
 ---
