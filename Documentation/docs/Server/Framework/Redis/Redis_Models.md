@@ -32,7 +32,7 @@ c.save()
 
 The agent model is used for registering agents/tracking that them exist
 
-`agent_id`: The unique field used to distinguish Agents. Needs to be *UNIQUE* or you may run into collission issues.
+`agent_id`: The unique field used to distinguish Agents. Needs to be *UNIQUE* or you may run into collision issues.
 
 ```py
 class Agent(HashModel):
@@ -79,9 +79,32 @@ redis_agent_class = AgentData(agent_id="SOMEID", json_blob=json_blob)
 redis_agent_class.save()
 ```
 
-## [ ] Listener Model
+## [X] Listener Model
 
-## DEPRECATED Client model
+The Listener model is used to store data for listeners that exist.
+
+`listener_id`: The unique field used to distinguish Listeners. I'd reccommend a UUID of some sorts
+
+`name`: The name of the listener
+
+```py
+class Listener(HashModel):
+    listener_id: str = Field(index=True, primary_key=True)  # Indexed field
+    name: str = Field()
+
+    class Meta:
+        model_key_prefix = "listener"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+Example Usage:
+
+```
+redis_listener_class = Listener(listener_id="SOMEID")
+redis_listener_class.save()
+```
+
 
 THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
 
@@ -134,6 +157,8 @@ Together, all these keys make up the contents of the `/clients` endpoint, which 
 }
 
 ```
+
+## DEPRECATED Client model
 
 ## Active Service Model
 
@@ -195,3 +220,4 @@ class Plugin(JsonModel):
         database = redis                            # The Redis connection
         global_key_prefix = "plugin"                # Prefix of key
 ```
+

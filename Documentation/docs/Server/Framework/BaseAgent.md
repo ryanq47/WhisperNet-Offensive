@@ -1,6 +1,6 @@
 # BaseAgent Class Documentation
 
-Last Update: 01/03/2025
+Last Update: 01/04/2025
 
 The `BaseAgent` class provides a foundation for client interaction in a Redis-backed system, supporting configuration loading, command queuing, data management, and interaction via templates and aliases.
 
@@ -8,7 +8,7 @@ Any plugin that has C2 capability, should use this for handling a lot of the bac
 
 ---
 
-## [X] Class Overview
+## Class Overview
 
 The `BaseAgent` class:
 
@@ -19,7 +19,7 @@ The `BaseAgent` class:
 
 ---
 
-## [X] Using in a class:
+## Using in a class:
 
 This class is meant to be inhereted. 
 
@@ -35,6 +35,45 @@ class Agent(BaseAgent):
         super().__init__(agent_id=agent_id)
 ```
 
+### Example Usage:
+
+```py
+# This example assumes that on checkin, a class will be created to handle the Agent checking in.
+
+# Commands would be enqueued to the redis DB from an endpoint, such as /myc2/uuid/enqueue, then popped here when the Agent checks in
+# Note, you can also use BaseAgent to do that enqueuing, here's example Pseudocode:
+
+#@flask.app("/somedest")
+#def enqueue_from_user():
+    #command = response.json()["command"]
+    #agent_id = response.json()["agent_id"]
+    #ba = BaseAgent(agent_id)
+    #ba.enqueue("somecommand")
+
+
+# Inherit BaseAgent into your class
+class Agent(BaseAgent):
+    def init(self, agent_id):
+        super().init(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
+
+        # Register the client 
+        self.register()
+
+        # Pop a command, in this case the one queued above in the pseudo code `enqueue_from_user()` function
+        next_command = self.dequeue()
+
+        # Your logic for sending command back to client
+        self.send(next_command)
+        # self.unload_data()
+
+        self.load_data()
+
+    def send(self, command):
+        ... #some send logic
+    def receive(self):
+        ... #some receive logic
+```
+
 ---
 
 ## [X]Attributes
@@ -47,7 +86,7 @@ class Agent(BaseAgent):
 
 ---
 
-## [X] Data Model Breakdown:
+## Data Model Breakdown:
 
 Here are the current default data items in the datamodel.
 
@@ -120,11 +159,11 @@ MyClass(BaseAgent):
 
 ---
 
-## [X] Methods
+## Methods
 
 ### Initialization
 
-#### [X] `__init__(self, agent_id, **kwargs)`
+#### `__init__(self, agent_id, **kwargs)`
 
 Initializes a `BaseAgent` instance:
 
@@ -135,31 +174,31 @@ Initializes a `BaseAgent` instance:
 
 ---
 
-### [X] Redis Data Management
+### Redis Data Management
 
 #### `_load_data_from_redis(self, agent_id)` - Not Implemented
 
 Loads client data from Redis into `self.data`.
 
-#### [X] `register(self)`
+#### `register(self)`
 
 Registers an agent in the system and stores it in Redis using the `Agent` model from `modules.redis_models`. The agent is uniquely identified by `self.data.agent.id`.
 
 Keys look like: `whispernet:client:UNIQUE_ID`
 
-#### [X] `unregister(self)`
+#### `unregister(self)`
 
 Removes the agent from the system by calling the `Agent` model from `modules.redis_models`, using `self.data.agent.id` for identification.
 
 Keys look like: `whispernet:client:UNIQUE_ID`
 
-### [X] Class Management:
+### Class Management:
 
 These functions provide persistent data storage to maintain state across reboots and disconnections. Instead of relying on in-memory Python objects or serialized data—which can pose security risks (i.e. RCE serialization)—Redis is used for reliably tracking and storing client data.
 
 DEV: Maybe add an auto unload_data at class init so data stays up to date? something to think about
 
-#### [X] load_data(self)  
+#### load_data(self)  
 
 Loads client data (`self.data`) from Redis into the class instance.
 
@@ -168,7 +207,7 @@ Loads client data (`self.data`) from Redis into the class instance.
 
 Keys look like: `whispernet:client:data:UNIQUE_ID`
 
-#### [X] `unload_data(self)` 
+#### `unload_data(self)` 
 
 Unloads client data (`self.data`) into Redis from the class instance.
 
@@ -179,7 +218,7 @@ Keys look like: `whispernet:client:data:UNIQUE_ID`
 
 ---
 
-### [X] Configuration Management
+### Configuration Management
 
 Config files (or "templates") let you quickly change an agent’s functionality. Similar to Cobalt Strike’s malleable profiles—but simpler—they are YAML-based and rely on macros to replace values.
 
@@ -238,7 +277,7 @@ template:
 
 ```
 
-#### [X] `load_config(self, config_file_path)`
+#### `load_config(self, config_file_path)`
 
 `config_file_path`: Either a string path, or a `pathlib.Path` object
 
@@ -257,15 +296,15 @@ class Agent(BaseAgent):
 				self.load_config("./myconfig.yaml")
 ```
 
-#### [X] `_load_alias(self, alias_dict)`
+#### `_load_alias(self, alias_dict)`
 
 Loads aliases from a dictionary into `self.alias`. Internal function, do not use
 
-#### [X] `_load_template(self, template_dict)`
+#### `_load_template(self, template_dict)`
 
 Loads templates from a dictionary into `self.template`. Internal function, do not use
 
-#### [X] `validate_config(config_file_path)`
+#### `validate_config(config_file_path)`
 
 Static method to validate the structure of a YAML configuration file.
 
@@ -280,9 +319,9 @@ This checks that the following items are in the template:
 
 ---
 
-### [X] Command Handling
+### Command Handling
 
-#### [X] `format_command(self, command, arguments)`
+#### `format_command(self, command, arguments)`
 
 Formats a command based on its template. This is meant to be called when a command comes in, and needs to be formatted to the current template.
 
@@ -319,15 +358,15 @@ Both have pros/cons, either are valid options.
 
 ---
 
-### [X] Redis Command Queue Management
+### Redis Command Queue Management
 
-#### [X] `Queue info`
+#### `Queue info`
 
 Redis Queue's are used to hold commands to be run. This is achieved with redis's `rpush`, and `blpop` functions. 
 
 Each queue item is put into the redis DB as such: `whispernet:client:id_of_client`. 
 
-#### [X] `enqueue_command(self, command)`
+#### `enqueue_command(self, command)`
 
 Enqueues a command into the Redis stream for this client.
 
@@ -338,7 +377,7 @@ command = "run:powershell"
 self.enqueue_command(command)
 ```
 
-#### [X] `dequeue_command(self)`
+#### `dequeue_command(self)`
 
 Dequeues and processes commands from the Redis stream.
 
@@ -362,7 +401,7 @@ print(f"The dequeued command is: {command}")
 
 ---
 
-## [X] Misc/Redis Commands
+## Misc/Redis Commands
 
 Just some helpful redis commands to view the keys/contents of the keys, from within `redis-cli`
 
