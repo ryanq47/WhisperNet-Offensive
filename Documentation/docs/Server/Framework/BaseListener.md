@@ -4,6 +4,10 @@ Last Update: 01//5/25
 
 The `BaseListener` class provides a foundation for listener interaction in a Redis-backed system.
 
+
+
+At the moment, this doesn't do much besides register, and store the needed data in redis. 
+
 ---
 
 ## [ ] Class Overview
