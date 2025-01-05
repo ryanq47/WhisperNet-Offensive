@@ -39,7 +39,7 @@ class Listener(BaseListener):
 
     def __init__(self, port: int, host: str):
         # init super
-        super().__init__()  # can give listener_id if there is one that needs to be respawned from redis data
+        super().__init__()
         # make sure port is an int
         if not type(port) == int:
             port = int(port)

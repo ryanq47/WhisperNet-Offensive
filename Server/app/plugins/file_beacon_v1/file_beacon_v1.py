@@ -66,6 +66,15 @@ def flask_spawn_listener():
     return api_response(data="somedata")
 
 
+# Note on these, /stats will provide all, these will provde plugin specific
+@app.route("/plugin/file-beacon-v1/agents", methods=["POST"])
+def flask_get_agents(): ...  # Get agents from redis w base agents
+
+
+@app.route("/plugin/file-beacon-v1/listeners", methods=["GET"])
+def flask_get_listeners(): ...  # Get listeners from redis w base listener
+
+
 @app.route(
     "/plugin/file-beacon-v1/listener/<string:listener_uuid>/kill", methods=["POST"]
 )

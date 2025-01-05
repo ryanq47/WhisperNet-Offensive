@@ -14,7 +14,7 @@ The `BaseAgent` class:
 
 - Connects to a Redis backend to store and retrieve data.
 - Loads configuration files to support aliasing and templating of commands.
-- Provides a **data** attribute (via `self.data`) for structured client state management.
+- Provides a **data** attribute (via `self.data`) for structured Agent state management.
 - Manages command queues for sending and processing tasks.
 
 ---
@@ -56,7 +56,7 @@ class Agent(BaseAgent):
     def __init__(self, agent_id, config_file_path):
         super().__init__(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
 
-        # Register the client 
+        # Register the Agent 
         self.register()
 
         # load config file if there is one

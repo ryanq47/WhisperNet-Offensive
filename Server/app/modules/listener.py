@@ -13,9 +13,10 @@ from redis_om import Field, HashModel, JsonModel, get_redis_connection
 logger = log(__name__)
 
 
+# future idea... as listeners are different, baseHttpListener? BaseTcpListener?
 class BaseListener:
     """
-    A base class that provides common functionality for all models.
+    A base class that provides common functionality for listeners.
     """
 
     def __init__(self, listener_id=None, **kwargs):
@@ -45,27 +46,6 @@ class BaseListener:
                     "port": None,  # Port number to listen on
                     "protocol": None,  # Protocol (e.g., "TCP", "UDP")
                 },
-                "endpoints": [  # List of endpoints for different functionalities
-                    {
-                        "endpoint_name": "command",
-                        "path": "/command",
-                        "methods": ["POST", "GET"],
-                    },
-                    {
-                        "endpoint_name": "heartbeat",
-                        "path": "/heartbeat",
-                        "methods": ["POST"],
-                    },
-                ],
-                "ssl": {
-                    "ssl_enabled": False,  # Whether SSL is enabled
-                    "ssl_cert_path": None,  # Path to SSL certificate (if SSL is enabled)
-                    "ssl_key_path": None,  # Path to SSL key (if SSL is enabled)
-                },
-                "authentication": {  # Authentication settings
-                    "enabled": True,  # Whether authentication is required
-                    "token": "securetoken123",  # Authentication token or mechanism
-                },
                 "metadata": {  # Additional metadata
                     "created_at": None,
                     "updated_at": None,
@@ -74,11 +54,7 @@ class BaseListener:
             }
         )
 
-        # Load data from Redis if listener_id is provided
-        if listener_id:
-            self._load_data_from_redis(listener_id)
-
-        elif listener_id == None:
+        if listener_id == None:
             uuid = generate_unique_id()
             logger.warning(f"No listener ID provided, settings as: {uuid}")
             self.data.listener.id = uuid  ## UUID generate
@@ -88,25 +64,6 @@ class BaseListener:
             name = generate_mashed_name()
             logger.warning(f"No name provided, setting as '{name}'")
             self.data.listener.name = name
-
-    def _load_data_from_redis(self, listener_id):
-        """Internal: Load client data from Redis."""
-        try:
-            # get data from redis
-            data = self.redis_client.get(f"listener:{self.data.listener.id}")
-            if data:
-                self._data = munch.munchify(json.loads(data))
-                logger.debug(
-                    f"Loaded listener data for {self.data.listener.id} from Redis."
-                )
-            else:
-                logger.debug(
-                    f"No data found in Redis for listener: {self.data.listener.id}"
-                )
-                # call register
-        except Exception as e:
-            logger.error(f"Error loading data from Redis: {e}")
-            raise e
 
     @property
     def data(self):
@@ -123,95 +80,6 @@ class BaseListener:
         """
         return self._data
 
-    def to_dict(self):
-        """Convert the model's attributes to a dictionary."""
-        return {key: getattr(self, key) for key in vars(self)}
-
-    def to_json(self):
-        """Convert the model to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create an instance from a dictionary."""
-        return cls(**data)
-
-    @classmethod
-    def from_json(cls, json_data):
-        """Create an instance from a JSON string."""
-        return cls.from_dict(json.loads(json_data))
-
-    ##########
-    # Script Options
-    ##########
-    def load_config(self, config_file_path: str | pathlib.Path):
-        """
-        Load template file into current session.
-
-        config_file_path (str | pathlib.path ): Path to config
-
-        """
-        try:  # make bulletproof
-            # Load configuration from a script if provided
-            # logger.debug(f"Loading script file: {template_file_path}")
-            with open(config_file_path, "r") as file:
-                data = yaml.safe_load(file)
-
-            # not doing anything with config at the moment
-
-        except FileNotFoundError as fnfe:
-            logger.error(f"Configuration file not found: {config_file_path}")
-            logger.error(fnfe)
-            raise fnfe
-
-        except Exception as e:
-            logger.error(e)
-            raise e
-
-    @staticmethod
-    def validate_config(config_file_path: str | pathlib.Path):
-        """
-        Validates a config file
-
-        returns True on success, false on fail
-        """
-        try:
-            with open(config_file_path, "r") as file:
-                data = yaml.safe_load(file)
-
-            # maybe use
-            template_dict = data.get("template", None)
-            alias_dict = data.get("alias", None)
-            info_dict = data.get("info", None)
-
-            if template_dict is None:
-                # err
-                logger.error("Missing 'template' section in configuration.")
-                return False
-                # raise ValueError("Configuration must include a 'template' section.")
-
-            if alias_dict is None:
-                # err
-                logger.error("Missing 'alias' section in configuration.")
-                return False
-                # raise ValueError("Configuration must include an 'alias' section.")
-
-            if info_dict is None:
-                # warning
-                logger.warning("Missing 'info' section in configuration")
-
-            return True
-
-        except FileNotFoundError as fnfe:
-            logger.error(f"Configuration file not found: {config_file_path}")
-            logger.error(fnfe)
-            raise fnfe
-
-        except Exception as e:
-            logger.error("An error not related to the config file contents occured:")
-            logger.error(e)
-            raise e
-
     ##########
     # Redis Stuff
     ##########
@@ -224,15 +92,6 @@ class BaseListener:
         Can be whatever we need
 
         """
-        # self.redis
-
-        # set self.registered to true?
-
-        # redis con setup...
-
-        # redis model ...
-
-        # redis save...
         logger.info(f"Registering listener: {self.data.listener.id}")
 
         listener_model = Listener(
@@ -252,24 +111,39 @@ class BaseListener:
         # It seems to be passed directly to the redis.delete function through redis_om
         Listener.delete(self.data.listener.id)
 
-    def load_data(self):
-        """
-        Loads data from redis.
-        """
-        # create a redis model for this
-
-        # have it be created at register
-
-        # this class is meant to load from redis after/on checkin, to re create the class
-
-        # might be able to pull off in the init as well
-        ...
-
     def unload_data(self):
         """
-        Unload data to redis
+        Store the given self.data in Redis under self.data.agent.id.
         """
-        ...
+        try:
+            logger.debug(
+                f"Unloading data for listener {self.data.listener.id} to redis"
+            )
+            # agent_data = AgentData(
+            #     agent_id=self.data.agent.id, json_blob=json.dumps(self.data)
+            # )
+            # agent_data.save()
+        except Exception as e:
+            logger.error(f"Could not unload data to redis, error occurred: {e}")
+            raise e
+
+    def load_data(self) -> dict:
+        """
+        Fetch and return the data dict from Redis by self.data.agent.id.
+        """
+        try:
+            logger.debug(
+                f"Loading data for listener {self.data.listener.id} from redis"
+            )
+            # fetched_instance = AgentData.get(self.data.agent.id)
+            ## JSON blob is stored as a json string in redis, need to convert back to dict
+            # new_dict = json.loads(fetched_instance.json_blob)
+            # self.data = new_dict
+            return True
+
+        except Exception as e:
+            logger.error(f"Could not load data from redis, error occurred: {e}")
+            raise e
 
     ##########
     # User STuff
@@ -304,48 +178,3 @@ class BaseListener:
     #     Basically, this just makes it easier to do/a one stop shop
     #     """
     #     ...
-
-
-# ## Basic example of usage
-# client = Agent()
-# ## load config - NEEDS to be called first
-# client.load_config(config_file_path="example.yaml")
-
-# ## make sure to run this every time before command gets sent off
-# ## LOG the before & after as well, in action log or something
-# client.format_command(command="powershell", arguments="whoami")
-
-# print(client.validate_config(config_file_path="example.yaml"))
-
-# access data in the data model
-# Categories:
-#  - system
-#  - network
-#  - hardware
-#  - agent
-#  - security
-#  - geo
-
-# client.data.system.os = "SOMEOS"
-# client_os = client.data.system.os
-# print(client.data.system.os) or print(client_os)
-
-# if you want to do custom options you can too:
-# client.data.system.second_os = "SOMEOS2"
-# print(client.data.system.second_os)
-
-# # ## Basic example of usage
-# client = Agent()
-# # ## load config - NEEDS to be called first
-# client.load_config(config_file_path="example.yaml")
-
-# # ## make sure to run this every time before command gets sent off
-# # ## LOG the before & after as well, in action log or something
-# client.format_command(command="powershell", arguments="whoami")
-
-# print(client.validate_config(config_file_path="example.yaml"))
-# client.data.system.os = "SOMEOS"
-# print(client.data.system.os)
-
-# client.data.system.urmom = "SOMEOS2"
-# print(client.data.system.urmom)
