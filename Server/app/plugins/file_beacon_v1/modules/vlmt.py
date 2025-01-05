@@ -97,27 +97,18 @@ class VLMT:
 
                 contents += chunk
 
-            logger.info(f"Full message of size {message_length} recieved")
+            logger.info(f"Full message of size {message_length} received")
 
             # print(contents)
             logger.debug(contents)
 
-            # c = Agent(agent_id="SOMEID")
             # Spawn agent class, and let it do its thing
-            # queue, dequue, register, etc?
-            agent_class = Agent(agent_id="SOMEID_1")
-            # send appropriate message back
-            # client_socket.sendall("ok".encode("utf-8"))
-
-            # crapy logic
-
-            command = agent_class.dequeue_command()
-            # some processing...
-            # with dequeue:
-            if command:
-                client_socket.sendall(command.encode("utf-8"))
-            else:
-                client_socket.sendall("sleep".encode("utf-8"))
+            # Create class, and checkin
+            agent_class = Agent(
+                agent_id="SOMEID_1",
+                config_file_path="./profiles/dev.yaml",
+                client_socket=client_socket,
+            ).checkin()
 
         except socket.timeout:
             logger.error(f"Socket timed out after 5 seconds while receiving data.")
@@ -129,3 +120,6 @@ class VLMT:
 
         finally:
             client_socket.close()
+
+
+# See listener framework thing in github projects for next steps

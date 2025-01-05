@@ -53,14 +53,19 @@ class Agent(BaseAgent):
 
 # Inherit BaseAgent into your class
 class Agent(BaseAgent):
-    def init(self, agent_id):
-        super().init(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
+    def __init__(self, agent_id, config_file_path):
+        super().__init__(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
 
         # Register the client 
         self.register()
 
+        # load config file if there is one
+        self.load_config(config_file_path=config_file_path) # A yaml file, example, myconfig.yaml
+
         # Pop a command, in this case the one queued above in the pseudo code `enqueue_from_user()` function
         next_command = self.dequeue()
+
+
 
         # Your logic for sending command back to client
         self.send(next_command)
@@ -70,6 +75,13 @@ class Agent(BaseAgent):
 
     def send(self, command):
         ... #some send logic
+        # The syntax for this may change as well
+				# example command: exec:powershell whoami
+        command_header = command.split()[0] # get command (in this case, exec:powershell)
+        command_arg = command.split()[1:]  # get args from command (whoami)
+        # Then format the command according to the config file
+        self.format_command(command="powershell", arguments="whoami")
+
     def receive(self):
         ... #some receive logic
 ```

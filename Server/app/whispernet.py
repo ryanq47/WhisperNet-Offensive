@@ -119,12 +119,14 @@ else:
 logger.info("Loading Plugins...")
 plugin_loader()
 
-# example listener spawn
-from plugins.file_beacon_v1.file_beacon_v1 import Listener
+# causes bugs cuz calling directly, meant to be called from web
+# put an api call here to do this
+# # example listener spawn
+# from plugins.file_beacon_v1.file_beacon_v1 import Listener
 
-l = Listener(9007, "0.0.0.0")
-l.spawn()
-l.unregister()
+# l = Listener(9007, "0.0.0.0")
+# l.spawn()
+# l.unregister()
 
 # add default user if DB is empty
 # kinda fugly but it works

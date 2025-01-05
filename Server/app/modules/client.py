@@ -17,7 +17,7 @@ class BaseAgent:
     A base class that provides common functionality for all models.
     """
 
-    def __init__(self, agent_id, **kwargs):
+    def __init__(self, agent_id, config_file_path, **kwargs):
         # connect to redis
         self.redis_client = get_redis_connection(  # switch to config values
             host=Config().config.redis.bind.ip,
@@ -29,8 +29,10 @@ class BaseAgent:
         #     setattr(self, key, value)
 
         # may or may not be needed
+        self.config_file_path = config_file_path
         self.alias = None
         self.template = None
+        self.load_config()
 
         # info stuff - munch object
         self._data = munch.munchify(
@@ -88,20 +90,20 @@ class BaseAgent:
         # if self.data.agent.id:
         #    self._load_data_from_redis(self.data.agent.id)
 
-    def _load_data_from_redis(self, agent_id):
-        """Internal: Load agent data from Redis."""
-        try:
-            # get data from redis
-            data = self.redis_client.get(f"agent:{self.data.agent.id}")
-            if data:
-                self._data = munch.munchify(json.loads(data))
-                logger.debug(f"Loaded agent data for {self.data.agent.id} from Redis.")
-            else:
-                logger.debug(f"No data found in Redis for agent: {self.data.agent.id}")
-                # call register
-        except Exception as e:
-            logger.error(f"Error loading data from Redis: {e}")
-            raise e
+    # def _load_data_from_redis(self, agent_id):
+    #     """Internal: Load agent data from Redis."""
+    #     try:
+    #         # get data from redis
+    #         data = self.redis_client.get(f"agent:{self.data.agent.id}")
+    #         if data:
+    #             self._data = munch.munchify(json.loads(data))
+    #             logger.debug(f"Loaded agent data for {self.data.agent.id} from Redis.")
+    #         else:
+    #             logger.debug(f"No data found in Redis for agent: {self.data.agent.id}")
+    #             # call register
+    #     except Exception as e:
+    #         logger.error(f"Error loading data from Redis: {e}")
+    #         raise e
 
     @property
     def data(self):
@@ -129,17 +131,18 @@ class BaseAgent:
     ##########
     # Script Options
     ##########
-    def load_config(self, config_file_path: str | pathlib.Path):
+    def load_config(self):  # , config_file_path: str | pathlib.Path):
         """
         Load template file into current session.
 
-        config_file_path (str | pathlib.path ): Path to config
+        uses self.config_file_path (str | pathlib.path ): Path to config
 
         """
         try:  # make bulletproof
             # Load configuration from a script if provided
-            # logger.debug(f"Loading script file: {template_file_path}")
-            with open(config_file_path, "r") as file:
+            # Also coerce to string incase of pathlib object
+            logger.debug(f"Loading profile file: {str(self.config_file_path)}")
+            with open(self.config_file_path, "r") as file:
                 data = yaml.safe_load(file)
 
             # maybe use
@@ -177,7 +180,7 @@ class BaseAgent:
         Internal
         Loads alias into agent.
 
-        Seperate method for future handling/standard way of handling
+        Separate method for future handling/standard way of handling
         """
         try:
             # munchify the dicts for better/easier access
@@ -199,7 +202,7 @@ class BaseAgent:
         Internal
         Loads alias into agent.
 
-        Seperate method for future handling/standard way of handling
+        Separate method for future handling/standard way of handling
 
         """
         try:
@@ -221,9 +224,11 @@ class BaseAgent:
         """
         Auto format a command based on its template string
 
-        command (str): The command. Used for lookups in config.yaml
+        command (str): The command. Used for lookups in config.yaml.
+            Ex: exec:powershell
 
         arguments (str): The arguments
+            Ex: whoami
 
 
         Returns: Formatted command
@@ -243,6 +248,7 @@ class BaseAgent:
 
             # Get the template based on which command
             command_template = self.template.get(command, None)
+            # maybe edit to return the command no matter what?
             if not command_template:
                 logger.error(f"Command template for '{command}' not found")
                 return
@@ -349,11 +355,6 @@ class BaseAgent:
             self.data = new_dict
             return True
 
-        except JSONDecodeError as jde:
-            logger.error(
-                f"Error decoding JSON blob from redis. May be invalid: {fetched_instance.json_blob}"
-            )
-            raise e
         except Exception as e:
             logger.error(f"Could not load data from redis, error occured: {e}")
             raise e
@@ -434,7 +435,7 @@ class BaseAgent:
 
         # changed up to if not a command, reutrn false
         logger.debug("Dequeuing command")
-        print(self.data.agent)
+        # print(self.data.agent)
         result = self.redis_client.blpop(self.data.agent.id)
 
         if result:
@@ -442,7 +443,7 @@ class BaseAgent:
             # queue == b'c2_queue' (bytes)
             # command == b'list_system_users' (bytes)
             command_str = command  # .decode("utf-8")
-            logger.debug(f"dequed command: {command_str}")
+            logger.debug(f"dequeued command: {command_str}")
             return command_str
             # Process the command
             # ...
