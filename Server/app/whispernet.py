@@ -10,6 +10,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
+from flask_restx import Api
 from flask_sqlalchemy import SQLAlchemy
 from modules.banner import print_banner
 from modules.config import Config
@@ -39,6 +40,7 @@ instance_path = launch_path / "instance"
 # Setup app variable, second.
 # Gunicorn want's the app to be globally accessible.
 app = Flask(__name__, instance_path=instance_path)
+api = Api(app)
 
 # the rest of the crap
 # DOC THESE
@@ -87,6 +89,7 @@ with app.app_context():
 
 # Application Instance
 Instance().app = app
+Instance().api = api
 
 ## Everything that relies on Instance stuff, goes AFTER this line
 
