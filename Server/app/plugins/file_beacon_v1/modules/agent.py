@@ -1,4 +1,4 @@
-from modules.client import BaseAgent
+from modules.agent import BaseAgent
 from modules.log import log
 
 logger = log(__name__)

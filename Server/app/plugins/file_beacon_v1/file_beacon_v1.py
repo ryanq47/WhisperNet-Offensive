@@ -5,7 +5,7 @@ import struct
 from multiprocessing import Process
 
 from flask import request
-from modules.client import BaseAgent
+from modules.agent import BaseAgent
 from modules.instances import Instance
 from modules.listener import BaseListener
 from modules.log import log

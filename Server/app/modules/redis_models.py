@@ -36,7 +36,7 @@ class Agent(HashModel):  # swich to JsonModel?
     # checkin: int = Field(index=True)  # Indexed field
 
     class Meta:
-        model_key_prefix = "client"
+        model_key_prefix = "agent"
         database = redis
         global_key_prefix = "whispernet"  # Prefix for keys
 
