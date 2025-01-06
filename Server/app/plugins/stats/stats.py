@@ -91,7 +91,7 @@ class StatsAgentsResource(Resource):
         Get all agents currently registered in the redis DB
 
         Returns: JSON
-        Returns all agents in redis. Does NOT return the data associated with each agent
+        Returns all agents + agent data in redis.
 
         Example Output:
             "{'whispernet:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
@@ -169,17 +169,17 @@ class StatsListenersResource(Resource):
         Get all listeners currently registered in the redis DB
 
         Returns: JSON
-        Returns all listener in redis. Does NOT return the data associated with each listener
+        Returns all listeners + data in redis.
 
         Example Output:
-            "{'whispernet:listener:2c877a2b-8a47-476b-86be-a2b4b3bc0de7': {'pk': '01JGX7QZ46DT43K7FPZC1HRYNY', 'listener_id': '2c877a2b-8a47-476b-86be-a2b4b3bc0de7', 'name': 'QUICK_SHARK'}}",
+            "{'whispernet:listener:2c877a2b-8a47-476b-86be-a2b4b3bc0de7': {'pk': '01JGX7QZ46DT43K7FPZC1HRYNY', 'listener_id': '2c877a2b-8a47-476b-86be-a2b4b3bc0de7', 'name': 'QUICK_SHARK', 'data':'json_data'}}",
         """
         logger.warning("UNAUTH ENDPOINT: Stats/plugins")
         try:
-            # Fetch all keys with the prefix 'agent:' using SCAN
+            # Fetch all keys with the prefix 'listeners:' using SCAN
             # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
             # small oversight in my key naming. All other keys are whispernet:x:x:data or something
-            # If I didn't do this, all subkeys under "whispernet:agent:*" would be included in the response
+            # If I didn't do this, all subkeys under "whispernet:listeners:*" would be included in the response
             listener_keys = [
                 key
                 for key in redis_conn.scan_iter("whispernet:listener:*")
