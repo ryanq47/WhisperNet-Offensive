@@ -59,9 +59,7 @@ stats_response = stats_ns.model(
     {
         "rid": fields.String(description="Request ID"),
         "timestamp": fields.String(description="Request Timestamp, Unix Time"),
-        "status": fields.Integer(
-            description="Response Code", default=200
-        ),  # Changed to Integer
+        "status": fields.Integer(description="Response Code", default=200),
         "data": fields.Raw(description="Data from server response"),
         "message": fields.String(
             description="Message to go along with data in response"
@@ -87,7 +85,7 @@ class StatsAgentsResource(Resource):
             500: "Server Side error",
         },
     )
-    # @stats_ns.marshal_with(stats_response)
+    @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """
         Get all agents currently registered in the redis DB
@@ -142,7 +140,6 @@ class StatsAgentsResource(Resource):
             # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'}}"
             # IDEA: Add data key, ex:
             # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'} 'data': data_dict}"
-
             return api_response(data=agents_dict)
 
         except Exception as e:
@@ -167,7 +164,7 @@ class StatsListenersResource(Resource):
             500: "Server Side error",
         },
     )
-    # @stats_ns.marshal_with(stats_response, code=200)
+    @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """
         Get all listeners currently registered in the redis DB
