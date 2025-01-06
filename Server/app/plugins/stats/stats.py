@@ -97,7 +97,6 @@ class StatsAgentsResource(Resource):
             "{'whispernet:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
         """
         logger.warning("UNAUTH ENDPOINT: Stats/clients")
-        logger.warning("Marshalling Broken/Disabled: Object Bytes Error")
 
         try:
             # Fetch all keys with the prefix 'agent:' using SCAN
@@ -176,7 +175,6 @@ class StatsListenersResource(Resource):
             "{'whispernet:listener:2c877a2b-8a47-476b-86be-a2b4b3bc0de7': {'pk': '01JGX7QZ46DT43K7FPZC1HRYNY', 'listener_id': '2c877a2b-8a47-476b-86be-a2b4b3bc0de7', 'name': 'QUICK_SHARK'}}",
         """
         logger.warning("UNAUTH ENDPOINT: Stats/plugins")
-        logger.warning("Marshalling Broken/Disabled: Object Bytes Error")
         try:
             # Fetch all keys with the prefix 'agent:' using SCAN
             # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
