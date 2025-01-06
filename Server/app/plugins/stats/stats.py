@@ -1,6 +1,6 @@
 import redis
 from flask_jwt_extended import jwt_required
-from flask_restx import Api, Namespace, Resource
+from flask_restx import Api, Namespace, Resource, fields
 from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
@@ -28,13 +28,40 @@ class Info:
 
 
 # ------------------------------------------------------------------------
-#                      Create Namespaces + Stuff
+#                      Create Namespaces + Stuff + Models
 # ------------------------------------------------------------------------
 stats_ns = Namespace(
     "Plugin: stats",
     description="BROKEN - Stats Plugin endpoints",
 )
 ping_ns = Namespace("ping", description="Ping endpoint")
+
+# Response models for each namespace, allowing for easy tweaks, etc.
+ping_response = ping_ns.model(
+    "PingResponse",
+    {
+        "rid": fields.String(description="Request ID"),
+        "timestamp": fields.String(description="Request Timestamp, Unix Time"),
+        "status": fields.Integer(description="Response Code", default=200),
+        "data": fields.String(description="Data from server response", default="pong"),
+        "message": fields.String(
+            description="Message to go along with data in response"
+        ),
+    },
+)
+
+stats_response = stats_ns.model(
+    "StatsResponse",
+    {
+        "rid": fields.String(description="Request ID"),
+        "timestamp": fields.String(description="Request Timestamp, Unix Time"),
+        "status": fields.Integer(description="Response Code", default=200),
+        "data": fields.String(description="Data from server response"),
+        "message": fields.String(
+            description="Message to go along with data in response"
+        ),
+    },
+)
 
 
 # ------------------------------------------------------------------------
@@ -54,6 +81,7 @@ class StatsClientsResource(Resource):
             500: "Server Side error",
         },
     )
+    @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """
         Get all agents currently registered in the redis DB
@@ -97,6 +125,7 @@ class StatsPluginsResource(Resource):
             500: "Server Side error",
         },
     )
+    @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """Returns JSON of plugins that are currently up/serving something"""
         prefix = "plugin:*"
@@ -132,6 +161,7 @@ class StatsContainersResource(Resource):
             500: "Server Side error",
         },
     )
+    @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """Returns JSON of containers that are currently up/serving something"""
         prefix = "container:*"
@@ -153,6 +183,11 @@ class StatsContainersResource(Resource):
 # ------------------------------------------------------------------------
 #                      Ping Endpoint
 # ------------------------------------------------------------------------
+# ping_model = ping_ns.model(
+#     "PingResponse", {"message": fields.String(description="Response message")}
+# )
+
+
 @ping_ns.route("")
 @ping_ns.doc(description="Ping endpoint for basic health checks")
 class PingResource(Resource):
@@ -168,14 +203,17 @@ class PingResource(Resource):
             500: "Server Side error",
         },
     )
-    @jwt_required()
+    @ping_ns.marshal_with(ping_response, code=200)
+    # @jwt_required()
     def get(self):
         """
         A super simple, basic upcheck endpoint.
         """
-        return "pong", 200
+        print(api_response)
+        return api_response(data="pong")
+        # "pong", 200
 
 
-# 3) Register the namespaces with paths
+# 2) Register the namespaces with paths
 Instance().api.add_namespace(stats_ns, path="/stats")
 Instance().api.add_namespace(ping_ns, path="/ping")

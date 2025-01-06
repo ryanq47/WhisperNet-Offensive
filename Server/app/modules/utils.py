@@ -98,7 +98,8 @@ def api_response(
         response.update({k: v for k, v in kwargs.items() if v is not None})
 
         # Return JSON response with appropriate status code
-        return jsonify(response), status
+        # return jsonify(response), status
+        return response
     except Exception as e:
         logger.error(e)
         raise e
