@@ -72,6 +72,16 @@ class Listener(HashModel):
         global_key_prefix = "whispernet"  # Prefix for keys
 
 
+class ListenerData(HashModel):
+    listener_id: str = Field(index=True, primary_key=True)  # Indexed field
+    json_blob: str
+
+    class Meta:
+        model_key_prefix = "listener:data"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for k
+
+
 class ActiveService(JsonModel):
     # need to determine a prefix + a diff between each instance?
     # service:somestuff:<service_uuid>?

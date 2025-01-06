@@ -317,6 +317,7 @@ class BaseAgent:
         Uses the Agent model from `modules.redis_models` and `self.data.agent.id` to ensure unique keys.
         """
         logger.info(f"Registering agent: {self.data.agent.id}")
+        self.unload_data()  # temp, auto unload data on register
         agent_model = Agent(agent_id=self.data.agent.id)
         agent_model.save()
 

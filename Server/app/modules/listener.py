@@ -6,7 +6,7 @@ import redis
 import yaml
 from modules.config import Config
 from modules.log import log
-from modules.redis_models import Listener
+from modules.redis_models import Listener, ListenerData
 from modules.utils import generate_mashed_name, generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
@@ -98,6 +98,8 @@ class BaseListener:
             listener_id=self.data.listener.id, name=self.data.listener.name
         )
         listener_model.save()
+        self.unload_data()
+
         # change to listener agent
 
     def unregister(self):
@@ -119,10 +121,10 @@ class BaseListener:
             logger.debug(
                 f"Unloading data for listener {self.data.listener.id} to redis"
             )
-            # agent_data = AgentData(
-            #     agent_id=self.data.agent.id, json_blob=json.dumps(self.data)
-            # )
-            # agent_data.save()
+            listener_data = ListenerData(
+                listener_id=self.data.listener.id, json_blob=json.dumps(self.data)
+            )
+            listener_data.save()
         except Exception as e:
             logger.error(f"Could not unload data to redis, error occurred: {e}")
             raise e
@@ -135,10 +137,10 @@ class BaseListener:
             logger.debug(
                 f"Loading data for listener {self.data.listener.id} from redis"
             )
-            # fetched_instance = AgentData.get(self.data.agent.id)
-            ## JSON blob is stored as a json string in redis, need to convert back to dict
-            # new_dict = json.loads(fetched_instance.json_blob)
-            # self.data = new_dict
+            fetched_instance = ListenerData.get(self.data.listener.id)
+            # JSON blob is stored as a json string in redis, need to convert back to dict
+            new_dict = json.loads(fetched_instance.json_blob)
+            self.data = new_dict
             return True
 
         except Exception as e:

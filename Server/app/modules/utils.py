@@ -99,7 +99,8 @@ def api_response(
 
         # Return JSON response with appropriate status code
         # return jsonify(response), status
-        return response
+        return jsonify(response)
+        # return response
     except Exception as e:
         logger.error(e)
         raise e
