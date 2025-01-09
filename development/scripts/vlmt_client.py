@@ -27,7 +27,7 @@ def send_vlmt_message(server_host, server_port, message):
 # Example usage
 if __name__ == "__main__":
     SERVER_HOST = "127.0.0.1"  # Replace with server IP
-    SERVER_PORT = 9007  # Replace with server port
+    SERVER_PORT = 9001  # Replace with server port
     MESSAGE = "Hello, this is VLMT client!"
 
     send_vlmt_message(SERVER_HOST, SERVER_PORT, MESSAGE)

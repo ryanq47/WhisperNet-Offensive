@@ -115,25 +115,29 @@ class StatsAgentsResource(Resource):
             agents_dict = {}
             agents_data_dict = {}
 
-            # Combining the registration key, with the data key
+            # Convert agent_data_keys iterator to a list, prevents the generator (scan_iter) from discarding as it loops over
+            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+
+            # Combining the registration key with the data key
             for key in agent_keys:
                 # Use HGETALL to fetch all fields and values from a Redis hash
-                # Get the agent key itself, and put into the key
+                # Get the agent key itself, and put it into the key
                 agent_registration_data = redis_conn.hgetall(key)
                 agents_dict[key] = agent_registration_data
 
-                # for each data key,
+                # For each data key (now a reusable list),
                 for data_key in agent_data_keys:
-                    # lookup key data
+                    # Lookup key data
                     agent_data = redis_conn.hgetall(data_key)
                     agent_data_dict = json.loads(agent_data["json_blob"])
                     if (
-                        # Check ids to make sure the correct data goes into the correct reg key
+                        # Check IDs to make sure the correct data goes into the correct reg key
                         agent_data_dict["agent"]["id"]
                         == agent_registration_data["agent_id"]
                     ):
-                        # get the data key associated with it
+                        # Get the data key associated with it
                         agents_dict[key]["data"] = agent_data_dict
+                        break  # Stop once we find the correct match for this agent_key
 
             # Example data output
             # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'}}"

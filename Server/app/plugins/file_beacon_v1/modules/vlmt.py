@@ -3,6 +3,7 @@ import socket
 import struct
 
 from modules.log import log
+from modules.utils import generate_unique_id
 
 # from modules.redis_models import Agent
 from plugins.file_beacon_v1.modules.agent import Agent
@@ -104,8 +105,9 @@ class VLMT:
 
             # Spawn agent class, and let it do its thing
             # Create class, and checkin
+            logger.warning("Using random agent_id, not what is supplied from the agent")
             agent_class = Agent(
-                agent_id="SOMEID_1",
+                agent_id=generate_unique_id(),
                 config_file_path="./profiles/dev.yaml",
                 client_socket=client_socket,
             ).checkin()
