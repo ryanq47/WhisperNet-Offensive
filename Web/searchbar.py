@@ -14,18 +14,37 @@ running_query: Optional[asyncio.Task] = None
 
 
 class Search:
-    def __init__(self):
+    def __init__(self, vertical_padding=True, full_horizontal_width=False, query=None):
         self.search_field = None
+
+        # docstring this, vertical pading for searchbar, used in search tab
+        self.vertical_padding = vertical_padding
+
+        # width for serachbar
+        self.full_horizontal_width = full_horizontal_width
+
+        self.query = query
 
     def spawn_search_bar(self):
         print("LOADING SEARCH - NEW CLASS INSTANCE")
 
-        self.search_field = (
-            ui.input(on_change=self.search)
-            .props('autofocus outlined item-aligned input-class="ml-3"')
-            .classes("w-1/2 self-center mt-24 transition-all")
-        )
-        self.results = ui.row()
+        if self.vertical_padding:
+            self.search_field = (
+                ui.input(on_change=self.search)
+                .props('autofocus outlined item-aligned input-class="ml-3"')
+                .classes("w-1/2 self-center mt-24 transition-all")
+            )
+            self.results = ui.row()
+
+        else:
+            self.search_field = (
+                ui.input(on_change=self.search)
+                .props('autofocus outlined item-aligned input-class="ml-3"')
+                .classes(
+                    f"{"w-full" if self.full_horizontal_width else "w-1/2"}  self-center transition-all"
+                )
+            )
+            self.results = ui.row()
 
     async def search(self, e: events.ValueChangeEventArguments) -> None:
         """Search for cocktails as you type."""

@@ -2,12 +2,14 @@ from nicegui import events, ui, app
 from searchbar import Search
 from agent import AgentView
 from listener import ListenerView
-from about import About
+from about import AboutView
+from home import HomeView
 
 
 def navbar():
-
-    with ui.header().classes("items-center justify-between bg-neutral-800 h-20 px-4"):
+    with ui.header().classes(
+        "items-center justify-between bg-neutral-800 h-20 px-4 h-1/6"
+    ):
         ui.button(on_click=lambda: left_drawer.toggle(), icon="menu").props(
             "flat color=white"
         )
@@ -15,17 +17,21 @@ def navbar():
         # Large screen buttons (hidden on small screens)
         with ui.row().classes():
             with ui.button_group().props("outline"):
-                ui.button("Home", icon="home").props("flat color=white").classes(
+                ui.button(
+                    "Home", icon="home", on_click=lambda: ui.navigate.to("/")
+                ).props("flat color=white").classes(
                     "text-xs py-2"
                 )  # Smaller height
-                ui.button("??", icon="map").props("flat color=white").classes(
-                    "py-2 text-xs"
-                )  # Smaller height
+                # ui.button("??", icon="map").props("flat color=white").classes(
+                #     "py-2 text-xs"
+                # )  # Smaller height
                 ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                    "Search",
+                    icon="search",
+                    on_click=lambda: ui.navigate.to("/search"),
                 ).props("flat color=white").classes("py-2 text-xs")
                 ui.button(
-                    "Search", icon="search", on_click=lambda: ui.navigate.to("/search")
+                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
                 ).props("flat color=white").classes("py-2 text-xs")
 
         # Small screen buttons (hidden on large screens)
@@ -57,6 +63,12 @@ def navbar():
 @ui.page("/")
 def index():
     navbar()
+    # little hack to set hieght to full here. Makes it so it is the full page, and not have a scrollbar
+    # with ui.element().classes():
+    # Fixed by doing a.class("absolute-center")
+    # Need to have this pop search cuz aboslute cetner cetners EVERYTHING
+    h = HomeView()
+    h.render()
 
 
 @ui.page("/search")
@@ -69,7 +81,7 @@ def search():
 @ui.page("/about")
 def about():
     navbar()
-    a = About()
+    a = AboutView()
     a.render()
 
 

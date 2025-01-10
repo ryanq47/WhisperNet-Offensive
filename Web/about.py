@@ -2,11 +2,10 @@ from nicegui import ui
 from config import Config
 
 
-class About:
+class AboutView:
     def __init__(self):
         pass
 
-    @ui.page("/about")
     def render(self):
         try:
             with ui.row().classes("w-full h-full items-center justify-center border"):
