@@ -1,15 +1,30 @@
+import json
+
 import redis
 from flask import jsonify
 from flask_jwt_extended import jwt_required
+from flask_restx import Api, Namespace, Resource, fields
+from modules.agent import BaseAgent
 from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
-from modules.redis_models import ActiveService, Client
 from modules.utils import api_response
 from redis_om import get_redis_connection
+import re
 
 logger = log(__name__)
+
+# Get your Flask instance (instead of "app = Flask(__name__)")
 app = Instance().app
+
+logger.warning("Stats is broken until redis keys are adjusted")
+
+# Instead of overshadowing the `redis` import, rename your connection object
+redis_conn = get_redis_connection(
+    host=Config().config.redis.bind.ip,
+    port=Config().config.redis.bind.port,
+    decode_responses=True,
+)
 
 
 class Info:
@@ -17,123 +32,550 @@ class Info:
     author = "ryanq.47"
 
 
-redis = get_redis_connection(  # switch to config values
-    host=Config().config.redis.bind.ip,
-    port=Config().config.redis.bind.port,
-    decode_responses=True,  # Ensures that strings are not returned as bytes
+# ------------------------------------------------------------------------
+#                      Create Namespaces + Stuff + Models
+# ------------------------------------------------------------------------
+stats_ns = Namespace(
+    "Plugin: stats",
+    description="Stats Plugin endpoints",
+)
+ping_ns = Namespace("ping", description="Ping endpoint")
+
+# Response models for each namespace, allowing for easy tweaks, etc.
+ping_response = ping_ns.model(
+    "PingResponse",
+    {
+        "rid": fields.String(description="Request ID"),
+        "timestamp": fields.String(description="Request Timestamp, Unix Time"),
+        "status": fields.Integer(description="Response Code", default=200),
+        "data": fields.String(description="Data from server response", default="pong"),
+        "message": fields.String(
+            description="Message to go along with data in response"
+        ),
+    },
+)
+
+stats_response = stats_ns.model(
+    "StatsResponse",
+    {
+        "rid": fields.String(description="Request ID"),
+        "timestamp": fields.String(description="Request Timestamp, Unix Time"),
+        "status": fields.Integer(description="Response Code", default=200),
+        "data": fields.Raw(description="Data from server response"),
+        "message": fields.String(
+            description="Message to go along with data in response"
+        ),
+    },
 )
 
 
-# hackily using redis instead of redis-om because of a weird index error
-@app.route("/stats/clients", methods=["GET"])
-# @jwt_required()
-def clients():
-    logger.warning("UNAUTH ENDPOINT: Stats/clients")
-    try:
-        # Fetch all keys with the prefix 'client:' using SCAN for better performance
-        client_keys = redis.scan_iter("client:*")
-
-        # Dictionary to store client data
-        clients_dict = {}
-
-        # Retrieve data for each client key
-        for key in client_keys:
-            # Assuming you're using HashModel, use HGETALL to fetch all fields and values
-            client_data = redis.hgetall(key)
-            # Store the client data in the dictionary
-            clients_dict[key] = client_data
-        # Return the dictionary as a JSON response
-        return api_response(data=clients_dict)
-    except Exception as e:
-        logger.error(e)
-        return api_response(status=500)
-
-
-@app.route("/ping", methods=["GET"])
-@jwt_required
-def ping():
+# ------------------------------------------------------------------------
+#                      Stats - Agents
+# ------------------------------------------------------------------------
+@stats_ns.route("/agents")
+class StatsAgentsResource(Resource):
     """
-    A super simple, basic upcheck ping endpoint
-
-    could also throw a jwt req'd, and use it to check if a token has expired.
-        Or... use a diff endopint and check like every 1 sec instead of constatly
+    GET /stats/agents
     """
-    return "pong", 200
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self):
+        """
+        Get all agents currently registered in the redis DB
+
+        Returns: JSON
+        Returns all agents + agent data in redis.
+
+        Example Output:
+            "{'whispernet:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
+
+        try:
+            # Fetch all keys with the prefix 'agent:' using SCAN
+            # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
+            # small oversight in my key naming. All other keys are whispernet:x:x:data or something
+            # If I didn't do this, all subkeys under "whispernet:agent:*" would be included in the response
+            agent_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:agent:*")
+                if len(key.split(":")) == 3
+            ]
+
+            agent_data_keys = redis_conn.scan_iter("whispernet:agent:data:*")
+
+            # Dictionary to store client data
+            agents_dict = {}
+            agents_data_dict = {}
+
+            # Convert agent_data_keys iterator to a list, prevents the generator (scan_iter) from discarding as it loops over
+            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+
+            # Combining the registration key with the data key
+            for key in agent_keys:
+                # Use HGETALL to fetch all fields and values from a Redis hash
+                # Get the agent key itself, and put it into the key
+                agent_registration_data = redis_conn.hgetall(key)
+                agents_dict[key] = agent_registration_data
+
+                # For each data key (now a reusable list),
+                for data_key in agent_data_keys:
+                    # Lookup key data
+                    agent_data = redis_conn.hgetall(data_key)
+                    agent_data_dict = json.loads(agent_data["json_blob"])
+                    if (
+                        # Check IDs to make sure the correct data goes into the correct reg key
+                        agent_data_dict["agent"]["id"]
+                        == agent_registration_data["agent_id"]
+                    ):
+                        # Get the data key associated with it
+                        agents_dict[key]["data"] = agent_data_dict
+                        break  # Stop once we find the correct match for this agent_key
+
+            # Example data output
+            # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'}}"
+            # IDEA: Add data key, ex:
+            # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'} 'data': data_dict}"
+            return api_response(data=agents_dict)
+
+        except Exception as e:
+            logger.error(e)
+            return api_response(status=500)
 
 
-@app.route("/stats/services", methods=["GET"])
-def services():
-    """returns json of plugins that are currently up/serving something"""
+@stats_ns.route("/agent/<string:agent_uuid>")
+class StatsAgentResource(Resource):
+    """
+    GET /stats/agents
+    """
 
-    prefix = "service:*"
-    # Initialize the dictionary to store results
-    active_services = {"active_services": []}
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self, agent_uuid):
+        """
+        Get data of ONE agent currently registered in the Redis DB.
 
-    # Using SCAN to find all keys that match the prefix
-    cursor = 0
-    while True:
-        cursor, keys = redis.scan(cursor=cursor, match=prefix)
-        for key in keys:
-            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
-            service_data = redis.json().get(key)
-            # Append the fetched data to the list in the dictionary
-            active_services["active_services"].append(service_data)
+        Returns:
+            JSON in the specified format.
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
 
-        if cursor == 0:
-            break
+        try:
+            # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
+            if not re.match(r"^[a-zA-Z0-9-]+$", agent_uuid):
+                raise ValueError(
+                    "Invalid agent_uuid format. Only alphanumeric characters and hyphens are allowed."
+                )
 
-    # format into formj
-    # send back
-    return api_response(data=active_services)
+            # Fetch agent registration data
+            agent_registration_key = f"whispernet:agent:{agent_uuid}"
+            agent_registration_data = redis_conn.hgetall(agent_registration_key)
+
+            if not agent_registration_data:
+                return api_response(status=404, data={"error": "Agent not found"})
+
+            # No decoding needed, data is already in the correct format
+            agent_dict = dict(agent_registration_data)
+
+            # Fetch agent data
+            agent_data_key = f"whispernet:agent:data:{agent_uuid}"
+            agent_data = redis_conn.hgetall(agent_data_key)
+
+            if agent_data:
+                # Parse the JSON blob from Redis
+                json_blob = agent_data.get("json_blob")
+                agent_data_dict = json.loads(json_blob) if json_blob else {}
+            else:
+                agent_data_dict = {}
+
+            # Combine registration and data
+            agent_dict["data"] = agent_data_dict
+
+            # Construct final output with the registration key
+            final_output = {agent_registration_key: agent_dict}
+
+            # Return the response
+            return api_response(data=final_output)
+
+        except ValueError as e:
+            logger.error(f"Input validation error: {e}")
+            return api_response(status=400, data={"error": str(e)})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return api_response(status=500, data={"error": "Internal Server Error"})
 
 
-@app.route("/stats/plugins", methods=["GET"])
-def plugins():
-    """returns json of plugins that are currently up/serving something"""
+# ------------------------------------------------------------------------
+#                      Stats - Listeners
+# ------------------------------------------------------------------------
+@stats_ns.route("/listeners")
+class StatsListenersResource(Resource):
+    """
+    GET /stats/listeners
+    """
 
-    prefix = "plugin:*"
-    # Initialize the dictionary to store results
-    plugins_dict = {"plugins": []}
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self):
+        """
+        Get all listeners currently registered in the redis DB
 
-    # Using SCAN to find all keys that match the prefix
-    cursor = 0
-    while True:
-        cursor, keys = redis.scan(cursor=cursor, match=prefix)
-        for key in keys:
-            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
-            plugin_data = redis.json().get(key)
-            # Append the fetched data to the list in the dictionary
-            plugins_dict["plugins"].append(plugin_data)
+        Returns: JSON
+        Returns all listeners + data in redis.
 
-        if cursor == 0:
-            break
+        Example Output:
+            "{'whispernet:listener:2c877a2b-8a47-476b-86be-a2b4b3bc0de7': {'pk': '01JGX7QZ46DT43K7FPZC1HRYNY', 'listener_id': '2c877a2b-8a47-476b-86be-a2b4b3bc0de7', 'name': 'QUICK_SHARK', 'data':'json_data'}}",
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/plugins")
+        try:
+            # Fetch all keys with the prefix 'listeners:' using SCAN
+            # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
+            # small oversight in my key naming. All other keys are whispernet:x:x:data or something
+            # If I didn't do this, all subkeys under "whispernet:listeners:*" would be included in the response
+            listener_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:listener:*")
+                if len(key.split(":")) == 3
+            ]
 
-    # format into formj
-    # send back
-    return api_response(data=plugins_dict)
+            agent_data_keys = redis_conn.scan_iter("whispernet:listener:data:*")
+
+            # Dictionary to store client data
+            listener_dict = {}
+            listener_data_dict = {}
+
+            # Combining the registration key, with the data key
+            for key in listener_keys:
+                # Use HGETALL to fetch all fields and values from a Redis hash
+                # Get the agent key itself, and put into the key
+                listener_registration_data = redis_conn.hgetall(key)
+                listener_dict[key] = listener_registration_data
+
+                # for each data key,
+                for data_key in agent_data_keys:
+                    # lookup key data
+                    agent_data = redis_conn.hgetall(data_key)
+                    listener_data_dict = json.loads(agent_data["json_blob"])
+                    if (
+                        # Check ids to make sure the correct data goes into the correct reg key
+                        listener_data_dict["listener"]["id"]
+                        == listener_registration_data["listener_id"]
+                    ):
+                        # get the data key associated with it
+                        listener_dict[key]["data"] = listener_data_dict
+
+            return api_response(data=listener_dict)
+
+        except Exception as e:
+            logger.error(e)
+            return api_response(status=500)
 
 
-@app.route("/stats/containers", methods=["GET"])
-def containers():
-    """returns json of plugins that are currently up/serving something"""
+@stats_ns.route("/listener/<string:listener_uuid>")
+class StatsListenerResource(Resource):
+    """
+    GET /stats/agents
+    """
 
-    prefix = "container:*"
-    # Initialize the dictionary to store results
-    container_dict = {"containers": []}
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self, listener_uuid):
+        """
+        Get data of ONE agent currently registered in the Redis DB.
 
-    # Using SCAN to find all keys that match the prefix
-    cursor = 0
-    while True:
-        cursor, keys = redis.scan(cursor=cursor, match=prefix)
-        for key in keys:
-            # Fetch the data for each key using JSON.GET assuming the data is stored as JSON
-            container_data = redis.json().get(key)
-            # Append the fetched data to the list in the dictionary
-            container_dict["containers"].append(container_data)
+        Returns:
+            JSON in the specified format.
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
 
-        if cursor == 0:
-            break
+        try:
+            # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
+            if not re.match(r"^[a-zA-Z0-9-]+$", listener_uuid):
+                raise ValueError(
+                    "Invalid agent_uuid format. Only alphanumeric characters and hyphens are allowed."
+                )
 
-    # format into formj
-    # send back
-    return api_response(data=container_dict)
+            # Fetch agent registration data
+            agent_registration_key = f"whispernet:listener:{listener_uuid}"
+            agent_registration_data = redis_conn.hgetall(agent_registration_key)
+
+            if not agent_registration_data:
+                return api_response(status=404, data={"error": "Agent not found"})
+
+            # No decoding needed, data is already in the correct format
+            agent_dict = dict(agent_registration_data)
+
+            # Fetch agent data
+            agent_data_key = f"whispernet:listener:data:{listener_uuid}"
+            agent_data = redis_conn.hgetall(agent_data_key)
+
+            if agent_data:
+                # Parse the JSON blob from Redis
+                json_blob = agent_data.get("json_blob")
+                agent_data_dict = json.loads(json_blob) if json_blob else {}
+            else:
+                agent_data_dict = {}
+
+            # Combine registration and data
+            agent_dict["data"] = agent_data_dict
+
+            # Construct final output with the registration key
+            final_output = {agent_registration_key: agent_dict}
+
+            # Return the response
+            return api_response(data=final_output)
+
+        except ValueError as e:
+            logger.error(f"Input validation error: {e}")
+            return api_response(status=400, data={"error": str(e)})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return api_response(status=500, data={"error": "Internal Server Error"})
+
+
+# ------------------------------------------------------------------------
+#                      Stats - All
+#
+# ------------------------------------------------------------------------
+@stats_ns.route("/all")
+class StatsAllResource(Resource):
+    """
+    GET /stats/all
+
+    Get all Agents, and Listeners from the server
+
+    Intended to be a safe search, all data in the redis query is returned, and the frontend must handle searching it, not the server
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self):
+        """
+        Returns a combined JSON object containing both agents and listeners
+        in a single top-level dictionary, e.g.:
+
+        {
+          "whispernet:agent:AGENT_1": { ... },
+          "whispernet:agent:AGENT_2": { ... },
+          "whispernet:listener:LISTENER_1": { ... },
+          ...
+        }
+        """
+        try:
+            # ---------------------------------------------------------------
+            #                   Gather Agents
+            # ---------------------------------------------------------------
+            agent_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:agent:*")
+                if len(key.split(":")) == 3
+            ]
+            # Convert agent_data_keys to a list
+            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+
+            # Dictionary to store combined agent data
+            combined_dict = {}
+
+            for key in agent_keys:
+                registration_data = redis_conn.hgetall(key)
+                # Convert to a normal dict
+                combined_dict[key] = dict(registration_data)
+
+                # Attempt to match with the data key
+                for data_key in agent_data_keys:
+                    agent_data = redis_conn.hgetall(data_key)
+                    if not agent_data:
+                        continue
+                    agent_data_dict = json.loads(agent_data["json_blob"])
+                    if agent_data_dict["agent"]["id"] == registration_data.get(
+                        "agent_id"
+                    ):
+                        combined_dict[key]["data"] = agent_data_dict
+                        break  # Found the matching data
+
+            # ---------------------------------------------------------------
+            #                   Gather Listeners
+            # ---------------------------------------------------------------
+            listener_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:listener:*")
+                if len(key.split(":")) == 3
+            ]
+            # Convert listener_data_keys to a list
+            listener_data_keys = list(
+                redis_conn.scan_iter("whispernet:listener:data:*")
+            )
+
+            for key in listener_keys:
+                registration_data = redis_conn.hgetall(key)
+                combined_dict[key] = dict(registration_data)
+
+                # Attempt to match with the data key
+                for data_key in listener_data_keys:
+                    listener_data = redis_conn.hgetall(data_key)
+                    if not listener_data:
+                        continue
+                    listener_data_dict = json.loads(listener_data["json_blob"])
+                    if listener_data_dict["listener"]["id"] == registration_data.get(
+                        "listener_id"
+                    ):
+                        combined_dict[key]["data"] = listener_data_dict
+                        break
+
+            # ---------------------------------------------------------------
+            # Return single dictionary (no nesting of "agents"/"listeners")
+            # ---------------------------------------------------------------
+            return api_response(data=combined_dict)
+
+        except Exception as e:
+            logger.error(e)
+            return api_response(status=500, data={"error": str(e)})
+
+
+# ------------------------------------------------------------------------
+#                      Stats - Plugins
+#               Currently disabled until needed/updated
+# ------------------------------------------------------------------------
+# @stats_ns.route("/plugins")
+# class StatsPluginsResource(Resource):
+#     """
+#     GET /stats/plugins
+#     """
+
+#     @stats_ns.doc(
+#         responses={
+#             200: "Success",
+#             400: "Bad Request",
+#             401: "Missing Auth",
+#             500: "Server Side error",
+#         },
+#     )
+#     @stats_ns.marshal_with(stats_response, code=200)
+#     def get(self):
+#         """Returns JSON of plugins that are currently up/serving something"""
+#         prefix = "plugin:*"
+#         plugins_dict = {"plugins": []}
+
+#         cursor = 0
+#         while True:
+#             cursor, keys = redis_conn.scan(cursor=cursor, match=prefix)
+#             for key in keys:
+#                 plugin_data = redis_conn.json().get(key)
+#                 plugins_dict["plugins"].append(plugin_data)
+
+#             if cursor == 0:
+#                 break
+
+#         return api_response(data=plugins_dict)
+
+
+# ------------------------------------------------------------------------
+#                      Stats - Containers
+#               Currently disabled until needed/updated
+# ------------------------------------------------------------------------
+# @stats_ns.route("/containers")
+# class StatsContainersResource(Resource):
+#     """
+#     GET /stats/containers
+#     """
+
+#     @stats_ns.doc(
+#         responses={
+#             200: "Success",
+#             400: "Bad Request",
+#             401: "Missing Auth",
+#             500: "Server Side error",
+#         },
+#     )
+#     @stats_ns.marshal_with(stats_response, code=200)
+#     def get(self):
+#         """Returns JSON of containers that are currently up/serving something"""
+#         prefix = "container:*"
+#         container_dict = {"containers": []}
+
+#         cursor = 0
+#         while True:
+#             cursor, keys = redis_conn.scan(cursor=cursor, match=prefix)
+#             for key in keys:
+#                 container_data = redis_conn.json().get(key)
+#                 container_dict["containers"].append(container_data)
+
+#             if cursor == 0:
+#                 break
+
+#         return api_response(data=container_dict)
+
+
+# ------------------------------------------------------------------------
+#                      Ping Endpoint
+# ------------------------------------------------------------------------
+# ping_model = ping_ns.model(
+#     "PingResponse", {"message": fields.String(description="Response message")}
+# )
+
+
+@ping_ns.route("")
+@ping_ns.doc(description="Ping endpoint for basic health checks")
+class PingResource(Resource):
+    """
+    GET /ping
+    """
+
+    @ping_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @ping_ns.marshal_with(ping_response, code=200)
+    # @jwt_required()
+    def get(self):
+        """
+        A super simple, basic upcheck endpoint.
+        """
+        print(api_response)
+        return api_response(data="pong")
+        # "pong", 200
+
+
+# 2) Register the namespaces with paths
+Instance().api.add_namespace(stats_ns, path="/stats")
+Instance().api.add_namespace(ping_ns, path="/ping")

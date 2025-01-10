@@ -14,7 +14,10 @@ To use these models, follow the redis-om docs: https://redis.io/docs/latest/inte
 
 If you don't want to dig through those, a basic example to save to the redis db is as such:
 
-```
+```py
+#import the class
+from modules.redis_models import SomeModel
+
 #Init the class
 c = SomeModel(
         name=container_name,
@@ -25,13 +28,90 @@ c = SomeModel(
 c.save()
 ```
 
+## [X] Agent Model
 
-## Client model
+The agent model is used for registering agents/tracking that them exist
+
+`agent_id`: The unique field used to distinguish Agents. Needs to be *UNIQUE* or you may run into collision issues.
+
+```py
+class Agent(HashModel):
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
+
+    class Meta:
+        model_key_prefix = "client"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+### Example Usage
+
+```py
+redis_agent_class = Agent(agent_id="SOMEID")
+redis_agent_class.save()
+```
+
+## [X] AgentData Model
+
+The AgentData model is used to store data for agents. 
+
+`agent_id`: The unique field used to distinguish Agents. Should be the same as the one used in the Agent Model if the Agents are the same.
+
+`json_blob`: The json string with data from the class. If using `BaseAgent`, the `unload_data` function does this.
+
+```py
+class AgentData(HashModel):
+    agent_id: str = Field(index=True, primary_key=True)  # Indexed field
+    json_blob: str
+
+    class Meta:
+        model_key_prefix = "agent:data"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+### Example Usage
+
+```py
+mydict = {"key":"value"}
+json_blob = json.dumps(mydict)
+redis_agent_class = AgentData(agent_id="SOMEID", json_blob=json_blob)
+redis_agent_class.save()
+```
+
+## [X] Listener Model
+
+The Listener model is used to store data for listeners that exist.
+
+`listener_id`: The unique field used to distinguish Listeners. I'd reccommend a UUID of some sorts
+
+`name`: The name of the listener
+
+```py
+class Listener(HashModel):
+    listener_id: str = Field(index=True, primary_key=True)  # Indexed field
+    name: str = Field()
+
+    class Meta:
+        model_key_prefix = "listener"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+Example Usage:
+
+```
+redis_listener_class = Listener(listener_id="SOMEID")
+redis_listener_class.save()
+```
+
+
 THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
+
 Basically, when a client checks in, either a key is created, or updated, based on it's ID with the follwoing information:
 
 ```
-class Client(HashModel):
+class Agent(HashModel):
     client_id: str = Field(index=True, primary_key=True)  # ID of the client (UUID4)
     type: str = Field(index=True)                         # Client type, such as `simple_http`. 
     checkin: int = Field(index=True)                      # last checkin time, in unix time
@@ -78,6 +158,7 @@ Together, all these keys make up the contents of the `/clients` endpoint, which 
 
 ```
 
+## DEPRECATED Client model
 
 ## Active Service Model
 
@@ -121,7 +202,6 @@ class Plugin(JsonModel):
         global_key_prefix = "plugin"                # Prefix of key
 ```
 
-
 ## Container Model
 
 The Container model is used for tracking all the containers that are up. 
@@ -140,3 +220,4 @@ class Plugin(JsonModel):
         database = redis                            # The Redis connection
         global_key_prefix = "plugin"                # Prefix of key
 ```
+

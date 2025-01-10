@@ -34,6 +34,17 @@ Example:
 - Folder name: "MyPlugin"
 - Py File name: "MyPlugin.py"
 
+## Prefered naming:
+
+For C2 Based plugins, I'm following the following naming scheme:
+
+`LOCATION_ON_HOST-COMMS_METHOD-0X`
+
+Example:
+
+`file-beacon-01`
+`memory-beacon-01`
+
 ### Basic Template
 
 Here’s a minimal template for the main file in a plugin:

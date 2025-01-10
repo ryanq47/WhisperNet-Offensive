@@ -1,14 +1,16 @@
 # NOTE! This is not the final resting place for functinos. These should all eventually end up in better described files/locations
 
-from modules.config import Config
-from modules.log import log
-from modules.instances import Instance
 import importlib
+import random
 import sys
+import time
+import uuid
+
 import flask
 from flask import jsonify
-import uuid
-import time
+from modules.config import Config
+from modules.instances import Instance
+from modules.log import log
 from sqlalchemy.orm.exc import NoResultFound
 
 logger = log(__name__)
@@ -89,14 +91,16 @@ def api_response(
 
         # this is a stupid line, not in comlpiance iwth api standard
         # Remove data key if it has no useful content
-        #if not response["data"]:
+        # if not response["data"]:
         #    del response["data"]
 
         # Add any additional keyword arguments, excluding None values
         response.update({k: v for k, v in kwargs.items() if v is not None})
 
         # Return JSON response with appropriate status code
-        return jsonify(response), status
+        # return jsonify(response), status
+        # return jsonify(response)
+        return response
     except Exception as e:
         logger.error(e)
         raise e
@@ -121,3 +125,53 @@ def generate_timestamp() -> int:
         int: The current timestamp in seconds since the epoch.
     """
     return int(time.time())
+
+
+def generate_mashed_name():
+    """
+    Generates a mashed name by randomly selecting one adjective and one noun,
+    then concatenating them with an underscore.
+
+    Returns:
+        str: The mashed name in uppercase, e.g., "MIGHTY_LION"
+    """
+    # Define two lists of words
+    ADJECTIVES = [
+        "Swift",
+        "Silent",
+        "Mighty",
+        "Brave",
+        "Clever",
+        "Fierce",
+        "Gentle",
+        "Happy",
+        "Jolly",
+        "Kind",
+        "Lucky",
+        "Nimble",
+        "Quick",
+        "Wise",
+        "Zealous",
+    ]
+
+    NOUNS = [
+        "Lion",
+        "Tiger",
+        "Eagle",
+        "Shark",
+        "Wolf",
+        "Bear",
+        "Falcon",
+        "Panther",
+        "Leopard",
+        "Dragon",
+        "Phoenix",
+        "Hawk",
+        "Dolphin",
+        "Cobra",
+        "Viper",
+    ]
+    adjective = random.choice(ADJECTIVES)
+    noun = random.choice(NOUNS)
+    mashed_name = f"{adjective}_{noun}".upper()
+    return mashed_name

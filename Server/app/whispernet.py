@@ -1,21 +1,28 @@
-from flask import Flask, jsonify, session, request, redirect, url_for
+import pathlib
+import time
+
+import bcrypt
+from flask import Flask, jsonify, redirect, request, session, url_for
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
-    jwt_required,
-    get_jwt_identity,
     get_jwt,
+    get_jwt_identity,
+    jwt_required,
 )
+from flask_restx import Api
 from flask_sqlalchemy import SQLAlchemy
-from modules.log import log
-from modules.utils import plugin_loader, generate_unique_id
-from modules.config import Config
-from modules.instances import Instance
-import pathlib
-import time
-import bcrypt
 from modules.banner import print_banner
-from modules.docker_handler import start_container, container_exists, pull_and_run_container
+from modules.config import Config
+from modules.docker_handler import (
+    container_exists,
+    pull_and_run_container,
+    start_container,
+    wait_for_container,
+)
+from modules.instances import Instance
+from modules.log import log
+from modules.utils import generate_unique_id, plugin_loader
 
 print_banner()
 
@@ -33,13 +40,14 @@ instance_path = launch_path / "instance"
 # Setup app variable, second.
 # Gunicorn want's the app to be globally accessible.
 app = Flask(__name__, instance_path=instance_path)
+api = Api(app)
 
 # the rest of the crap
 # DOC THESE
 # Config Singleton
 Config().launch_path = launch_path  # Adding custom launch_path attribute
 # project path is the root path of project
-Config().root_project_path = (Config().launch_path / "../")
+Config().root_project_path = Config().launch_path / "../"
 
 if not config_file.exists():
     exit("config.yaml file does not exist, cannot continue.")
@@ -81,23 +89,47 @@ with app.app_context():
 
 # Application Instance
 Instance().app = app
+Instance().api = api
 
 ## Everything that relies on Instance stuff, goes AFTER this line
 
-# Spin up needed docker containers BEFORE loading plugins. 
-# could probably toss this in a config file & loop over those values for each needed container
+
+# Spin up needed docker containers BEFORE loading plugins.
+# Could probably toss this in a config file & loop over those values for each needed container
 logger.info("Checking on docker containers...")
 ## redis
-if not container_exists("redis-stack-server"):
-    pull_and_run_container(image_name="redis/redis-stack-server", container_name="redis-stack-server", ports={'6379/tcp': 6379})
+container_name = "redis-stack-server"
+if not container_exists(container_name):
+    pull_and_run_container(
+        image_name="redis/redis-stack-server",
+        container_name=container_name,
+        ports={"6379/tcp": 6379},
+    )
+    # After pulling and running, verify the container is up
+    if not wait_for_container(container_name, timeout=30):
+        logger.error(
+            f"Container '{container_name}' failed to start within the timeout period."
+        )
+        # Handle the failure as needed, e.g., retry, exit, etc.
 else:
-    start_container("redis-stack-server")
-
+    start_container(container_name)
+    # Verify the container is running
+    if not wait_for_container(container_name, timeout=10):
+        logger.error(f"Container '{container_name}' is not running as expected.")
+        # Handle the issue as needed
 
 # Plugin Loader
 logger.info("Loading Plugins...")
 plugin_loader()
 
+# causes bugs cuz calling directly, meant to be called from web
+# put an api call here to do this
+# # example listener spawn
+# from plugins.file_beacon_v1.file_beacon_v1 import Listener
+
+# l = Listener(9007, "0.0.0.0")
+# l.spawn()
+# l.unregister()
 
 # add default user if DB is empty
 # kinda fugly but it works
@@ -125,7 +157,6 @@ with app.app_context():
         logger.info("User DB is not empty, not adding default user.")
 
 
-
 # Used when calling from Gunicorn
 def start():
     try:
@@ -137,7 +168,7 @@ def start():
 # Used when calling whispernet.py directly
 if __name__ == "__main__":
     try:
-        app.run(debug=True, port=8081, host="0.0.0.0")
+        app.run(debug=True, port=8081, host="0.0.0.0", threaded=True)
 
     except Exception as e:
         print(e)
