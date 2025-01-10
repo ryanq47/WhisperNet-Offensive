@@ -7,39 +7,56 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-@ui.page('/help-about')
-def help_about():
-    try:
-        if not check_login():
-            return
 
-        create_header()  # Add the header to the page
+class About:
+    def __init__(self): ...
 
-        with ui.column().classes("w-full items-center p-4 gap-4"):  # Center the content with padding and spacing
+    @ui.page("/about")
+    def help_about(self):
+        try:
+            if not check_login():
+                return
 
-            # About section
-            with ui.card().classes("w-full max-w-screen-md p-4"):
-                ui.image("/static/icon_full.png").classes("w-32 h-32 mx-auto")  # Centered image with specified size
-                ui.markdown("# About WhisperNet").classes("text-center")
-                ui.markdown("""
-                WhisperNet is an offensive cybersecurity platform designed to streamline C2 operations.
-                It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations... 
-                or at least that's the goal. It's not quite done yet :)
-                """)
+            create_header()  # Add the header to the page
 
-            # Help section
-            with ui.card().classes("w-full max-w-screen-md p-4"):
-                ui.markdown("# Help & Documentation").classes("text-center")
-                with ui.column().classes("gap-2"):
-                    ui.markdown("[Documentation Link](#)").classes("text-lg text-blue-500")
-                    ui.markdown("[GitHub Page](https://github.com/ryanq47/WhisperNet-Offensive)").classes("text-lg text-blue-500")
-                    ui.markdown("[Submit a Problem](https://github.com/ryanq47/WhisperNet-Offensive/issues)").classes("text-lg text-blue-500")
-                    ui.markdown("""
-                    If you need additional support, please visit the documentation or submit a problem on our issue tracker.
-                    You can also check out our GitHub page for the latest updates and contributions.
-                    """)
+            with ui.column().classes(
+                "w-full items-center p-4 gap-4"
+            ):  # Center the content with padding and spacing
 
-    except Exception as e:
-        logger.error(e)
-        raise e
+                # About section
+                with ui.card().classes("w-full max-w-screen-md p-4"):
+                    ui.image("/static/icon_full.png").classes(
+                        "w-32 h-32 mx-auto"
+                    )  # Centered image with specified size
+                    ui.markdown("# About WhisperNet").classes("text-center")
+                    ui.markdown(
+                        """
+                    WhisperNet is an offensive cybersecurity platform designed to streamline C2 operations.
+                    It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations... 
+                    or at least that's the goal. It's not quite done yet :)
+                    """
+                    )
 
+                # Help section
+                with ui.card().classes("w-full max-w-screen-md p-4"):
+                    ui.markdown("# Help & Documentation").classes("text-center")
+                    with ui.column().classes("gap-2"):
+                        ui.markdown("[Documentation Link](#)").classes(
+                            "text-lg text-blue-500"
+                        )
+                        ui.markdown(
+                            "[GitHub Page](https://github.com/ryanq47/WhisperNet-Offensive)"
+                        ).classes("text-lg text-blue-500")
+                        ui.markdown(
+                            "[Submit a Problem](https://github.com/ryanq47/WhisperNet-Offensive/issues)"
+                        ).classes("text-lg text-blue-500")
+                        ui.markdown(
+                            """
+                        If you need additional support, please visit the documentation or submit a problem on our issue tracker.
+                        You can also check out our GitHub page for the latest updates and contributions.
+                        """
+                        )
+
+        except Exception as e:
+            logger.error(e)
+            raise e

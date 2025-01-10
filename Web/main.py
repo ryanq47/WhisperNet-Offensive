@@ -2,6 +2,7 @@ from nicegui import events, ui, app
 from searchbar import Search
 from agent import AgentView
 from listener import ListenerView
+from about import About
 
 
 def navbar():
@@ -21,6 +22,9 @@ def navbar():
                     "py-2 text-xs"
                 )  # Smaller height
                 ui.button(
+                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                ).props("flat color=white").classes("py-2 text-xs")
+                ui.button(
                     "Search", icon="search", on_click=lambda: ui.navigate.to("/search")
                 ).props("flat color=white").classes("py-2 text-xs")
 
@@ -39,7 +43,7 @@ def navbar():
             "h-full text-xs py-2"
         )  # Added text size and padding
 
-    with ui.left_drawer().classes("bg-neutral-600") as left_drawer:
+    with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
         ui.label("Menu")
         ui.separator()
 
@@ -62,6 +66,13 @@ def search():
     s.spawn_search_bar()
 
 
+@ui.page("/about")
+def about():
+    navbar()
+    a = About()
+    a.render()
+
+
 @ui.page("/agent/{uuid}")
 def agent_view_page(uuid: str):
     navbar()
@@ -76,4 +87,7 @@ def listener_view_page(uuid: str):
     a.render()
 
 
+app.add_static_files(
+    "/static", "static"
+)  # Serve files from the 'static' directory, to /static
 ui.run(storage_secret="URMOM", host="0.0.0.0")
