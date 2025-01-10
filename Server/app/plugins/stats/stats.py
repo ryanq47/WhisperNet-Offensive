@@ -10,6 +10,7 @@ from modules.instances import Instance
 from modules.log import log
 from modules.utils import api_response
 from redis_om import get_redis_connection
+import re
 
 logger = log(__name__)
 
@@ -150,6 +151,75 @@ class StatsAgentsResource(Resource):
             return api_response(status=500)
 
 
+@stats_ns.route("/agent/<string:agent_uuid>")
+class StatsAgentResource(Resource):
+    """
+    GET /stats/agents
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self, agent_uuid):
+        """
+        Get data of ONE agent currently registered in the Redis DB.
+
+        Returns:
+            JSON in the specified format.
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
+
+        try:
+            # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
+            if not re.match(r"^[a-zA-Z0-9-]+$", agent_uuid):
+                raise ValueError(
+                    "Invalid agent_uuid format. Only alphanumeric characters and hyphens are allowed."
+                )
+
+            # Fetch agent registration data
+            agent_registration_key = f"whispernet:agent:{agent_uuid}"
+            agent_registration_data = redis_conn.hgetall(agent_registration_key)
+
+            if not agent_registration_data:
+                return api_response(status=404, data={"error": "Agent not found"})
+
+            # No decoding needed, data is already in the correct format
+            agent_dict = dict(agent_registration_data)
+
+            # Fetch agent data
+            agent_data_key = f"whispernet:agent:data:{agent_uuid}"
+            agent_data = redis_conn.hgetall(agent_data_key)
+
+            if agent_data:
+                # Parse the JSON blob from Redis
+                json_blob = agent_data.get("json_blob")
+                agent_data_dict = json.loads(json_blob) if json_blob else {}
+            else:
+                agent_data_dict = {}
+
+            # Combine registration and data
+            agent_dict["data"] = agent_data_dict
+
+            # Construct final output with the registration key
+            final_output = {agent_registration_key: agent_dict}
+
+            # Return the response
+            return api_response(data=final_output)
+
+        except ValueError as e:
+            logger.error(f"Input validation error: {e}")
+            return api_response(status=400, data={"error": str(e)})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return api_response(status=500, data={"error": "Internal Server Error"})
+
+
 # ------------------------------------------------------------------------
 #                      Stats - Listeners
 # ------------------------------------------------------------------------
@@ -221,6 +291,181 @@ class StatsListenersResource(Resource):
         except Exception as e:
             logger.error(e)
             return api_response(status=500)
+
+
+@stats_ns.route("/listener/<string:listener_uuid>")
+class StatsListenerResource(Resource):
+    """
+    GET /stats/agents
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self, listener_uuid):
+        """
+        Get data of ONE agent currently registered in the Redis DB.
+
+        Returns:
+            JSON in the specified format.
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
+
+        try:
+            # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
+            if not re.match(r"^[a-zA-Z0-9-]+$", listener_uuid):
+                raise ValueError(
+                    "Invalid agent_uuid format. Only alphanumeric characters and hyphens are allowed."
+                )
+
+            # Fetch agent registration data
+            agent_registration_key = f"whispernet:listener:{listener_uuid}"
+            agent_registration_data = redis_conn.hgetall(agent_registration_key)
+
+            if not agent_registration_data:
+                return api_response(status=404, data={"error": "Agent not found"})
+
+            # No decoding needed, data is already in the correct format
+            agent_dict = dict(agent_registration_data)
+
+            # Fetch agent data
+            agent_data_key = f"whispernet:listener:data:{listener_uuid}"
+            agent_data = redis_conn.hgetall(agent_data_key)
+
+            if agent_data:
+                # Parse the JSON blob from Redis
+                json_blob = agent_data.get("json_blob")
+                agent_data_dict = json.loads(json_blob) if json_blob else {}
+            else:
+                agent_data_dict = {}
+
+            # Combine registration and data
+            agent_dict["data"] = agent_data_dict
+
+            # Construct final output with the registration key
+            final_output = {agent_registration_key: agent_dict}
+
+            # Return the response
+            return api_response(data=final_output)
+
+        except ValueError as e:
+            logger.error(f"Input validation error: {e}")
+            return api_response(status=400, data={"error": str(e)})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return api_response(status=500, data={"error": "Internal Server Error"})
+
+
+# ------------------------------------------------------------------------
+#                      Stats - All
+#
+# ------------------------------------------------------------------------
+@stats_ns.route("/all")
+class StatsAllResource(Resource):
+    """
+    GET /stats/all
+
+    Get all Agents, and Listeners from the server
+
+    Intended to be a safe search, all data in the redis query is returned, and the frontend must handle searching it, not the server
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    def get(self):
+        """
+        Returns a combined JSON object containing both agents and listeners
+        in a single top-level dictionary, e.g.:
+
+        {
+          "whispernet:agent:AGENT_1": { ... },
+          "whispernet:agent:AGENT_2": { ... },
+          "whispernet:listener:LISTENER_1": { ... },
+          ...
+        }
+        """
+        try:
+            # ---------------------------------------------------------------
+            #                   Gather Agents
+            # ---------------------------------------------------------------
+            agent_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:agent:*")
+                if len(key.split(":")) == 3
+            ]
+            # Convert agent_data_keys to a list
+            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+
+            # Dictionary to store combined agent data
+            combined_dict = {}
+
+            for key in agent_keys:
+                registration_data = redis_conn.hgetall(key)
+                # Convert to a normal dict
+                combined_dict[key] = dict(registration_data)
+
+                # Attempt to match with the data key
+                for data_key in agent_data_keys:
+                    agent_data = redis_conn.hgetall(data_key)
+                    if not agent_data:
+                        continue
+                    agent_data_dict = json.loads(agent_data["json_blob"])
+                    if agent_data_dict["agent"]["id"] == registration_data.get(
+                        "agent_id"
+                    ):
+                        combined_dict[key]["data"] = agent_data_dict
+                        break  # Found the matching data
+
+            # ---------------------------------------------------------------
+            #                   Gather Listeners
+            # ---------------------------------------------------------------
+            listener_keys = [
+                key
+                for key in redis_conn.scan_iter("whispernet:listener:*")
+                if len(key.split(":")) == 3
+            ]
+            # Convert listener_data_keys to a list
+            listener_data_keys = list(
+                redis_conn.scan_iter("whispernet:listener:data:*")
+            )
+
+            for key in listener_keys:
+                registration_data = redis_conn.hgetall(key)
+                combined_dict[key] = dict(registration_data)
+
+                # Attempt to match with the data key
+                for data_key in listener_data_keys:
+                    listener_data = redis_conn.hgetall(data_key)
+                    if not listener_data:
+                        continue
+                    listener_data_dict = json.loads(listener_data["json_blob"])
+                    if listener_data_dict["listener"]["id"] == registration_data.get(
+                        "listener_id"
+                    ):
+                        combined_dict[key]["data"] = listener_data_dict
+                        break
+
+            # ---------------------------------------------------------------
+            # Return single dictionary (no nesting of "agents"/"listeners")
+            # ---------------------------------------------------------------
+            return api_response(data=combined_dict)
+
+        except Exception as e:
+            logger.error(e)
+            return api_response(status=500, data={"error": str(e)})
 
 
 # ------------------------------------------------------------------------
