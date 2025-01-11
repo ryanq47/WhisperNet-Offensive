@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import asyncio
 from typing import Optional
-from config import Config
+from config import ThemeConfig
 import httpx
 from nicegui import events, ui
 import time
 import json
 from cards import agent_card, unknown_card, listener_card
+from config import Config, ThemeConfig
 
 # Works fine, error on server end with getting all data out, see bug in github.
 
@@ -63,7 +64,7 @@ class Search:
         running_query = asyncio.create_task(
             api.get(
                 # f"https://www.thecocktaildb.com/api/json/v1/1/search.php?s={e.value}"
-                "http://127.0.0.1:8081/stats/all"
+                f"{Config.API_HOST}/stats/all"
             )
         )
         response = await running_query

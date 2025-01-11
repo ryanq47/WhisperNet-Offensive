@@ -1,5 +1,5 @@
 from nicegui import ui
-from config import Config
+from config import ThemeConfig
 
 
 def agent_card(data: dict):
@@ -24,14 +24,14 @@ def agent_card(data: dict):
             # Left-aligned section/Data in row 1
             with ui.column().classes("flex-1 text-left"):
                 # > link
-                with ui.row().classes(f"items-center {Config.gap}"):
+                with ui.row().classes(f"items-center {ThemeConfig.gap}"):
                     ui.icon("badge").classes(
                         "text-gray-500 text-lg"
                     )  # Add spacing after the icon
                     ui.link(
                         f"{data.get('agent', {}).get('id', 'none')}",
                         f"/agent/{data.get('agent', {}).get('id', 'none')}",
-                    ).classes(f"{Config.link} text-xl")
+                    ).classes(f"{ThemeConfig.link} text-xl")
 
                 # Add icons to each label
                 with ui.row().classes("items-center mb-1"):
@@ -71,7 +71,7 @@ def agent_card(data: dict):
                 with ui.row().classes("items-center mb-1"):
                     ui.icon("chevron_right").classes("text-gray-500 text-lg mr-1")
                     ui.label(
-                        f"ConfigFile: {data.get('config', {}).get('file', 'none')}"
+                        f"ThemeConfigFile: {data.get('config', {}).get('file', 'none')}"
                     ).classes("mb-1")
 
             # Right-aligned section/data in row 3
@@ -119,14 +119,14 @@ def listener_card(data: dict):
             # Left-aligned section/Data in row 1
             with ui.column().classes("flex-1 text-left"):
                 # > link
-                with ui.row().classes(f"items-center {Config.gap}"):
+                with ui.row().classes(f"items-center {ThemeConfig.gap}"):
                     ui.icon("badge").classes(
                         "text-gray-500 text-lg"
                     )  # Add spacing after the icon
                     ui.link(
                         f"{data.get('listener', {}).get('id', 'none')} - {data.get('listener', {}).get('name', 'none')}",
                         "/#",
-                    ).classes(f"{Config.link} text-xl")
+                    ).classes(f"{ThemeConfig.link} text-xl")
                 with ui.row().classes("items-center mb-1 justify-end"):
                     ui.icon("chevron_right").classes("text-gray-500 text-lg mr-1")
                     ui.label(

@@ -1,5 +1,6 @@
 from nicegui import ui, app
 import requests
+from config import Config, ThemeConfig
 
 
 class ListenerView:
@@ -7,7 +8,7 @@ class ListenerView:
         self.listener_id = str(listener_id)
 
         self.request_data = api_call(
-            url=f"http://127.0.0.1:8081/stats/listener/{self.listener_id}"
+            url=f"{Config.API_HOST}/stats/listener/{self.listener_id}"
         )
 
         data = self.request_data.get("data", {})
@@ -172,12 +173,12 @@ class ListenerView:
 
 class ListenersView:
     """
-    A list of agents
+    A list of listeners
     """
 
     def __init__(self):
 
-        self.request_data = api_call(url=f"http://127.0.0.1:8081/stats/listeners")
+        self.request_data = api_call(url=f"{Config.API_HOST}/stats/listeners")
 
         # get top level data key from response
         self.request_data = self.request_data.get("data", {})
@@ -216,7 +217,7 @@ class ListenersView:
                 # Append formatted row
                 row_data.append(
                     {
-                        "Listener ID": f"<u><a href='http://127.0.0.1:8080/listener/{listener_id}'>{listener_id}</a></u>",
+                        "Listener ID": f"<u><a href='/listener/{listener_id}'>{listener_id}</a></u>",
                         "Name": name,
                         "Address": address,
                         "Port": port,

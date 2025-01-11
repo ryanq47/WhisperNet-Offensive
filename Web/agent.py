@@ -3,6 +3,8 @@ import asyncio
 import requests
 from cards import agent_card, unknown_card
 
+from config import Config, ThemeConfig
+
 
 class AgentView:
     """
@@ -13,7 +15,7 @@ class AgentView:
         self.agent_id = str(agent_id)
 
         self.request_data = api_call(
-            url=f"http://127.0.0.1:8081/stats/agent/{self.agent_id}"
+            url=f"{Config.API_HOST}/stats/agent/{self.agent_id}"
         )
 
         data = self.request_data.get("data", {})
@@ -204,7 +206,7 @@ class AgentsView:
 
     def __init__(self):
 
-        self.request_data = api_call(url=f"http://127.0.0.1:8081/stats/agents")
+        self.request_data = api_call(url=f"{Config.API_HOST}/stats/agents")
 
         # get top level data key from response
         self.request_data = self.request_data.get("data", {})
@@ -235,9 +237,12 @@ class AgentsView:
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
 
                 # Append formatted row
+                print(
+                    "WARNING: Path busted with clickable aggrid, doesn't work outside of localhost"
+                )
                 row_data.append(
                     {
-                        "Agent ID": f"<u><a href='http://127.0.0.1:8080/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
                         "Hostname": hostname,
                         "OS": os,
                         "Internal IP": internal_ip,

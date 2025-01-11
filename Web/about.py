@@ -1,5 +1,5 @@
 from nicegui import ui
-from config import Config
+from config import ThemeConfig
 
 
 class AboutView:
@@ -28,19 +28,19 @@ class AboutView:
                     # Links Section
                     with ui.column().classes("w-full items-center"):
                         ui.link("Documentation", "#").classes(
-                            f"text-lg font-medium text-blue-600 hover:underline {Config.link}"
+                            f"text-lg font-medium text-blue-600 hover:underline {ThemeConfig.link}"
                         )
                         ui.link(
                             "GitHub Page",
                             "https://github.com/ryanq47/WhisperNet-Offensive",
                         ).classes(
-                            f"text-lg font-medium text-blue-600 hover:underline {Config.link}"
+                            f"text-lg font-medium text-blue-600 hover:underline {ThemeConfig.link}"
                         )
                         ui.link(
                             "Submit a Problem",
                             "https://github.com/ryanq47/WhisperNet-Offensive/issues",
                         ).classes(
-                            f"text-lg font-medium text-blue-600 hover:underline {Config.link}"
+                            f"text-lg font-medium text-blue-600 hover:underline {ThemeConfig.link}"
                         )
 
         except Exception as e:

@@ -1,3 +1,17 @@
-class Config:
+class ThemeConfig:
     link = "underline text-slate-600 hover:text-slate-800 visited:text-slate-600 "
     gap = ""  # "gap-1"  # gap between elements
+
+
+class Config:
+    API_HOST = None  # Initialize to None or a default value
+
+    @staticmethod
+    def set_api_host(host: str):
+        ThemeConfig.API_HOST = host
+
+    @staticmethod
+    def get_api_host() -> str:
+        if not ThemeConfig.API_HOST:
+            raise ValueError("API host is not set.")
+        return ThemeConfig.API_HOST

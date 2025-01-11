@@ -4,7 +4,7 @@ Keep brainstorming how to lay this thing out/refine it all.
 
 Key things:
     Style
-    Config
+    ThemeConfig
     Design
     Layout of classes, etc.
 

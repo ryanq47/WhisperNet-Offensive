@@ -1,6 +1,6 @@
 from nicegui import ui
 from app.modules.ui_elements import create_header
-from app.modules.config import Config
+from app.modules.config import ThemeConfig
 from app.modules.login import check_login
 import logging
 import requests

@@ -1,10 +1,11 @@
 from nicegui import ui
 from app.modules.ui_elements import create_header
-from app.modules.config import Config
+from app.modules.config import ThemeConfig
 import logging
 import requests
 
 logger = logging.getLogger(__name__)
+
 
 def homepage():
     try:
@@ -12,7 +13,9 @@ def homepage():
         ui.markdown("# Whispernet-Offensive Client")
 
         # Container to hold the service grid, which will be updated
-        grid_container = ui.row().classes('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-screen p-4')
+        grid_container = ui.row().classes(
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-screen p-4"
+        )
 
         # Function to refresh the service data and update the UI
         def refresh_services():
@@ -28,25 +31,33 @@ def homepage():
 
                 # Create a card for each active service
                 with grid_container:  # Add cards dynamically
-                    with ui.card().classes('w-full p-4'):
+                    with ui.card().classes("w-full p-4"):
                         # Card header
-                        ui.markdown(f"### {name}").classes('text-white')
-                        ui.markdown(f"#### Service Details").classes('text-white')
-                        ui.markdown(f"{info}").classes('text-white')
+                        ui.markdown(f"### {name}").classes("text-white")
+                        ui.markdown(f"#### Service Details").classes("text-white")
+                        ui.markdown(f"{info}").classes("text-white")
 
                         # Define table columns and rows
                         columns = [
-                            {'name': 'label', 'label': 'Label', 'field': 'label', 'required': True, 'align': 'left'},
-                            {'name': 'value', 'label': 'Value', 'field': 'value'},
+                            {
+                                "name": "label",
+                                "label": "Label",
+                                "field": "label",
+                                "required": True,
+                                "align": "left",
+                            },
+                            {"name": "value", "label": "Value", "field": "value"},
                         ]
                         rows = [
-                            {'label': 'Status', 'value': 'Active'},
-                            {'label': 'IP Address', 'value': ip},
-                            {'label': 'Port', 'value': port},
+                            {"label": "Status", "value": "Active"},
+                            {"label": "IP Address", "value": ip},
+                            {"label": "Port", "value": port},
                         ]
 
                         # Display table
-                        ui.table(columns=columns, rows=rows, row_key='label').classes('w-full text-left text-sm text-white border')
+                        ui.table(columns=columns, rows=rows, row_key="label").classes(
+                            "w-full text-left text-sm text-white border"
+                        )
 
                         ui.markdown("<br>")  # Add padding or margin if necessary
 
@@ -64,15 +75,15 @@ def get_service_data() -> dict:
     Function to retrieve client data from server.
     """
     try:
-        url = Config().get_url() / "stats" / "services"
-        token = Config().get_token()
+        url = ThemeConfig().get_url() / "stats" / "services"
+        token = ThemeConfig().get_token()
 
-        headers = {
-            'Authorization': f'Bearer {token}'
-        }
+        headers = {"Authorization": f"Bearer {token}"}
 
         logger.debug("Getting services from server")
-        response = requests.get(url, headers=headers, verify=Config().get_verify_certs())
+        response = requests.get(
+            url, headers=headers, verify=ThemeConfig().get_verify_certs()
+        )
 
         if response.status_code == 200:
             data = response.json()
@@ -80,7 +91,9 @@ def get_service_data() -> dict:
             logger.debug(f"Service data retrieved: {client_data}")
             return client_data
         else:
-            logger.warning(f"Received a {response.status_code} status code when requesting {url}")
+            logger.warning(
+                f"Received a {response.status_code} status code when requesting {url}"
+            )
             return {}
 
     except Exception as e:

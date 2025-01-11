@@ -4,6 +4,10 @@ from agent import AgentView, AgentsView
 from listener import ListenerView, ListenersView
 from about import AboutView
 from home import HomeView
+from config import Config, ThemeConfig
+
+# yarl this
+Config.API_HOST = "http://192.168.23.128:8081/"
 
 
 def navbar():

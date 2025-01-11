@@ -1,6 +1,7 @@
 from nicegui import ui
 from searchbar import Search
 from networking import api_call
+from config import Config, ThemeConfig
 
 
 class HomeView:
@@ -44,7 +45,7 @@ class HomeView:
                                 "flex-1 items-center text-center p-4 bg-blue-50 rounded-md shadow-sm"
                             ):
                                 agent_data = api_call(
-                                    url="http://127.0.0.1:8081/stats/agents"
+                                    url=f"{Config.API_HOST}/stats/agents"
                                 )
                                 num_active_agents = len(
                                     agent_data.get("data", {}).keys()
@@ -63,7 +64,7 @@ class HomeView:
                                 "flex-1 items-center text-center p-4 bg-green-50 rounded-md shadow-sm"
                             ):
                                 listener_data = api_call(
-                                    url="http://127.0.0.1:8081/stats/listeners"
+                                    url=f"{Config.API_HOST}/stats/listeners"
                                 )
                                 num_active_listeners = len(
                                     listener_data.get("data", {}).keys()
