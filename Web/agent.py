@@ -1,9 +1,14 @@
 from nicegui import ui, app
 import asyncio
 import requests
+from cards import agent_card, unknown_card
 
 
 class AgentView:
+    """
+    Individual agent view
+    """
+
     def __init__(self, agent_id: str = None):
         self.agent_id = str(agent_id)
 
@@ -190,6 +195,99 @@ class AgentView:
         # with ui.row().classes('w-full h-full flex'):
         #     # Move to somethign server based, or find a better way to save these session wise?
         #     ui.textarea('User notes. NOTE! These are stored in the current session, aka only YOU can see these, in this browser. THEY WILL DISAPPEAR ON DIFFERENT BROWSERS - Fix This to have a notes endpoint for agents + save, etc').classes('w-full').bind_value(app.storage.user, 'note')
+
+
+class AgentsView:
+    """
+    A list of agents
+    """
+
+    def __init__(self):
+
+        self.request_data = api_call(url=f"http://127.0.0.1:8081/stats/agents")
+
+        # get top level data key from response
+        self.request_data = self.request_data.get("data", {})
+
+    def render(self):
+        self.render_agents_grid()
+
+    def render_agents_grid(self):
+        try:
+            # NOTES:
+            #     Holy Shitballs aggrids are so much fun -_-
+
+            #     I originally had a similar setupto the /search here, but that didn't include granular filtering.
+            #     As for URL's, I had to render an HTML element in the Agent ID field. It's a little weird,
+            #     as I can't use ui.navigate.to, so the whole path has to go into it. Currently hardocded,
+            #     will be fixed later
+
+            # Extract the relevant data
+            agents = self.request_data
+            row_data = []
+            for key, agent_info in agents.items():
+                agent_id = agent_info.get("agent_id", "Unknown")
+                hostname = agent_info["data"]["system"].get("hostname", "Unknown")
+                os = agent_info["data"]["system"].get("os", "Unknown")
+                internal_ip = agent_info["data"]["network"].get(
+                    "internal_ip", "Unknown"
+                )
+                last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+
+                # Append formatted row
+                row_data.append(
+                    {
+                        "Agent ID": f"<u><a href='http://127.0.0.1:8080/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Hostname": hostname,
+                        "OS": os,
+                        "Internal IP": internal_ip,
+                        "Last Seen": last_seen,
+                    }
+                )
+
+            # Render the aggrid
+            with ui.element().classes("gap-0 w-full"):
+                ui.aggrid(
+                    {
+                        "domLayout": "autoHeight",
+                        "columnDefs": [
+                            {
+                                "headerName": "Agent ID - CLICK ME",
+                                "field": "Agent ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Hostname",
+                                "field": "Hostname",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "OS",
+                                "field": "OS",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Internal IP",
+                                "field": "Internal IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Last Seen",
+                                "field": "Last Seen",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                        ],
+                        "rowData": row_data,
+                    },
+                    html_columns=[0],
+                ).style("height: 750px").classes("ag-theme-balham-dark")
+        except Exception as e:
+            print(f"Error rendering grid: {e}")
 
 
 # ------------------------------------------------------------------------

@@ -240,51 +240,43 @@ class StatsListenersResource(Resource):
     @stats_ns.marshal_with(stats_response, code=200)
     def get(self):
         """
-        Get all listeners currently registered in the redis DB
+        Get all listeners currently registered in the redis DB.
 
         Returns: JSON
-        Returns all listeners + data in redis.
-
-        Example Output:
-            "{'whispernet:listener:2c877a2b-8a47-476b-86be-a2b4b3bc0de7': {'pk': '01JGX7QZ46DT43K7FPZC1HRYNY', 'listener_id': '2c877a2b-8a47-476b-86be-a2b4b3bc0de7', 'name': 'QUICK_SHARK', 'data':'json_data'}}",
         """
         logger.warning("UNAUTH ENDPOINT: Stats/plugins")
         try:
             # Fetch all keys with the prefix 'listeners:' using SCAN
-            # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
-            # small oversight in my key naming. All other keys are whispernet:x:x:data or something
-            # If I didn't do this, all subkeys under "whispernet:listeners:*" would be included in the response
             listener_keys = [
                 key
                 for key in redis_conn.scan_iter("whispernet:listener:*")
                 if len(key.split(":")) == 3
             ]
 
-            agent_data_keys = redis_conn.scan_iter("whispernet:listener:data:*")
+            # Convert the agent_data_keys generator to a list
+            agent_data_keys = list(redis_conn.scan_iter("whispernet:listener:data:*"))
 
             # Dictionary to store client data
             listener_dict = {}
-            listener_data_dict = {}
 
-            # Combining the registration key, with the data key
+            # Combining the registration key with the data key
             for key in listener_keys:
-                # Use HGETALL to fetch all fields and values from a Redis hash
-                # Get the agent key itself, and put into the key
+                # Fetch all fields and values from a Redis hash
                 listener_registration_data = redis_conn.hgetall(key)
                 listener_dict[key] = listener_registration_data
 
-                # for each data key,
+                # Iterate through the data keys
                 for data_key in agent_data_keys:
-                    # lookup key data
+                    # Lookup key data
                     agent_data = redis_conn.hgetall(data_key)
                     listener_data_dict = json.loads(agent_data["json_blob"])
                     if (
-                        # Check ids to make sure the correct data goes into the correct reg key
                         listener_data_dict["listener"]["id"]
                         == listener_registration_data["listener_id"]
                     ):
-                        # get the data key associated with it
+                        # Associate the data key with the listener registration
                         listener_dict[key]["data"] = listener_data_dict
+                        break  # Stop searching once the correct match is found
 
             return api_response(data=listener_dict)
 

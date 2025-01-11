@@ -170,6 +170,105 @@ class ListenerView:
         #     ui.textarea('User notes. NOTE! These are stored in the current session, aka only YOU can see these, in this browser. THEY WILL DISAPPEAR ON DIFFERENT BROWSERS - Fix This to have a notes endpoint for agents + save, etc').classes('w-full').bind_value(app.storage.user, 'note')
 
 
+class ListenersView:
+    """
+    A list of agents
+    """
+
+    def __init__(self):
+
+        self.request_data = api_call(url=f"http://127.0.0.1:8081/stats/listeners")
+
+        # get top level data key from response
+        self.request_data = self.request_data.get("data", {})
+
+    def render(self):
+        self.render_listeners_grid()
+
+    def render_listeners_grid(self):
+        try:
+            # NOTES:
+            #     Adapting for listeners.
+            #     Similar setup to agents, adjusted for listener data fields.
+
+            # Extract the relevant data
+            listeners = self.request_data  # Assuming this is where your data resides
+            row_data = []
+            for key, listener_info in listeners.items():
+                listener_id = listener_info.get("listener_id", "Unknown")
+                name = listener_info.get("name", "Unknown")
+                address = (
+                    listener_info.get("data", {})
+                    .get("network", {})
+                    .get("address", "Unknown")
+                )
+                port = (
+                    listener_info.get("data", {})
+                    .get("network", {})
+                    .get("port", "Unknown")
+                )
+                protocol = (
+                    listener_info.get("data", {})
+                    .get("network", {})
+                    .get("protocol", "Unknown")
+                )
+
+                # Append formatted row
+                row_data.append(
+                    {
+                        "Listener ID": f"<u><a href='http://127.0.0.1:8080/listener/{listener_id}'>{listener_id}</a></u>",
+                        "Name": name,
+                        "Address": address,
+                        "Port": port,
+                        "Protocol": protocol,
+                    }
+                )
+
+            # Render the aggrid
+            with ui.element().classes("gap-0 w-full"):
+                ui.aggrid(
+                    {
+                        "domLayout": "autoHeight",
+                        "columnDefs": [
+                            {
+                                "headerName": "Listener ID - CLICK ME",
+                                "field": "Listener ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Name",
+                                "field": "Name",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Address",
+                                "field": "Address",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Port",
+                                "field": "Port",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Protocol",
+                                "field": "Protocol",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                        ],
+                        "rowData": row_data,
+                    },
+                    html_columns=[0],
+                ).style("height: 750px").classes("ag-theme-balham-dark")
+        except Exception as e:
+            print(f"Error rendering grid: {e}")
+
+
 # ------------------------------------------------------------------------
 #                      Misc Stuff
 # ------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 from nicegui import events, ui, app
 from searchbar import Search
-from agent import AgentView
-from listener import ListenerView
+from agent import AgentView, AgentsView
+from listener import ListenerView, ListenersView
 from about import AboutView
 from home import HomeView
 
@@ -92,10 +92,24 @@ def agent_view_page(uuid: str):
     a.render()
 
 
+@ui.page("/agents")
+def agent_view_page():
+    navbar()
+    a = AgentsView()
+    a.render()
+
+
 @ui.page("/listener/{uuid}")
 def listener_view_page(uuid: str):
     navbar()
     a = ListenerView(listener_id=uuid)
+    a.render()
+
+
+@ui.page("/listeners")
+def agent_view_page():
+    navbar()
+    a = ListenersView()
     a.render()
 
 

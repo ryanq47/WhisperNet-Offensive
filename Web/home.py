@@ -51,8 +51,11 @@ class HomeView:
                                 )
 
                                 ui.icon("computer").classes("text-blue-600 text-5xl")
-                                ui.label(f"{num_active_agents} Active Agents").classes(
-                                    "text-xl font-medium text-slate-700"
+                                ui.button(
+                                    f"{num_active_agents} Active Agents",
+                                    on_click=lambda nav: ui.navigate.to("/agents"),
+                                ).classes("text-xl font-medium text-slate-700").props(
+                                    "flat"
                                 )
 
                             # Online Listeners
@@ -66,9 +69,12 @@ class HomeView:
                                     listener_data.get("data", {}).keys()
                                 )
                                 ui.icon("headphones").classes("text-green-600 text-5xl")
-                                ui.label(
-                                    f"{num_active_listeners} Listeners Online"
-                                ).classes("text-xl font-medium text-slate-700")
+                                ui.button(
+                                    f"{num_active_listeners} Listeners Online",
+                                    on_click=lambda nav: ui.navigate.to("/listeners"),
+                                ).classes("text-xl font-medium text-slate-700").props(
+                                    "flat"
+                                )
 
                             # Alerts - can integrate later
                             # with ui.column().classes(
