@@ -44,20 +44,59 @@ def navbar():
                 "py-2 text-xs"
             )
 
+        # placeholder to keep items in cetner. disabled
+        # maybe put something else here?
         # Menu button (typically for mobile)
         ui.button(icon="menu").props("flat color=white").classes(
             "h-full text-xs py-2"
-        )  # Added text size and padding
+        ).disable()  # Added text size and padding
 
     with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
-        ui.label("Menu")
+        ui.button(
+            f"Home",
+            on_click=lambda agents: ui.navigate.to("/"),
+            icon="home",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
-        for i in range(0, 5):
-            ui.button(f"Button {i}", on_click=..., color="bg-neutral-600").classes(
-                "w-full text-slate-50"
-            ).props("square flat condensed")
-            ui.separator()
+        ui.button(
+            f"Search",
+            on_click=lambda agents: ui.navigate.to("/search"),
+            color="bg-neutral-600",
+            icon="search",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            f"Agents",
+            on_click=lambda agents: ui.navigate.to("/agents"),
+            color="bg-neutral-600",
+            icon="computer",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            f"Listeners",
+            on_click=lambda listeners: ui.navigate.to("/listeners"),
+            color="bg-neutral-600",
+            icon="headphones",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            f"About",
+            on_click=lambda agents: ui.navigate.to("/about"),
+            color="bg-neutral-600",
+            icon="help",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        # for i in range(0, 5):
+        #     ui.button(f"Button {i}", on_click=..., color="bg-neutral-600").classes(
+        #         "w-full text-slate-50"
+        #     ).props("square flat condensed")
+        #     ui.separator()
 
 
 @ui.page("/")
