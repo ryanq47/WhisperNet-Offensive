@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui, app
 from config import ThemeConfig
 
 
@@ -18,7 +18,7 @@ def agent_card(data: dict):
 
     # data = data["data"]
     # Full-width card
-    with ui.card().classes("w-full bg-gray-100 shadow-md p-4"):
+    with ui.card().classes("w-full shadow-lg border p-4"):
         # Create a row with left, center, and right sections
         with ui.row().classes("justify-between items-center w-full"):
             # Left-aligned section/Data in row 1
@@ -99,7 +99,7 @@ def unknown_card(data: dict, title=None):
     Args:
         data (dict): _description_
     """
-    with ui.card().classes("w-full bg-gray-100 shadow-md p-4"):
+    with ui.card().classes("w-full border shadow-lg p-4"):
         ui.label(f"{title if title else 'Unknown data from search'}:").classes(
             f"text-xl"
         )
@@ -113,7 +113,7 @@ def listener_card(data: dict):
         data (dict): dict containing agent data from server
     """
     # Full-width card
-    with ui.card().classes("w-full bg-gray-100 shadow-md p-4"):
+    with ui.card().classes("w-full border shadow-lg p-4"):
         # Create a row with left, center, and right sections
         with ui.row().classes("justify-between items-center w-full"):
             # Left-aligned section/Data in row 1

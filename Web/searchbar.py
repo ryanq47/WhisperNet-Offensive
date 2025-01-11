@@ -3,7 +3,7 @@ import asyncio
 from typing import Optional
 from config import ThemeConfig
 import httpx
-from nicegui import events, ui
+from nicegui import events, ui, app
 import time
 import json
 from cards import agent_card, unknown_card, listener_card

@@ -5,113 +5,51 @@ from listener import ListenerView, ListenersView
 from about import AboutView
 from home import HomeView
 from config import Config, ThemeConfig
+from settings import Settings
+from error import ErrorPage
+from navbar import navbar
 
 # yarl this
 Config.API_HOST = "http://192.168.23.128:8081/"
 
 
-def navbar():
-    with ui.header().classes(
-        "items-center justify-between bg-neutral-800 h-20 px-4 h-1/6"
-    ):
-        ui.button(on_click=lambda: left_drawer.toggle(), icon="menu").props(
-            "flat color=white"
-        )
+# @ui.page("/animation")
+# def animation_page():
+#     # Initial position of the walking element
+#     position = {"left": 0}
 
-        # Large screen buttons (hidden on small screens)
-        with ui.row().classes():
-            with ui.button_group().props("outline"):
-                ui.button(
-                    "Home", icon="home", on_click=lambda: ui.navigate.to("/")
-                ).props("flat color=white").classes(
-                    "text-xs py-2"
-                )  # Smaller height
-                # ui.button("??", icon="map").props("flat color=white").classes(
-                #     "py-2 text-xs"
-                # )  # Smaller height
-                ui.button(
-                    "Search",
-                    icon="search",
-                    on_click=lambda: ui.navigate.to("/search"),
-                ).props("flat color=white").classes("py-2 text-xs")
-                ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
-                ).props("flat color=white").classes("py-2 text-xs")
+#     # Function to update position
+#     def move():
+#         position["left"] += 10  # Move 10 pixels to the right
+#         if position["left"] > 500:  # Reset position after reaching the end
+#             position["left"] = 0
+#         walking_element.style(f"position: absolute; left: {position['left']}px;")
 
-        # Small screen buttons (hidden on large screens)
-        with ui.row().classes("sm:hidden items-center space-x-4 h-full"):
-            ui.button(icon="shopping_cart").props("flat color=white").classes(
-                "py-2 text-xs"
-            )
-            ui.button(icon="feed").props("flat color=white").classes("py-2 text-xs")
-            ui.button(icon="perm_phone_msg").props("flat color=white").classes(
-                "py-2 text-xs"
-            )
+#     # Create the walking element
+#     with ui.row().style("position: relative; height: 100px;"):
+#         walking_element = ui.label("========>").style("position: absolute; left: 0px;")
 
-        # placeholder to keep items in cetner. disabled
-        # maybe put something else here?
-        # Menu button (typically for mobile)
-        ui.button(icon="menu").props("flat color=white").classes(
-            "h-full text-xs py-2"
-        ).disable()  # Added text size and padding
-
-    with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
-        ui.button(
-            f"Home",
-            on_click=lambda agents: ui.navigate.to("/"),
-            icon="home",
-            color="bg-neutral-600",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
-            f"Search",
-            on_click=lambda agents: ui.navigate.to("/search"),
-            color="bg-neutral-600",
-            icon="search",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
-            f"Agents",
-            on_click=lambda agents: ui.navigate.to("/agents"),
-            color="bg-neutral-600",
-            icon="computer",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
-            f"Listeners",
-            on_click=lambda listeners: ui.navigate.to("/listeners"),
-            color="bg-neutral-600",
-            icon="headphones",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
-            f"About",
-            on_click=lambda agents: ui.navigate.to("/about"),
-            color="bg-neutral-600",
-            icon="help",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        # for i in range(0, 5):
-        #     ui.button(f"Button {i}", on_click=..., color="bg-neutral-600").classes(
-        #         "w-full text-slate-50"
-        #     ).props("square flat condensed")
-        #     ui.separator()
+#     # Timer to trigger the move function
+#     ui.timer(interval=0.1, callback=move)  # Update position every 100ms
 
 
 @ui.page("/")
 def index():
     navbar()
+
     # little hack to set hieght to full here. Makes it so it is the full page, and not have a scrollbar
     # with ui.element().classes():
     # Fixed by doing a.class("absolute-center")
     # Need to have this pop search cuz aboslute cetner cetners EVERYTHING
     h = HomeView()
     h.render()
+
+
+@ui.page("/settings")
+def settings():
+    navbar()
+    s = Settings()
+    s.render()
 
 
 @ui.page("/search")

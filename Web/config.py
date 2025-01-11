@@ -1,5 +1,15 @@
+from nicegui import app
+
+# # Load settings from session storage or use defaults
+# current_settings = app.storage.user.get("settings")
+
+# # Apply dark mode based on the setting
+# DARK_MODE = current_settings.get("Dark Mode")
+
+
 class ThemeConfig:
-    link = "underline text-slate-600 hover:text-slate-800 visited:text-slate-600 "
+    link = "underline"  # text-slate-600 hover:text-slate-800 visited:text-slate-600"
+    # dark_link = "underline text-green-600 hover:text-green-800 visited:text-green-600"
     gap = ""  # "gap-1"  # gap between elements
 
 
