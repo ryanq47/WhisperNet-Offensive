@@ -20,6 +20,8 @@ class ListenerView:
     # ------------------------------------------------------------------------
 
     def render(self):
+        current_settings = app.storage.user.get("settings", {})
+
         # with ui.header().classes(replace='row items-center').classes('bg-neutral-800') as header:
         # ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').props('flat color=white')
         with ui.row().classes("text-5xl"):
@@ -37,21 +39,24 @@ class ListenerView:
         with ui.tabs() as tabs:
             ui.tab("MAIN")
             # ui.tab('OTHER')
-            ui.tab(
-                "STATS"
-            )  # Graphs N Stuff? There's examples of this in nicegui examples
-            # ui.tab('FileExplorer')
-            ui.tab("NOTES")
+            if current_settings.get("Dev Mode", False):
+                ui.tab(
+                    "STATS"
+                )  # Graphs N Stuff? There's examples of this in nicegui examples
+                # ui.tab('FileExplorer')
+                ui.tab("NOTES")
         with ui.tab_panels(tabs, value="MAIN").classes("w-full border"):
             with ui.tab_panel("MAIN"):
                 # ui.label('Content of A')
                 self.render_main_tab()
-            with ui.tab_panel("STATS"):
-                # ui.label('Content of A')
-                self.render_stats_tab()
-            with ui.tab_panel("NOTES"):
-                # ui.label('Content of A')
-                self.render_notes_tab()
+
+            if current_settings.get("Dev Mode", False):
+                with ui.tab_panel("STATS"):
+                    # ui.label('Content of A')
+                    self.render_stats_tab()
+                with ui.tab_panel("NOTES"):
+                    # ui.label('Content of A')
+                    self.render_notes_tab()
 
     # ------------------------------------------------------------------------
     #                      Main Tab

@@ -30,6 +30,8 @@ class AgentView:
     # ------------------------------------------------------------------------
 
     def render(self):
+        current_settings = app.storage.user.get("settings", {})
+
         # fun bug: Everything still works tho???
         #   File "/home/kali/Documents/GitHub/WN-NewWeb/agent.py", line 23, in render
         #     self.agent_data.get("data", {})
@@ -59,26 +61,35 @@ class AgentView:
         with ui.tabs() as tabs:
             ui.tab("MAIN")
             # ui.tab('OTHER')
-            ui.tab(
-                "STATS"
-            )  # Graphs N Stuff? There's examples of this in nicegui examples
-            # ui.tab('FileExplorer')
-            ui.tab("SHELL")
-            ui.tab("NOTES")
+
+            # DEV Tabs - can do one if per tab if you want to maintain an order
+            if current_settings.get("Dev Mode", False):
+                ui.tab(
+                    "STATS"
+                )  # Graphs N Stuff? There's examples of this in nicegui examples
+                # ui.tab('FileExplorer')
+                ui.tab("SHELL")
+                ui.tab("NOTES")
 
         with ui.tab_panels(tabs, value="MAIN").classes("w-full border"):
             with ui.tab_panel("MAIN"):
                 # ui.label('Content of A')
                 self.render_main_tab()
-            with ui.tab_panel("STATS"):
-                # ui.label('Content of A')
-                self.render_stats_tab()
-            with ui.tab_panel("SHELL"):
-                # ui.label('Content of A')
-                self.render_shell_tab()
-            with ui.tab_panel("NOTES"):
-                # ui.label('Content of A')
-                self.render_notes_tab()
+
+            if current_settings.get("Dev Mode", False):
+                with ui.tab_panel("STATS"):
+                    # ui.label('Content of A')
+                    self.render_stats_tab()
+
+            if current_settings.get("Dev Mode", False):
+                with ui.tab_panel("SHELL"):
+                    # ui.label('Content of A')
+                    self.render_shell_tab()
+
+            if current_settings.get("Dev Mode", False):
+                with ui.tab_panel("NOTES"):
+                    # ui.label('Content of A')
+                    self.render_notes_tab()
 
     # ------------------------------------------------------------------------
     #                      Main Tab
