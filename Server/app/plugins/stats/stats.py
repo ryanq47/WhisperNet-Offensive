@@ -1,7 +1,7 @@
 import json
 
 import redis
-from flask import jsonify
+from flask import Response
 from flask_jwt_extended import jwt_required
 from flask_restx import Api, Namespace, Resource, fields
 from modules.agent import BaseAgent
@@ -458,6 +458,114 @@ class StatsAllResource(Resource):
         except Exception as e:
             logger.error(e)
             return api_response(status=500, data={"error": str(e)})
+
+
+# ------------------------------------------------------------------------
+#                      Stats - Logs
+# ------------------------------------------------------------------------
+
+
+@stats_ns.route("/logs/text")
+class StatsLogsResource(Resource):
+    """
+    GET /stats/logs/text
+
+    Get the logs from the logfile
+
+    Returns a raw contents of logs, ex:
+        2025-01-12 16:27:25,846 - stats - WARNING - Stats is broken until redis keys are adjusted
+        2025-01-12 16:27:31,976 - stats - WARNING - UNAUTH ENDPOINT: Stats/clients
+
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @stats_ns.marshal_with(stats_response, code=200)
+    # def get(self):
+    #     with open("./whispernet.log", "r") as log_file:
+    #         return log_file.read(), 200
+
+    def get(self):
+        ANSI_COLOR_REGEX = re.compile(r"\x1B\[[0-9;]*m")
+
+        def generate():
+            with open("./whispernet.log", "r", encoding="utf-8") as log_file:
+                for line in log_file:
+                    # Remove any ANSI color sequences per line on the fly
+                    yield ANSI_COLOR_REGEX.sub("", line)
+
+        return Response(generate(), mimetype="text/plain")
+
+
+@stats_ns.route("/logs/html")
+class StatsLogsResource(Resource):
+    """
+    GET /stats/logs/html
+
+    Get the logs from the logfile, formatted in HTML, with color.
+
+    GET /stats/logs
+
+    Get the logs from the logfile
+
+    Returns HTML formatted contents of logs
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @stats_ns.marshal_with(stats_response, code=200)
+    # def get(self):
+    #     with open("./whispernet.log", "r") as log_file:
+    #         return log_file.read(), 200
+
+    def get(self):
+        # Mapping ANSI color codes to CSS styles
+        color_map = {
+            "0": "color: initial;",  # Reset
+            "31": "color: red;",
+            "32": "color: green;",
+            "33": "color: yellow;",
+            "34": "color: blue;",
+            "35": "color: magenta;",
+            "36": "color: cyan;",
+            "37": "color: white;",
+            # Extend as needed...
+        }
+
+        # Regex to capture color codes like \x1b[31m (i.e., \x1B\[(digits)m)
+        ansi_color_pattern = re.compile(r"\x1B\[(\d+)m")
+
+        def ansi_to_span(match):
+            """Converts a single ANSI code into a <span style="...">."""
+            code = match.group(1)
+            css = color_map.get(code, "")
+            return f'<span style="{css}">'
+
+        # Read the entire file
+        with open("./whispernet.log", "r", encoding="utf-8") as log_file:
+            raw_text = log_file.read()
+
+        # Replace color codes like \x1b[31m with <span style="color:red;">
+        converted = ansi_color_pattern.sub(ansi_to_span, raw_text)
+
+        # Replace the reset code \x1b[0m with closing </span>
+        # (you can do this repeatedly if logs have multiple resets)
+        converted = re.sub(r"\x1B\[0m", "</span>", converted)
+
+        # Wrap the final text in <pre> to preserve spacing and line breaks
+        return f"<pre>{converted}</pre>", 200
 
 
 # ------------------------------------------------------------------------
