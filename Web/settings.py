@@ -86,3 +86,5 @@ class Settings:
         # 2) Now we can safely check 'Dark Mode' as a dictionary
         if current_settings.get("Dark Mode", {}).get("value"):
             ui.dark_mode().enable()
+        else:
+            ui.dark_mode().disable()

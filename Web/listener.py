@@ -62,6 +62,8 @@ class ListenerView:
     #                      Main Tab
     # ------------------------------------------------------------------------
     def render_main_tab(self):
+        current_settings = app.storage.user.get("settings", {})
+
         with ui.row().classes("w-full h-full flex"):
             # Details Section
             with ui.column().classes("flex-1 h-full"):
@@ -74,6 +76,11 @@ class ListenerView:
 
             # Command History Section
             with ui.column().classes("flex-1 h-full"):
+                aggrid_theme = (
+                    "ag-theme-balham-dark"
+                    if current_settings.get("Dark Mode", False)
+                    else "ag-theme-balham"
+                )
                 # Header for Command History
                 ui.label("Connected Clients").classes("h-6 text-slate-400")
                 ui.separator()
@@ -93,33 +100,35 @@ class ListenerView:
                     {"command": "exec:powershell:whoami /all", "result": "john_doe"}
                 )
 
-                self.command_grid = ui.aggrid(
-                    {
-                        "columnDefs": [
-                            {
-                                "headerName": "ID",
-                                "field": "id",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                            {
-                                "headerName": "Name",
-                                "field": "name",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                            {
-                                "headerName": "Open",
-                                "field": "open",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                        ],
-                        "rowData": mydict,  # Pass the list as rowData
-                    }
-                ).style(
-                    "height: 750px"
-                )  # .classes("h-64")
+                self.command_grid = (
+                    ui.aggrid(
+                        {
+                            "columnDefs": [
+                                {
+                                    "headerName": "ID",
+                                    "field": "id",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                                {
+                                    "headerName": "Name",
+                                    "field": "name",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                                {
+                                    "headerName": "Open",
+                                    "field": "open",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                            ],
+                            "rowData": mydict,  # Pass the list as rowData
+                        }
+                    )
+                    .style("height: 750px")
+                    .classes(f"{aggrid_theme}")
+                )
 
                 # Full-width Button: Below Agents section
                 ui.button(
@@ -136,6 +145,7 @@ class ListenerView:
     def render_stats_tab(self):
         with ui.row().classes("w-full h-full flex"):
             with ui.row().classes("flex-1 h-full"):
+
                 ui.label("Test Graph - Connected clients").classes("h-6 text-slate-400")
                 fig = {
                     "data": [
@@ -192,6 +202,8 @@ class ListenersView:
         self.render_listeners_grid()
 
     def render_listeners_grid(self):
+        current_settings = app.storage.user.get("settings", {})
+
         try:
             # NOTES:
             #     Adapting for listeners.
@@ -232,12 +244,17 @@ class ListenersView:
 
             # Render the aggrid
             with ui.element().classes("gap-0 w-full"):
+                aggrid_theme = (
+                    "ag-theme-balham-dark"
+                    if current_settings.get("Dark Mode", False)
+                    else "ag-theme-balham"
+                )
                 ui.aggrid(
                     {
                         "domLayout": "autoHeight",
                         "columnDefs": [
                             {
-                                "headerName": "Listener ID - CLICK ME",
+                                "headerName": "Listener ID",
                                 "field": "Listener ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
@@ -270,7 +287,7 @@ class ListenersView:
                         "rowData": row_data,
                     },
                     html_columns=[0],
-                ).style("height: 750px").classes("ag-theme-balham-dark")
+                ).style("height: 750px").classes(f"{aggrid_theme}")
         except Exception as e:
             print(f"Error rendering grid: {e}")
 

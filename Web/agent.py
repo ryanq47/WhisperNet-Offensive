@@ -96,6 +96,8 @@ class AgentView:
     # ------------------------------------------------------------------------
 
     def render_main_tab(self):
+        current_settings = app.storage.user.get("settings", {})
+
         with ui.row().classes("w-full h-full flex"):
             # Details Section
             with ui.column().classes("flex-1 h-full"):
@@ -106,6 +108,11 @@ class AgentView:
 
             # Command History Section
             with ui.column().classes("flex-1 h-full"):
+                aggrid_theme = (
+                    "ag-theme-balham-dark"
+                    if current_settings.get("Dark Mode", False)
+                    else "ag-theme-balham"
+                )
                 # Header for Command History
                 ui.label("Command History").classes("h-6 text-slate-400")
                 ui.separator()
@@ -121,33 +128,35 @@ class AgentView:
                     {"command": "exec:powershell:whoami /all", "result": "john_doe"}
                 )
 
-                self.command_grid = ui.aggrid(
-                    {
-                        "columnDefs": [
-                            {
-                                "headerName": "Timestamp",
-                                "field": "timestamp",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                            {
-                                "headerName": "Command",
-                                "field": "command",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                            {
-                                "headerName": "Result",
-                                "field": "result",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                            },
-                        ],
-                        "rowData": mydict,  # Pass the list as rowData
-                    }
-                ).style(
-                    "height: 750px"
-                )  # .classes("h-64")
+                self.command_grid = (
+                    ui.aggrid(
+                        {
+                            "columnDefs": [
+                                {
+                                    "headerName": "Timestamp",
+                                    "field": "timestamp",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                                {
+                                    "headerName": "Command",
+                                    "field": "command",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                                {
+                                    "headerName": "Result",
+                                    "field": "result",
+                                    "filter": "agTextColumnFilter",
+                                    "floatingFilter": True,
+                                },
+                            ],
+                            "rowData": mydict,  # Pass the list as rowData
+                        }
+                    )
+                    .style("height: 750px")
+                    .classes(f"{aggrid_theme}")
+                )
 
                 # Full-width Button: Below Command History section
                 ui.button(
@@ -227,6 +236,7 @@ class AgentsView:
 
     def render_agents_grid(self):
         try:
+            current_settings = app.storage.user.get("settings", {})
             # NOTES:
             #     Holy Shitballs aggrids are so much fun -_-
 
@@ -263,12 +273,17 @@ class AgentsView:
 
             # Render the aggrid
             with ui.element().classes("gap-0 w-full"):
+                aggrid_theme = (
+                    "ag-theme-balham-dark"
+                    if current_settings.get("Dark Mode", False)
+                    else "ag-theme-balham"
+                )
                 ui.aggrid(
                     {
                         "domLayout": "autoHeight",
                         "columnDefs": [
                             {
-                                "headerName": "Agent ID - CLICK ME",
+                                "headerName": "Agent ID",
                                 "field": "Agent ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
@@ -301,7 +316,7 @@ class AgentsView:
                         "rowData": row_data,
                     },
                     html_columns=[0],
-                ).style("height: 750px").classes("ag-theme-balham-dark")
+                ).style("height: 750px").classes(f"{aggrid_theme}")
         except Exception as e:
             print(f"Error rendering grid: {e}")
 
