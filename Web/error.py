@@ -16,7 +16,6 @@ from navbar import navbar
 #               Assets N stuff
 # ----------------------------------------------
 person = """
-404: could not locate page, better go find it...
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⡈⠛⢉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -33,8 +32,6 @@ person = """
 
               """
 
-# ui.label("Get a standardized professional error message for not fun mode")
-
 
 class ErrorPage:
 
@@ -47,30 +44,36 @@ class ErrorPage:
     def http_404():
         navbar()
         current_settings = app.storage.user.get("settings", {})
-        if current_settings.get("More Fun Mode", False):
-            # Initial position of the walking element
-            position = {"left": 0}
+        # Have to include this so error message gets centered
+        with ui.column().classes("w-full h-full items-center justify-center"):
+            if current_settings.get("More Fun Mode", False):
+                # Initial position of the walking element
+                position = {"left": 0}
 
-            # Function to update position
-            def move():
-                position["left"] += 10  # Move 10 pixels to the right
-                if position["left"] > 1920:  # Reset position after reaching the end
-                    position["left"] = 0
-                walking_element.style(
-                    f"position: absolute; left: {position['left']}px;"
+                # Function to update position
+                def move():
+                    position["left"] += 10  # Move 10 pixels to the right
+                    if position["left"] > 1920:  # Reset position after reaching the end
+                        position["left"] = 0
+                    walking_element.style(
+                        f"position: absolute; left: {position['left']}px;"
+                    )
+
+                # Create the walking element
+                with ui.row().style("position: relative; height: 100px;"):
+                    walking_element = ui.label(person).style(
+                        "position: absolute; left: 0px;"
+                    )
+
+                # Timer to trigger the move function
+                ui.timer(interval=0.1, callback=move)  # Update position every 100ms
+                error_box(
+                    status_code="404",
+                    error_message="could not locate page, better keep looking...",
                 )
 
-            # Create the walking element
-            with ui.row().style("position: relative; height: 100px;"):
-                walking_element = ui.label(person).style(
-                    "position: absolute; left: 0px;"
-                )
-
-            # Timer to trigger the move function
-            ui.timer(interval=0.1, callback=move)  # Update position every 100ms
-
-        else:
-            ui.label("404 Error")
+            else:
+                error_box(status_code="404", error_message="Page not found")
 
     # ----------------------------------------------
     #               500
@@ -79,16 +82,35 @@ class ErrorPage:
     @ui.page("/500")
     def http_500():
         navbar()
-        current_settings = app.storage.user.get("settings", {})
-        if current_settings.get("More Fun Mode", False):
-            with ui.element().classes("absolute-center"):
+        with ui.column().classes("w-full h-full items-center justify-center"):
+            current_settings = app.storage.user.get("settings", {})
+            if current_settings.get("More Fun Mode", False):
                 ui.image("static/youre_did_it.png").props(f"width=400px height=400px")
-                ui.label("Good f***ing job, you broke something - 500 error").classes(
-                    "flex justify-center items-center"
+
+                error_box(
+                    status_code="500",
+                    error_message="Good f**ing job, you broke something",
                 )
 
-        else:
-            ui.label("500 Error")
+            else:
+                ui.label("500 Error")
+
+                error_box(status_code="500", error_message="Server Error")
+
+
+# ----------------------------------------------
+#               Helper Functions
+# ----------------------------------------------
+
+
+def error_box(status_code, error_message):
+    """Error box for easier error formatting
+
+    Args:
+        status_code (string): The status code
+        error_message (string): The message for the error box
+    """
+    ui.markdown(f"# {status_code} - {error_message}")
 
 
 # ----------------------------------------------
