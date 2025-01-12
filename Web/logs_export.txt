@@ -1,0 +1,11 @@
+<pre>2025-01-12 16:29:32,772 - stats - WARNING - <span style="color: yellow;">Stats is broken until redis keys are adjusted<span style="color: initial;">
+2025-01-12 16:31:19,119 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:32:01,993 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:32:41,527 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:32:45,494 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:33:12,765 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:40:29,725 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:40:29,751 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/plugins<span style="color: initial;">
+2025-01-12 16:50:39,289 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/clients<span style="color: initial;">
+2025-01-12 16:50:39,307 - stats - WARNING - <span style="color: yellow;">UNAUTH ENDPOINT: Stats/plugins<span style="color: initial;">
+</pre>

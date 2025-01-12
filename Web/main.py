@@ -8,6 +8,7 @@ from config import Config, ThemeConfig
 from settings import Settings
 from error import ErrorPage
 from navbar import navbar
+from logs import LogsView
 
 # yarl this
 Config.API_HOST = "http://192.168.23.128:8081/"
@@ -91,6 +92,13 @@ def listener_view_page(uuid: str):
 def agent_view_page():
     navbar()
     a = ListenersView()
+    a.render()
+
+
+@ui.page("/logs")
+def agent_view_page():
+    navbar()
+    a = LogsView()
     a.render()
 
 
