@@ -23,6 +23,8 @@ def navbar():
 
 
 def fun_navbar():
+    current_settings = app.storage.user.get("settings", {})
+
     # Option 1: Just change the background image via .style(...)
     # We'll use a popular Nyan Cat GIF from giphy (or your own URL).
     # You can also do background-size: cover; or whichever suits your design.
@@ -104,6 +106,15 @@ def fun_navbar():
             icon="help",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
+
+        if current_settings.get("Dev Mode", False):
+            ui.button(
+                "Logs",
+                on_click=lambda: ui.navigate.to("/logs"),
+                color="bg-neutral-600",
+                icon="article",
+            ).classes("w-full text-slate-50").props("square flat condensed")
+            ui.separator()
 
         ui.button(
             "Settings",

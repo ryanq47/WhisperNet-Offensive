@@ -495,16 +495,16 @@ class StatsLogsResource(Resource):
         ANSI_COLOR_REGEX = re.compile(r"\x1B\[[0-9;]*m")
 
         def generate():
-            with open("./whispernet.log", "r", encoding="utf-8") as log_file:
+            with open("whispernet.log", "r", encoding="utf-8") as log_file:
                 for line in log_file:
-                    # Remove any ANSI color sequences per line on the fly
+                    # Strip out ANSI color codes
                     yield ANSI_COLOR_REGEX.sub("", line)
 
         return Response(generate(), mimetype="text/plain")
 
 
 @stats_ns.route("/logs/html")
-class StatsLogsResource(Resource):
+class StatsHTMLLogsResource(Resource):
     """
     GET /stats/logs/html
 

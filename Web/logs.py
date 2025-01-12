@@ -9,17 +9,11 @@ class LogsView:
         self.text_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
 
     def render(self):
-        # Navbar
-        with ui.header().classes(
-            "items-center justify-between bg-neutral-800 h-16 px-4"
+        ui.label("gaps.... gaps for days")
+        with ui.column().classes(
+            "w-full h-5/6 flex flex-col p-4 gap-4 absolute-center"
         ):
-            ui.button("Back", on_click=lambda: ui.open("/")).props("flat color=white")
-            ui.label("Logs Viewer").classes("text-white text-xl")
-
-        # Main Content
-        with ui.column().classes("w-full items-center p-4 gap-4"):
-            # Logs Viewer Card
-            with ui.card().classes("w-full max-w-screen-lg p-4 shadow-md"):
+            with ui.card().classes("w-full h-5/6 p-4 shadow-md flex flex-col"):
                 ui.label("Logs Viewer").classes("text-2xl font-bold mb-4 text-center")
                 ui.separator()
 
@@ -29,9 +23,8 @@ class LogsView:
                 ).props("outlined").classes("mb-4 w-full")
 
                 # Logs Display
-                self.logs_container = ui.html(self.html_log_data).classes(
-                    "overflow-auto p-4 border rounded-lg max-h-96"
-                )
+                with ui.scroll_area().classes("flex-1 overflow-y-auto"):
+                    self.logs_container = ui.html(self.html_log_data)
 
                 with ui.row().classes("justify-center w-full mt-4 gap-4"):
                     ui.button(
