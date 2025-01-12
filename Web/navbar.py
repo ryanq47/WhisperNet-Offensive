@@ -7,13 +7,114 @@ Navbar is in its own file for 2 reasons:
 """
 
 from settings import Settings
-from nicegui import ui
+from nicegui import ui, app
 
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
     Settings.apply_settings()
+    current_settings = app.storage.user.get("settings", {})
+    # Have to include this so error message gets centered
+    if current_settings.get("More Fun Mode", False):
+        fun_navbar()
 
+    else:
+        normal_navbar()
+
+
+def fun_navbar():
+    # Option 1: Just change the background image via .style(...)
+    # We'll use a popular Nyan Cat GIF from giphy (or your own URL).
+    # You can also do background-size: cover; or whichever suits your design.
+    # A fixed height for your header (h-20 = 5rem).
+    # Also note the color=white in props for buttons and text classes to ensure visibility.
+    with ui.header().classes("flex items-center justify-between h-20 px-4").style(
+        """
+        /* Example gradient from purple-500 to teal-400 */
+        background: linear-gradient(to right,rgb(45, 45, 46),rgb(179, 179, 179));
+        color: white;
+        """
+    ):
+        ui.button(
+            icon="menu",
+            on_click=lambda: left_drawer.toggle(),
+        ).props("flat color=white")
+
+        # If you remove "hidden sm:flex" and "sm:hidden", you won't hide them on any screen size.
+        with ui.row().classes("items-center space-x-4"):  # Always visible row
+            with ui.button_group().props("outline"):
+                ui.button(
+                    "Home", icon="home", on_click=lambda: ui.navigate.to("/")
+                ).props("flat color=white").classes("text-xs py-2")
+
+                ui.button(
+                    "Search",
+                    icon="search",
+                    on_click=lambda: ui.navigate.to("/search"),
+                ).props("flat color=white").classes("py-2 text-xs")
+
+                ui.button(
+                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                ).props("flat color=white").classes("py-2 text-xs")
+
+        # An extra button on the far right as an example
+        ui.button(icon="menu").props("flat color=white").classes(
+            "py-2 text-xs"
+        ).disable()
+
+    # Left drawer (unchanged). If you also want Nyan Cat background here,
+    # remove 'bg-neutral-600' and apply a similar background style.
+    with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
+        ui.button(
+            "Home",
+            on_click=lambda: ui.navigate.to("/"),
+            icon="home",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Search",
+            on_click=lambda: ui.navigate.to("/search"),
+            color="bg-neutral-600",
+            icon="search",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Agents",
+            on_click=lambda: ui.navigate.to("/agents"),
+            color="bg-neutral-600",
+            icon="computer",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Listeners",
+            on_click=lambda: ui.navigate.to("/listeners"),
+            color="bg-neutral-600",
+            icon="headphones",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "About",
+            on_click=lambda: ui.navigate.to("/about"),
+            color="bg-neutral-600",
+            icon="help",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Settings",
+            on_click=lambda: ui.navigate.to("/settings"),
+            color="bg-neutral-600",
+            icon="settings",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+
+def normal_navbar():
     with ui.header().classes(
         "items-center justify-between bg-neutral-800 h-20 px-4 h-1/6"
     ):
@@ -24,6 +125,7 @@ def navbar():
         # Large screen buttons (hidden on small screens)
         with ui.row().classes():
             with ui.button_group().props("outline"):
+
                 ui.button(
                     "Home", icon="home", on_click=lambda: ui.navigate.to("/")
                 ).props("flat color=white").classes(
