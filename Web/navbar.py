@@ -64,8 +64,7 @@ def fun_navbar():
             "py-2 text-xs"
         ).disable()
 
-    # Left drawer (unchanged). If you also want Nyan Cat background here,
-    # remove 'bg-neutral-600' and apply a similar background style.
+    # drawer stuff
     with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
         ui.button(
             "Home",
@@ -121,6 +120,22 @@ def fun_navbar():
             on_click=lambda: ui.navigate.to("/settings"),
             color="bg-neutral-600",
             icon="settings",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Settings2",
+            on_click=lambda: ui.navigate.to("/settings"),
+            color="bg-neutral-600",
+            icon="settings",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Logout",
+            on_click=lambda: ui.navigate.to("/logout"),
+            color="bg-neutral-600",
+            icon="logout",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
@@ -218,6 +233,14 @@ def normal_navbar():
             color="bg-neutral-600",
             icon="settings",
             # pin to bottom?
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Logout",
+            on_click=lambda: ui.navigate.to("/logout"),
+            color="bg-neutral-600",
+            icon="logout",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 

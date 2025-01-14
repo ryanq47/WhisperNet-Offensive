@@ -10,7 +10,7 @@ from nicegui import ui, Client, app
 from nicegui.page import page
 import math
 from navbar import navbar
-
+from auth import check_login
 
 # ----------------------------------------------
 #               Assets N stuff
@@ -42,6 +42,7 @@ class ErrorPage:
     @staticmethod
     @ui.page("/404")
     def http_404():
+        check_login()
         navbar()
         current_settings = app.storage.user.get("settings", {})
         # Have to include this so error message gets centered
@@ -81,6 +82,7 @@ class ErrorPage:
     @staticmethod
     @ui.page("/500")
     def http_500():
+        check_login()
         navbar()
         with ui.column().classes("w-full h-full items-center justify-center"):
             current_settings = app.storage.user.get("settings", {})

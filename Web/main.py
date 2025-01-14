@@ -9,7 +9,7 @@ from settings import Settings
 from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
-from auth import AuthView
+from auth import AuthView, check_login
 
 # yarl this
 Config.API_HOST = "http://192.168.23.128:8081/"
@@ -37,8 +37,8 @@ Config.API_HOST = "http://192.168.23.128:8081/"
 
 @ui.page("/")
 def index():
+    check_login()
     navbar()
-
     # little hack to set hieght to full here. Makes it so it is the full page, and not have a scrollbar
     # with ui.element().classes():
     # Fixed by doing a.class("absolute-center")
@@ -49,6 +49,7 @@ def index():
 
 @ui.page("/settings")
 def settings():
+    check_login()
     navbar()
     s = Settings()
     s.render()
@@ -56,6 +57,7 @@ def settings():
 
 @ui.page("/search")
 def search():
+    check_login()
     navbar()
     s = Search()
     s.spawn_search_bar()
@@ -63,6 +65,7 @@ def search():
 
 @ui.page("/about")
 def about():
+    check_login()
     navbar()
     a = AboutView()
     a.render()
@@ -70,6 +73,7 @@ def about():
 
 @ui.page("/agent/{uuid}")
 def agent_view_page(uuid: str):
+    check_login()
     navbar()
     a = AgentView(agent_id=uuid)
     a.render()
@@ -77,6 +81,7 @@ def agent_view_page(uuid: str):
 
 @ui.page("/agents")
 def agent_view_page():
+    check_login()
     navbar()
     a = AgentsView()
     a.render()
@@ -84,6 +89,7 @@ def agent_view_page():
 
 @ui.page("/listener/{uuid}")
 def listener_view_page(uuid: str):
+    check_login()
     navbar()
     a = ListenerView(listener_id=uuid)
     a.render()
@@ -91,6 +97,7 @@ def listener_view_page(uuid: str):
 
 @ui.page("/listeners")
 def agent_view_page():
+    check_login()
     navbar()
     a = ListenersView()
     a.render()
@@ -98,6 +105,7 @@ def agent_view_page():
 
 @ui.page("/logs")
 def agent_view_page():
+    check_login()
     navbar()
     a = LogsView()
     a.render()
