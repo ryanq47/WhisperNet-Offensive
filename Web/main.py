@@ -9,6 +9,7 @@ from settings import Settings
 from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
+from auth import AuthView
 
 # yarl this
 Config.API_HOST = "http://192.168.23.128:8081/"
@@ -99,6 +100,13 @@ def agent_view_page():
 def agent_view_page():
     navbar()
     a = LogsView()
+    a.render()
+
+
+@ui.page("/auth")
+def auth_view_page():
+    # navbar()
+    a = AuthView()
     a.render()
 
 
