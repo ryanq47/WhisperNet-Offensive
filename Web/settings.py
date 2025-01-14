@@ -1,4 +1,6 @@
 from nicegui import ui, app
+import requests
+from config import Config
 
 
 class Settings:
@@ -25,44 +27,146 @@ class Settings:
                 # ls.render()
 
 
+## HEY - FINISH THE REGISTER USER and make it pretty
+
+
+from nicegui import ui
+import requests
+
+
 class Users:
     def __init__(self):
-        pass
+        self.user_data = []  # Store user data for the table
+        self.user_table = None  # Placeholder for the table
 
     def render(self):
         with ui.tabs() as tabs:
             ui.tab("REGISTER")
-            ui.tab("OTHER TABS")
+            ui.tab("USER LIST")
 
-        with ui.tab_panels(tabs, value="REGISTER").classes("w-full border"):
+        with ui.tab_panels(tabs, value="REGISTER").classes("w-full"):
+            # Tab for registering users
             with ui.tab_panel("REGISTER"):
-                # ui.label('Content of A')
-                # ls = LocalSettings()
-                # ls.render()
                 self.register_user_view()
-            # with ui.tab_panel("USERS"):
-            #     ui.label("Content of USERS")
-            #     # ls = LocalSettings()
-            #     # ls.render()
+
+            # Tab for listing users
+            with ui.tab_panel("USER LIST"):
+                self.list_users_view()
 
     def register_user_view(self):
+        """
+        Render the user registration view.
+        """
         with ui.column().classes("items-center justify-center w-full"):
-            ui.label("Register a user").classes(
-                "text-2xl font-bold text-center text-slate-600 mb-4"
-            )
+            ui.label("Register a user").classes("text-2xl font-bold text-center mb-4")
             ui.separator().classes("mb-4")
 
-            # Input fields and login button
-            with ui.column().classes("gap-4 w-1/2 max-w-md"):  # Limit maximum width
-                self.username = ui.input("Username").props("outlined").classes("w-full")
-                self.password = (
+            # Input fields and register button
+            with ui.column().classes("gap-4 w-1/2 max-w-md"):
+                self.username_input = (
+                    ui.input("Username").props("outlined").classes("w-full")
+                )
+                self.password_input = (
                     ui.input("Password", password=True, password_toggle_button=True)
                     .props("outlined")
                     .classes("w-full")
                 )
-                ui.button("Register User").classes(
+                ui.button("Register User", on_click=self.register_api_call).classes(
                     "bg-blue-500 text-white w-full hover:bg-blue-600 rounded-lg"
                 )
+
+    def register_api_call(self):
+        """
+        Register a new user via the API.
+        """
+        data = {
+            "username": self.username_input.value,
+            "password": self.password_input.value,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.post(
+                url=f"{Config.API_HOST}/auth/register", json=data, headers=headers
+            )
+
+            if response.status_code == 201:
+                ui.notify(
+                    f"User '{self.username_input.value}' created successfully",
+                    type="positive",
+                )
+                self.load_users()  # Refresh the user list after registration
+            else:
+                ui.notify(
+                    f"Error registering user: {response.status_code}", type="warning"
+                )
+        except Exception as e:
+            ui.notify(f"Error: {e}", type="negative")
+
+    def list_users_view(self):
+        """
+        Render the user list view.
+        """
+        # auto load users on tab creation
+        # self.load_users()
+        with ui.column().classes("w-full items-center justify-center"):
+            ui.label("User Management").classes("text-2xl font-bold text-center mb-4")
+            ui.separator().classes("mb-4")
+
+            # Add table for user management
+            self.user_table = ui.aggrid(
+                {
+                    "columnDefs": [
+                        {
+                            "headerName": "UUID",
+                            "field": "uuid",
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                        },
+                        {
+                            "headerName": "Username",
+                            "field": "username",
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                        },
+                    ],
+                    "rowData": self.user_data,
+                    "enableCellTextSelection": True,  # allows selecting data
+                }
+            ).classes("w-full")
+
+            # Button to refresh the table
+            ui.button("Refresh Users", on_click=self.load_users).classes(
+                "bg-green-500 text-white mt-4 hover:bg-green-600"
+            )
+
+    def load_users(self):
+        """
+        Fetch users from the /auth/users endpoint and update the table.
+        """
+        try:
+            headers = {
+                "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
+                "Content-Type": "application/json",
+            }
+            response = requests.get(
+                url=f"{Config.API_HOST}/auth/users", headers=headers
+            )
+            if response.status_code == 200:
+                self.user_data = response.json().get("data", {}).get("users", [])
+                self.user_table.options["rowData"] = self.user_data
+                self.user_table.update()  # Refresh the table with new data
+                ui.notify("User list updated successfully", type="positive")
+            else:
+                ui.notify(
+                    f"Failed to load users: {response.status_code}", type="warning"
+                )
+        except Exception as e:
+            ui.notify(f"Error loading users: {e}", type="negative")
 
 
 class LocalSettings:

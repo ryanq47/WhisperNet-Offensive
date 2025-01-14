@@ -125,14 +125,6 @@ def fun_navbar():
         ui.separator()
 
         ui.button(
-            "Settings2",
-            on_click=lambda: ui.navigate.to("/settings"),
-            color="bg-neutral-600",
-            icon="settings",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
             "Logout",
             on_click=lambda: ui.navigate.to("/logout"),
             color="bg-neutral-600",
