@@ -10,6 +10,7 @@ class AuthView:
     def __init__(self):
         self.username = None
         self.password = None
+        self.api_host = None  # url of server, full thing + protocol
 
     def render(self):
         with ui.column().classes(
@@ -22,6 +23,13 @@ class AuthView:
                 ui.separator().classes("mb-4")
 
                 with ui.column().classes("gap-4"):
+                    self.api_host = (
+                        ui.input("Server", placeholder="http(s)://<address>:<port>")
+                        .props("outlined")
+                        .classes("w-full")
+                    )
+                    # set api host with value directly from user input
+                    Config.set_api_host(host=self.api_host.value)
                     self.username = (
                         ui.input("Username").props("outlined").classes("w-full")
                     )
