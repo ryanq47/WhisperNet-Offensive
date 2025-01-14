@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 import requests
-from app.modules.config import Config
+from app.modules.config import ThemeConfig
 from app.modules.login import check_login
 from app.modules.ui_elements import create_header
 from app.modules.utils import is_base64, is_hex_shellcode
@@ -34,13 +34,13 @@ class BinaryBuilderPage:
         Retrieve container data from the server.
         """
         try:
-            url = Config().get_url() / "binary-builder" / "targets"
-            token = Config().get_token()
+            url = ThemeConfig().get_url() / "binary-builder" / "targets"
+            token = ThemeConfig().get_token()
             headers = {"Authorization": f"Bearer {token}"}
 
             logger.debug("Getting targets from server")
             response = requests.get(
-                url, headers=headers, verify=Config().get_verify_certs()
+                url, headers=headers, verify=ThemeConfig().get_verify_certs()
             )
 
             if response.status_code == 200:
@@ -59,13 +59,13 @@ class BinaryBuilderPage:
         Retrieve binaries data from the server.
         """
         try:
-            url = Config().get_url() / "binary-builder" / "binaries"
-            token = Config().get_token()
+            url = ThemeConfig().get_url() / "binary-builder" / "binaries"
+            token = ThemeConfig().get_token()
             headers = {"Authorization": f"Bearer {token}"}
 
             logger.debug("Getting binaries from server")
             response = requests.get(
-                url, headers=headers, verify=Config().get_verify_certs()
+                url, headers=headers, verify=ThemeConfig().get_verify_certs()
             )
 
             if response.status_code == 200:
@@ -92,12 +92,17 @@ class BinaryBuilderPage:
         Download a binary from the server and serve it via NiceGUI.
         """
         try:
-            url = str(Config().get_url() / "binary-builder" / "binaries" / filename)
-            token = Config().get_token()
+            url = str(
+                ThemeConfig().get_url() / "binary-builder" / "binaries" / filename
+            )
+            token = ThemeConfig().get_token()
             headers = {"Authorization": f"Bearer {token}"}
 
             response = requests.get(
-                url, headers=headers, stream=True, verify=Config().get_verify_certs()
+                url,
+                headers=headers,
+                stream=True,
+                verify=ThemeConfig().get_verify_certs(),
             )
             if response.status_code != 200:
                 ui.notify(
@@ -154,12 +159,12 @@ class BinaryBuilderPage:
         Send a compilation request to the server.
         """
         try:
-            url = Config().get_url() / "binary-builder" / "build"
-            token = Config().get_token()
+            url = ThemeConfig().get_url() / "binary-builder" / "build"
+            token = ThemeConfig().get_token()
             headers = {"Authorization": f"Bearer {token}"}
 
             response = requests.post(
-                url, headers=headers, json=data, verify=Config().get_verify_certs()
+                url, headers=headers, json=data, verify=ThemeConfig().get_verify_certs()
             )
             if response.status_code == 200:
                 ui.notify("Successfully queued for compilation")

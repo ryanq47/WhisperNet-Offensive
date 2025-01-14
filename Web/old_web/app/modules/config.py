@@ -3,19 +3,20 @@ from app.modules.log import log
 
 logger = log(__name__)
 
-# not using a yaml file at the moment, this works fine. 
+# not using a yaml file at the moment, this works fine.
 
-# Config singleton
-class Config:
+
+# ThemeConfig singleton
+class ThemeConfig:
     _instance = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(Config, cls).__new__(cls)
+            cls._instance = super(ThemeConfig, cls).__new__(cls)
             # Initialize default configuration values
             cls._instance.url = URL()
-            cls._instance.username = ''
-            cls._instance.password = ''
+            cls._instance.username = ""
+            cls._instance.password = ""
             cls._instance.current_token = None
             cls._instance.active_sessions = []
             cls._instance.button_color = "#013A63"
@@ -97,23 +98,23 @@ class Config:
             logger.error(f"Error getting active sessions: {e}")
             return []
 
-
     def get_button_color(self) -> str:
         try:
             return self.button_color
         except Exception as e:
             logger.error(f"Error getting active sessions: {e}")
-            return [] 
+            return []
+
     def get_background_color(self) -> str:
         try:
             return self.background_color
         except Exception as e:
             logger.error(f"Error getting active sessions: {e}")
-            return [] 
+            return []
 
     def get_verify_certs(self) -> str:
         try:
             return self.verify_certs
         except Exception as e:
             logger.error(f"Error getting verify_certs: {e}")
-            return [] 
+            return []

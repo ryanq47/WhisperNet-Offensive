@@ -44,7 +44,7 @@ class log(logging.Logger):
 
         self.color = color
 
-        # no longer need basicConfig as we can set this here.
+        # no longer need basicThemeConfig as we can set this here.
         # basic config is for ONE handler.
 
         ## add stream handler
