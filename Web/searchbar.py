@@ -28,14 +28,11 @@ class Search:
         self.query = query
 
     def spawn_search_bar(self):
-        ui.label(
-            "NOTE: Dedicated search with no aggrid/grid due to mutliple data types here"
-        )
-        print("LOADING SEARCH - NEW CLASS INSTANCE")
-
+        placeholder = "Search anything on the server..."
+        # either enable or disable vertical padding, ex if you want to use the searchbar somewhere besdies the search menu, disable it
         if self.vertical_padding:
             self.search_field = (
-                ui.input(on_change=self.search)
+                ui.input(on_change=self.search, placeholder=placeholder)
                 .props('autofocus outlined item-aligned input-class="ml-3"')
                 .classes("w-1/2 self-center mt-24 transition-all")
             )
@@ -43,7 +40,7 @@ class Search:
 
         else:
             self.search_field = (
-                ui.input(on_change=self.search)
+                ui.input(on_change=self.search, placeholder=placeholder)
                 .props('autofocus outlined item-aligned input-class="ml-3"')
                 .classes(
                     f"{"w-full" if self.full_horizontal_width else "w-1/2"}  self-center transition-all"

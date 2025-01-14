@@ -48,14 +48,14 @@ class AgentView:
         # ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').props('flat color=white')
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
-            ui.label(str(hostname)).classes("h-10 text-slate-600")
+            ui.label(str(hostname)).classes("h-10  600")
         # reduce space here
         with ui.row().classes("w-full text-2xl"):
             ui.icon("badge")
-            ui.label(self.agent_id).classes("h-6 text-slate-400")
+            ui.label(self.agent_id).classes("h-6  400")
             ui.space()
             ui.icon("timer")
-            ui.label("Last Checkin: 01:01:01 ").classes("h-6 text-slate-400")
+            ui.label("Last Checkin: 01:01:01 ").classes("h-6  400")
 
         ui.separator()
         with ui.tabs() as tabs:
@@ -102,7 +102,7 @@ class AgentView:
             # Details Section
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("Details").classes("h-6 text-slate-400")
+                    ui.label("Details").classes("h-6  400")
                 ui.separator()
                 create_ui_from_json(self.agent_data)
 
@@ -114,7 +114,7 @@ class AgentView:
                     else "ag-theme-balham"
                 )
                 # Header for Command History
-                ui.label("Command History").classes("h-6 text-slate-400")
+                ui.label("Command History").classes("h-6  400")
                 ui.separator()
 
                 mydict = []
@@ -173,9 +173,7 @@ class AgentView:
     def render_stats_tab(self):
         with ui.row().classes("w-full h-full flex"):
             with ui.row().classes("flex-1 h-full"):
-                ui.label("Test Graph - Average Checkin Times").classes(
-                    "h-6 text-slate-400"
-                )
+                ui.label("Test Graph - Average Checkin Times").classes("h-6  400")
                 fig = {
                     "data": [
                         {

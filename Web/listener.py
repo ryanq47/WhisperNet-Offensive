@@ -26,14 +26,14 @@ class ListenerView:
         # ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').props('flat color=white')
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
-            ui.label("ListenerName").classes("h-10 text-slate-600")
+            ui.label("ListenerName").classes("h-10  600")
         # reduce space here
         with ui.row().classes("w-full text-2xl"):
             ui.icon("badge")
-            ui.label(self.listener_id).classes("h-6 text-slate-400")
+            ui.label(self.listener_id).classes("h-6  400")
             ui.space()
             # ui.icon("timer")
-            # ui.label("Last Checkin: 01:01:01 ").classes("h-6 text-slate-400")
+            # ui.label("Last Checkin: 01:01:01 ").classes("h-6  400")
 
         ui.separator()
         with ui.tabs() as tabs:
@@ -68,7 +68,7 @@ class ListenerView:
             # Details Section
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("Details").classes("h-6 text-slate-400")
+                    ui.label("Details").classes("h-6  400")
                 ui.separator()
                 create_ui_from_json(self.listener_data)
 
@@ -82,7 +82,7 @@ class ListenerView:
                     else "ag-theme-balham"
                 )
                 # Header for Command History
-                ui.label("Connected Clients").classes("h-6 text-slate-400")
+                ui.label("Connected Clients").classes("h-6  400")
                 ui.separator()
 
                 mydict = []
@@ -146,7 +146,7 @@ class ListenerView:
         with ui.row().classes("w-full h-full flex"):
             with ui.row().classes("flex-1 h-full"):
 
-                ui.label("Test Graph - Connected clients").classes("h-6 text-slate-400")
+                ui.label("Test Graph - Connected clients").classes("h-6  400")
                 fig = {
                     "data": [
                         {

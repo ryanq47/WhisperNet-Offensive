@@ -99,6 +99,15 @@ def fun_navbar():
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
+        # if current_settings.get("Dev Mode", False):
+        ui.button(
+            "Logs",
+            on_click=lambda: ui.navigate.to("/logs"),
+            color="bg-neutral-600",
+            icon="article",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
         ui.button(
             "About",
             on_click=lambda: ui.navigate.to("/about"),
@@ -106,15 +115,6 @@ def fun_navbar():
             icon="help",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
-
-        if current_settings.get("Dev Mode", False):
-            ui.button(
-                "Logs",
-                on_click=lambda: ui.navigate.to("/logs"),
-                color="bg-neutral-600",
-                icon="article",
-            ).classes("w-full text-slate-50").props("square flat condensed")
-            ui.separator()
 
         ui.button(
             "Settings",

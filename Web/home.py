@@ -20,13 +20,13 @@ class HomeView:
                     ui.image("/static/icon_full.png").classes("w-32 h-32")
 
                     ui.label("WhisperNet Dashboard").classes(
-                        "text-3xl font-bold text-slate-700 ml-4"
+                        "text-3xl font-bold  700 ml-4"
                     )
 
                     # Subheader
                     ui.label(
-                        "Some Saying Here That Looks and or Sounds Cool But is long enoguh to overwrap"
-                    ).classes("text-lg text-slate-600 text-center leading-6")
+                        "Some really cool oneliner that explains the platform!!!!"
+                    ).classes("text-lg  600 text-center leading-6")
                     ui.separator()
 
                 # Status Section
@@ -42,7 +42,7 @@ class HomeView:
                         ui.button(
                             f"{num_active_agents} Active Agents",
                             on_click=lambda nav: ui.navigate.to("/agents"),
-                        ).classes("text-xl font-medium text-slate-700").props("flat")
+                        ).classes("text-xl font-medium  700").props("flat")
 
                     # Online Listeners
                     with ui.column().classes(
@@ -56,7 +56,7 @@ class HomeView:
                         ui.button(
                             f"{num_active_listeners} Listeners Online",
                             on_click=lambda nav: ui.navigate.to("/listeners"),
-                        ).classes("text-xl font-medium text-slate-700").props("flat")
+                        ).classes("text-xl font-medium  700").props("flat")
 
                     # Alerts - can integrate later
                     # with ui.column().classes(
@@ -66,7 +66,7 @@ class HomeView:
                     #         "text-red-600 text-5xl"
                     #     )
                     #     ui.label("2 Alerts").classes(
-                    #         "text-xl font-medium text-slate-700"
+                    #         "text-xl font-medium  700"
                     #     )
                     ui.separator()
 
@@ -76,7 +76,7 @@ class HomeView:
                 #     "w-full items-center justify-center mt-6"
                 # ):
                 #     ui.label("Searchbar").classes(
-                #         "text-lg text-slate-600 font-medium mb-2 underline"
+                #         "text-lg  600 font-medium mb-2 underline"
                 #     )
                 #     s = Search(
                 #         vertical_padding=False, full_horizontal_width=True

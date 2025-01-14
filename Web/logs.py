@@ -17,11 +17,6 @@ class LogsView:
                 ui.label("Logs Viewer").classes("text-2xl font-bold mb-4 text-center")
                 ui.separator()
 
-                # Search Bar
-                ui.input(placeholder="Search logs...").on(
-                    "input", self._search_logs
-                ).props("outlined").classes("mb-4 w-full")
-
                 # Logs Display
                 with ui.scroll_area().classes("flex-1 overflow-y-auto"):
                     self.logs_container = ui.html(self.html_log_data)
@@ -34,13 +29,6 @@ class LogsView:
                         "Export Text Logs", on_click=self._export_text_logs
                     ).props("flat").classes("flex-1")
 
-    def _search_logs(self, event):
-        search_term = event.value.lower()
-        filtered_logs = [
-            line for line in self.log_data.splitlines() if search_term in line.lower()
-        ]
-        self.logs_container.set_content("<br>".join(filtered_logs))
-
     def _export_html_logs(self):
         # get data at export, instead of at init
         html_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
@@ -51,7 +39,9 @@ class LogsView:
 
     def _export_text_logs(self):
         # get data at export, instead of at init
-        text_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
+        text_log_data = api_call(
+            f"{Config.API_HOST}/stats/logs/text", return_dict_from_json=False
+        )
         # Provide logs as a downloadable file
         with open("logs_export.txt", "w") as f:
             f.write(text_log_data)

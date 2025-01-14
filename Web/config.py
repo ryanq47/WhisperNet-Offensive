@@ -8,7 +8,7 @@ from nicegui import app
 
 
 class ThemeConfig:
-    link = "underline"  # text-slate-600 hover:text-slate-800 visited:text-slate-600"
+    link = "underline"  #  600 hover: 800 visited: 600"
     # dark_link = "underline text-green-600 hover:text-green-800 visited:text-green-600"
     gap = ""  # "gap-1"  # gap between elements
 

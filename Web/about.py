@@ -17,13 +17,17 @@ class AboutView:
 
                     # Header Section
                     ui.label("About WhisperNet").classes(
-                        "text-3xl font-extrabold text-center text-slate-800"
+                        "text-3xl font-extrabold text-center  800"
                     )
 
                     # Description Section
+                    # ui.label(
+                    #     "WhisperNet is an offensive cybersecurity platform designed to streamline C2 operations. It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations."
+                    # ).classes("text-base text-center  600")
+
                     ui.label(
-                        "WhisperNet is an offensive cybersecurity platform designed to streamline C2 operations. It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations."
-                    ).classes("text-base text-center text-slate-600")
+                        "Some really cool oneliner that explains the platform!!!!"
+                    ).classes("text-base text-center  600")
 
                     # Links Section
                     with ui.column().classes("w-full items-center"):
