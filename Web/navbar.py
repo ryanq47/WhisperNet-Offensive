@@ -6,13 +6,14 @@ Navbar is in its own file for 2 reasons:
 
 """
 
-from settings import Settings
+from settings import Settings, LocalSettings
 from nicegui import ui, app
 
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
-    Settings.apply_settings()
+    # calling apply_settings for local settings stored in users sessions
+    LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})
     # Have to include this so error message gets centered
     if current_settings.get("More Fun Mode", False):
