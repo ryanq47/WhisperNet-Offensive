@@ -76,7 +76,11 @@ class CredstoreCredentialResource(Resource):
     # @jwt_required
     def get(self, credential_id):
         try:
-            ...
+            c = CredStore()
+            single_cred = c.get_credential(credential_id=credential_id)
+            cred_list = serialize_credentials(single_cred)
+
+            return api_response(message="Success", data={"credentials": cred_list})
 
         except Exception as e:
             logger.error(e)
@@ -136,26 +140,7 @@ class CredentialsResource(Resource):
         """
         try:
             c = CredStore()
-            all_creds = (
-                c.get_all_credentials()
-            )  # Assuming this returns a list of Credential objects
-
-            # Convert the list of credentials to a list of dictionaries
-            # cred_list = []
-            # for cred in all_creds:
-            #     cred_dict = {
-            #         "id": cred.id,
-            #         "username": cred.username,
-            #         "password": cred.password,
-            #         "realm": cred.realm,
-            #         "notes": cred.notes,
-            #         "date_added": (
-            #             cred.date_added.strftime("%Y-%m-%d %H:%M:%S")
-            #             if cred.date_added
-            #             else None
-            #         ),
-            #     }
-            #     cred_list.append(cred_dict)
+            all_creds = c.get_all_credentials()
             cred_list = serialize_credentials(all_creds)
 
             # Return the credentials in a structured response
