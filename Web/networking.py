@@ -1,4 +1,6 @@
 import requests
+from config import Config
+from nicegui import app
 
 
 def api_call(url, timeout=3, return_dict_from_json=True):
@@ -16,6 +18,11 @@ def api_call(url, timeout=3, return_dict_from_json=True):
         ValueError: If the response cannot be parsed as JSON.
         requests.RequestException: For network-related errors or timeouts.
     """
+    headers = {
+        "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
+        "Content-Type": "application/json",
+    }
+
     if not url:
         raise ValueError("A valid URL must be provided.")
 

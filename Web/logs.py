@@ -9,9 +9,8 @@ class LogsView:
         self.text_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
 
     def render(self):
-        ui.label("gaps.... gaps for days")
         with ui.column().classes(
-            "w-full h-5/6 flex flex-col p-4 gap-4 absolute-center"
+            "w-full h-full flex flex-col p-4 gap-4 absolute-center"
         ):
             with ui.card().classes("w-full h-5/6 p-4 shadow-md flex flex-col"):
                 ui.label("Logs Viewer").classes("text-2xl font-bold mb-4 text-center")

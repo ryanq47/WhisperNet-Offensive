@@ -6,13 +6,14 @@ Navbar is in its own file for 2 reasons:
 
 """
 
-from settings import Settings
+from settings import Settings, LocalSettings
 from nicegui import ui, app
 
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
-    Settings.apply_settings()
+    # calling apply_settings for local settings stored in users sessions
+    LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})
     # Have to include this so error message gets centered
     if current_settings.get("More Fun Mode", False):
@@ -64,8 +65,7 @@ def fun_navbar():
             "py-2 text-xs"
         ).disable()
 
-    # Left drawer (unchanged). If you also want Nyan Cat background here,
-    # remove 'bg-neutral-600' and apply a similar background style.
+    # drawer stuff
     with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
         ui.button(
             "Home",
@@ -121,6 +121,14 @@ def fun_navbar():
             on_click=lambda: ui.navigate.to("/settings"),
             color="bg-neutral-600",
             icon="settings",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Logout",
+            on_click=lambda: ui.navigate.to("/logout"),
+            color="bg-neutral-600",
+            icon="logout",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
@@ -205,6 +213,14 @@ def normal_navbar():
         ui.separator()
 
         ui.button(
+            "Logs",
+            on_click=lambda: ui.navigate.to("/logs"),
+            color="bg-neutral-600",
+            icon="article",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
             f"About",
             on_click=lambda agents: ui.navigate.to("/about"),
             color="bg-neutral-600",
@@ -218,6 +234,14 @@ def normal_navbar():
             color="bg-neutral-600",
             icon="settings",
             # pin to bottom?
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
+        ui.button(
+            "Logout",
+            on_click=lambda: ui.navigate.to("/logout"),
+            color="bg-neutral-600",
+            icon="logout",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
