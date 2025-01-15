@@ -80,7 +80,7 @@ class CredstoreCredentialResource(Resource):
 
     @credstore_ns.marshal_with(credstore_response, code=200)
     @credstore_ns.expect(credential_model)  # Attach the model here
-    def put(self):
+    def post(self):
         """
         Add a credential to the credential list via a JSON payload.
 
@@ -100,6 +100,9 @@ class CredstoreCredentialResource(Resource):
             payload = request.json
             if not payload:
                 return api_response(status=400, message="Missing JSON payload")
+
+            print("PAYLOAD")
+            print(payload)
 
             username = payload.get("username")
             password = payload.get("password")
