@@ -541,10 +541,10 @@ class StatsHTMLLogsResource(Resource):
             "0": "color: initial;",  # Reset
             "31": "color: red;",
             "32": "color: green;",
-            "33": "color: yellow;",
-            "34": "color: blue;",
+            "33": "color: red;",
+            "34": "color: DarkBlue;",
             "35": "color: magenta;",
-            "36": "color: cyan;",
+            "36": "color: blue;",
             "37": "color: white;",
             # Extend as needed...
         }

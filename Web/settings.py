@@ -19,10 +19,10 @@ class Settings:
                 # ui.label('Content of A')
                 ls = LocalSettings()
                 ls.render()
-            if current_settings.get("Dev Mode", False):
-                with ui.tab_panel("USERS"):
-                    u = Users()
-                    u.render()
+            # if current_settings.get("Dev Mode", False):
+            with ui.tab_panel("USERS"):
+                u = Users()
+                u.render()
                 # ls = LocalSettings()
                 # ls.render()
 
