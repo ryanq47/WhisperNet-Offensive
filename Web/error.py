@@ -77,6 +77,23 @@ class ErrorPage:
                 error_box(status_code="404", error_message="Page not found")
 
     # ----------------------------------------------
+    #               404
+    # ----------------------------------------------
+
+    @staticmethod
+    @ui.page("/401")
+    def http_401():
+        current_settings = app.storage.user.get("settings", {})
+
+        if current_settings.get("More Fun Mode", False):
+            ui.notify("Token has expired, please log in again.")
+
+        else:
+            ui.notify("Token has expired, please log in again.")
+
+        ui.navigate.to("/auth")
+
+    # ----------------------------------------------
     #               500
     # ----------------------------------------------
     @staticmethod
@@ -128,6 +145,13 @@ async def exception_handler_404(request, exception: Exception):
     with Client(page(""), request=request) as client:
         ui.navigate.to("/404")
     return client.build_response(request, 404)
+
+
+@app.exception_handler(401)
+async def exception_handler_401(request, exception: Exception):
+    with Client(page(""), request=request) as client:
+        ui.navigate.to("/401")
+    return client.build_response(request, 401)
 
 
 @app.exception_handler(500)

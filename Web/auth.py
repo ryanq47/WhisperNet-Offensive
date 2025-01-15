@@ -43,7 +43,7 @@ class AuthView:
                         ui.input("Username").props("outlined").classes("w-full")
                     )
                     self.password = (
-                        ui.input("Password", password=True)
+                        ui.input("Password", password=True, password_toggle_button=True)
                         .props("outlined")
                         .classes("w-full")
                     ).on(
