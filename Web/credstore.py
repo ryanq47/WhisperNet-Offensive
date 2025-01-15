@@ -5,6 +5,7 @@ from config import Config
 import asyncio  # If not already imported
 import requests
 import json
+import httpx
 
 
 class CredentialStore:
@@ -34,6 +35,13 @@ class CredentialStore:
             self.grid = ui.aggrid(
                 {
                     "columnDefs": [
+                        {
+                            "headerName": "ID",
+                            "field": "id",
+                            "sortable": True,
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                        },
                         {
                             "headerName": "Username",
                             "field": "username",
@@ -118,12 +126,28 @@ class CredentialStore:
             # Await the coroutine to get selected rows
             selected_rows = await self.grid.get_selected_rows()
 
-            # get ID, for each id selected, send delete when hit delete
+            # Iterate over selected rows and send a DELETE request for each
+            async with httpx.AsyncClient() as client:
+                for row in selected_rows:
+                    cred_id = row.get("id")  # Ensure "id" exists in row data
+                    if cred_id:
+                        try:
+                            response = await client.delete(
+                                f"{Config.API_HOST}/credstore/credential/{cred_id}"
+                            )
+                            if response.status_code != 200:
+                                print(
+                                    f"Failed to delete credential ID {cred_id}: {response.text}"
+                                )
+                        except Exception as request_error:
+                            print(
+                                f"Error deleting credential ID {cred_id}: {request_error}"
+                            )
 
-            # Filter out the selected rows from the credential data
-            self.credential_data = [
-                row for row in self.credential_data if row not in selected_rows
-            ]
+            # # Filter out the selected rows from the credential data
+            # self.credential_data = [
+            #     row for row in self.credential_data if row not in selected_rows
+            # ]
 
             # Refresh the grid to reflect the updated data
             self.refresh_grid()
@@ -131,6 +155,7 @@ class CredentialStore:
             print(f"Error deleting selected rows: {e}")
 
     def refresh_grid(self):
+        # borked, TypeError: AgGrid.update() takes 1 positional argument but 2 were given
         self.grid.update({"rowData": self.credential_data})
 
     def get_cred_data(self) -> list:
