@@ -10,6 +10,7 @@ from modules.instances import Instance
 from modules.log import log
 from modules.utils import api_response
 from redis_om import get_redis_connection
+from modules.credstore import CredStore
 import re
 
 logger = log(__name__)
@@ -58,7 +59,7 @@ credstore_response = credstore_ns.model(
 #                      Stats - Agents
 # ------------------------------------------------------------------------
 @credstore_ns.route("/credential/<string:credential_id>")
-class StatsAgentsResource(Resource):
+class CredstoreCredentialResource(Resource):
     """
     GET /stats/credential/...
     """
@@ -75,7 +76,7 @@ class StatsAgentsResource(Resource):
     # @jwt_required
     def get(self, credential_id):
         try:
-            return api_response(message=credential_id)
+            ...
 
         except Exception as e:
             logger.error(e)
@@ -112,7 +113,7 @@ class StatsAgentsResource(Resource):
 #                      Stats - Agents
 # ------------------------------------------------------------------------
 @credstore_ns.route("/credentials")
-class StatsAgentsResource(Resource):
+class CredentialsResource(Resource):
     """
     GET /credstore/credentials
 
@@ -130,13 +131,96 @@ class StatsAgentsResource(Resource):
     @credstore_ns.marshal_with(credstore_response, code=200)
     # @jwt_required
     def get(self):
+        """
+        Retrieve all credentials and return as a JSON-compatible dictionary
+        """
         try:
-            ...
-            return api_response(message="hi")
+            c = CredStore()
+            all_creds = (
+                c.get_all_credentials()
+            )  # Assuming this returns a list of Credential objects
+
+            # Convert the list of credentials to a list of dictionaries
+            # cred_list = []
+            # for cred in all_creds:
+            #     cred_dict = {
+            #         "id": cred.id,
+            #         "username": cred.username,
+            #         "password": cred.password,
+            #         "realm": cred.realm,
+            #         "notes": cred.notes,
+            #         "date_added": (
+            #             cred.date_added.strftime("%Y-%m-%d %H:%M:%S")
+            #             if cred.date_added
+            #             else None
+            #         ),
+            #     }
+            #     cred_list.append(cred_dict)
+            cred_list = serialize_credentials(all_creds)
+
+            # Return the credentials in a structured response
+            return api_response(message="Success", data={"credentials": cred_list})
 
         except Exception as e:
-            logger.error(e)
-            return api_response(status=500)
+            logger.error(f"Error retrieving credentials: {e}")
+            return api_response(status=500, message="Internal Server Error")
+
+
+def serialize_credentials(credentials):
+    """
+    Convert a list of credential objects into a list of dictionaries.
+
+    Args:
+        credentials (list): List of credential objects with attributes
+            like id, username, password, realm, notes, and date_added.
+
+    Returns:
+        list: List of dictionaries representing the credentials.
+
+    Example output:
+        {
+            "status": 200,
+            "message": "Success",
+            "data": {
+                "credentials": [
+                    {
+                        "id": 1,
+                        "username": "user1",
+                        "password": "password1",
+                        "realm": "example.com",
+                        "notes": "First entry",
+                        "date_added": "2025-01-15 12:00:00"
+                    },
+                    {
+                        "id": 2,
+                        "username": "user2",
+                        "password": "password2",
+                        "realm": "example.org",
+                        "notes": "Second entry",
+                        "date_added": "2025-01-15 13:00:00"
+                    }
+                ]
+            }
+        }
+
+    """
+    serialized = []
+    for cred in credentials:
+        serialized.append(
+            {
+                "id": cred.id,
+                "username": cred.username,
+                "password": cred.password,
+                "realm": cred.realm,
+                "notes": cred.notes,
+                "date_added": (
+                    cred.date_added.strftime("%Y-%m-%d %H:%M:%S")
+                    if cred.date_added
+                    else None
+                ),
+            }
+        )
+    return serialized
 
 
 # 2) Register the namespaces with paths
