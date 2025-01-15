@@ -92,6 +92,10 @@ class CredentialStore:
                 ui.button("Export CSV", on_click=self.export_csv).classes(
                     "bg-blue-500 text-white"
                 )
+                ui.upload(
+                    label="Import CSV",
+                    on_upload=self.process_uploaded_file,
+                ).props("accept='.csv'")
 
     def add_credential(self):
         username = self.username_input.value
@@ -155,8 +159,22 @@ class CredentialStore:
             print(f"Error deleting selected rows: {e}")
 
     def refresh_grid(self):
-        # borked, TypeError: AgGrid.update() takes 1 positional argument but 2 were given
-        self.grid.update({"rowData": self.credential_data})
+        """
+        Refresh the ag-Grid with updated row data.
+        """
+        try:
+            # # Ensure the grid is updated with the new row data
+            # self.grid.options["rowData"] = (
+            #     self.credential_data
+            # )  # Update grid data directly
+            # self.get_cred_data()
+            # DOESN"T UPDATE AHHH
+
+            # temporarily reload page, instead of just aggrid
+            ui.navigate.to("/credstore")
+            self.grid.update()  # Trigger a grid refresh
+        except Exception as e:
+            print(f"Error refreshing grid: {e}")
 
     def get_cred_data(self) -> list:
         try:
@@ -184,7 +202,55 @@ class CredentialStore:
         else:
             ui.notify(f"{r.status_code} Error adding credential")
 
-    def import_csv(self): ...
+    def process_uploaded_file(self, event):
+        """
+        Process the uploaded file and import credentials.
+        """
+        try:
+            import pandas as pd
+            from io import StringIO
+
+            # Access the uploaded file content
+            file = StringIO(event.content.read().decode("utf-8"))
+
+            # Read the uploaded CSV file into a DataFrame
+            df = pd.read_csv(file)
+
+            # Validate required columns
+            required_columns = {"Username", "Password"}
+            if not required_columns.issubset(df.columns):
+                ui.notify(
+                    "CSV must contain 'username' and 'password' columns",
+                    color="red",
+                )
+                return
+
+            # Convert DataFrame to list of dictionaries
+            credentials = df.to_dict(orient="records")
+
+            ui.notify(
+                "DICT IS EMPTY WHEN BEING SENT TO SERVER - FIX ME, credstore line 231"
+            )
+            ## DICT IS EMPTY WHEN BEING SENT TO SERVER
+
+            # Send each credential to the server
+            for cred in credentials:
+                data = {
+                    "username": cred.get("username"),
+                    "password": cred.get("password"),
+                    "realm": cred.get("realm", None),
+                    "notes": cred.get("notes", None),
+                }
+                self.add_cred_to_server(data)
+
+            # Refresh the grid after import
+            # self.refresh_grid()
+            ui.notify(
+                f"Successfully imported {len(credentials)} credentials",
+                color="green",
+            )
+        except Exception as e:
+            ui.notify(f"Error processing CSV: {e}", color="red")
 
     def export_csv(self):
         ui.notify("Prepping data to export...")
