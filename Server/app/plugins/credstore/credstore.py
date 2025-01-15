@@ -1,7 +1,7 @@
 import json
 
 import redis
-from flask import Response
+from flask import Response, request
 from flask_jwt_extended import jwt_required
 from flask_restx import Api, Namespace, Resource, fields
 from modules.agent import BaseAgent
@@ -54,14 +54,84 @@ credstore_response = credstore_ns.model(
     },
 )
 
+credential_model = credstore_ns.model(
+    "Credential",
+    {
+        "username": fields.String(
+            required=True, description="The username for the credential"
+        ),
+        "password": fields.String(
+            required=True, description="The password for the credential"
+        ),
+        "realm": fields.String(required=False, description="The realm or domain"),
+        "notes": fields.String(required=False, description="Additional notes"),
+    },
+)
+
 
 # ------------------------------------------------------------------------
-#                      Stats - Agents
+#                      Cred - /credential
+# ------------------------------------------------------------------------
+@credstore_ns.route("/credential")
+class CredstoreCredentialResource(Resource):
+    """
+    GET /stats/credential/
+    """
+
+    @credstore_ns.marshal_with(credstore_response, code=200)
+    @credstore_ns.expect(credential_model)  # Attach the model here
+    def put(self):
+        """
+        Add a credential to the credential list via a JSON payload.
+
+        Expected JSON Structure:
+        {
+            "username": "string",
+            "password": "string",
+            "realm": "string (optional)",
+            "notes": "string (optional)"
+        }
+
+        Returns:
+            dict: Response message with success or error status.
+        """
+        try:
+            # Parse JSON payload
+            payload = request.json
+            if not payload:
+                return api_response(status=400, message="Missing JSON payload")
+
+            username = payload.get("username")
+            password = payload.get("password")
+            realm = payload.get("realm")
+            notes = payload.get("notes")
+
+            # Validate required fields
+            if not username or not password:
+                return api_response(
+                    status=400, message="Username and Password are required"
+                )
+
+            # Add credential using the CredStore method
+            c = CredStore()
+            c.add_credential(
+                username=username, password=password, realm=realm, notes=notes
+            )
+
+            return api_response(message="Credential added successfully", status=201)
+
+        except Exception as e:
+            logger.error(f"Error adding credential: {e}")
+            return api_response(status=500, message="Internal Server Error")
+
+
+# ------------------------------------------------------------------------
+#                      Cred - /credential/ID
 # ------------------------------------------------------------------------
 @credstore_ns.route("/credential/<string:credential_id>")
 class CredstoreCredentialResource(Resource):
     """
-    GET /stats/credential/...
+    GET /stats/credential/ID
     """
 
     @credstore_ns.doc(
@@ -86,15 +156,7 @@ class CredstoreCredentialResource(Resource):
             logger.error(e)
             return api_response(status=500)
 
-    def put(self):
-        """Put a credential"""
-        try:
-            return api_response(message="PUT")
-
-        except Exception as e:
-            logger.error(e)
-            return api_response(status=500)
-
+    @credstore_ns.marshal_with(credstore_response, code=200)
     def delete(self, credential_id):
         """Delete Credential
 
@@ -105,8 +167,9 @@ class CredstoreCredentialResource(Resource):
             _type_: _description_
         """
         try:
-            ...
-            return api_response(message=credential_id)
+            c = CredStore()
+            c.delete_credential(credential_id=credential_id)
+            return api_response(message=f"{credential_id} Deleted successfully")
 
         except Exception as e:
             logger.error(e)
@@ -114,7 +177,7 @@ class CredstoreCredentialResource(Resource):
 
 
 # ------------------------------------------------------------------------
-#                      Stats - Agents
+#                      Cred - /credentials
 # ------------------------------------------------------------------------
 @credstore_ns.route("/credentials")
 class CredentialsResource(Resource):
