@@ -10,6 +10,7 @@ from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
+from credstore import CredentialStore
 import argparse
 
 
@@ -72,6 +73,14 @@ def settings():
     navbar()
     s = Settings()
     s.render()
+
+
+@ui.page("/credstore")
+def settings():
+    check_login()
+    navbar()
+    c = CredentialStore()
+    c.render()
 
 
 @ui.page("/search")
