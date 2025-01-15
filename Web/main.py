@@ -10,9 +10,28 @@ from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
+import argparse
+
+
+parser = argparse.ArgumentParser(description="Set the API host for the application.")
+
+# Add the API host argument
+parser.add_argument(
+    "--api-host",
+    type=str,
+    required=True,
+    help="The API host URL (e.g., http://localhost:8080).",
+)
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Access the API host value
+api_host = args.api_host
+print(f"API Host set to: {api_host}")
 
 # yarl this
-Config.API_HOST = "http://192.168.23.128:8081/"
+Config.API_HOST = api_host  # "http://192.168.23.128:8081/"
 
 
 # @ui.page("/animation")

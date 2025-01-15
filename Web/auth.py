@@ -19,22 +19,25 @@ class AuthView:
         app.storage.user.clear()
         add_particles_background()
         with ui.column().classes(
-            "items-center justify-center absolute-center w-full h-screen bg-neutral-100"
+            "items-center justify-center absolute-center w-full h-screen"
         ):
-            with ui.card().classes("w-full max-w-sm p-6 shadow-lg bg-white"):
+            with ui.card().classes("w-full max-w-sm p-6 shadow-lg"):
                 ui.label("Login").classes(
                     "text-2xl font-bold text-center text-slate-600 mb-4"
+                )
+                ui.markdown(
+                    "API address is set at run time, with the `--api-host` argument"
                 )
                 ui.separator().classes("mb-4")
 
                 # Input fields and login button
                 with ui.column().classes("gap-4 w-full"):
-                    self.api_host = (
-                        ui.input("Server", placeholder="http(s)://<address>:<port>")
-                        .props("outlined")
-                        .classes("w-full")
-                    )
-                    Config.set_api_host(host=self.api_host.value)
+                    # self.api_host = (
+                    #     ui.input("Server", placeholder="http(s)://<address>:<port>")
+                    #     .props("outlined")
+                    #     .classes("w-full")
+                    # )
+                    # Config.set_api_host(host=self.api_host.value)
 
                     self.username = (
                         ui.input("Username").props("outlined").classes("w-full")

@@ -111,11 +111,18 @@ class Users:
         """
         Render the user list view.
         """
+        current_settings = app.storage.user.get("settings", {})
         # auto load users on tab creation
         # self.load_users()
         with ui.column().classes("w-full items-center justify-center"):
             ui.label("User Management").classes("text-2xl font-bold text-center mb-4")
             ui.separator().classes("mb-4")
+
+            aggrid_theme = (
+                "ag-theme-balham-dark"
+                if current_settings.get("Dark Mode", False)
+                else "ag-theme-balham"
+            )
 
             # Add table for user management
             self.user_table = ui.aggrid(
@@ -137,7 +144,7 @@ class Users:
                     "rowData": self.user_data,
                     "enableCellTextSelection": True,  # allows selecting data
                 }
-            ).classes("w-full")
+            ).classes(f"w-full {aggrid_theme}")
 
             # Button to refresh the table
             ui.button("Refresh Users", on_click=self.load_users).classes(

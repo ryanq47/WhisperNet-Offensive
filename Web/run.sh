@@ -43,7 +43,7 @@ fi
 # Run the main script
 if [ -f "$MAIN_SCRIPT" ]; then
     echo "Running $MAIN_SCRIPT..."
-    python "$MAIN_SCRIPT"
+    python "$MAIN_SCRIPT" --api-host http://127.0.0.1:8081
     if [ $? -ne 0 ]; then
         echo "Failed to run $MAIN_SCRIPT."
         deactivate
