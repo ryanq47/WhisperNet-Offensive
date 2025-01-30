@@ -6,6 +6,8 @@ import asyncio  # If not already imported
 import requests
 import json
 import httpx
+import pandas as pd
+from io import StringIO
 
 
 class CredentialStore:
@@ -14,7 +16,8 @@ class CredentialStore:
         self.grid = None
 
     def render(self):
-        with ui.column().classes("w-full p-4 border"):
+        with ui.column().classes("w-full h-full p-4 border"):
+            # Page title
             ui.label("Credential Store").classes("text-2xl text-center mb-4")
 
             # Add Credential Form
@@ -25,13 +28,11 @@ class CredentialStore:
                     self.realm_input = ui.input(label="Realm/Domain").classes("flex-1")
                     self.notes_input = ui.input(label="Notes").classes("flex-1")
                 ui.button("Add", on_click=self.add_credential).classes(
-                    "bg-green-500 text-white"
+                    "bg-green-500 text-white px-4 py-2 rounded"
                 )
 
+            # Credential Grid
             self.credential_data = self.get_cred_data()
-            # print(self.credential_data)
-
-            # Credential Grid with Search Filters
             self.grid = ui.aggrid(
                 {
                     "columnDefs": [
@@ -57,7 +58,7 @@ class CredentialStore:
                             "floatingFilter": True,
                         },
                         {
-                            "headerName": "Realm/Domain",
+                            "headerName": "Realm",
                             "field": "realm",
                             "sortable": True,
                             "filter": "agTextColumnFilter",
@@ -79,23 +80,28 @@ class CredentialStore:
                         },
                     ],
                     "rowData": self.credential_data,
-                    "rowSelection": "multiple",  # Enable multi-row selection
-                    "suppressRowClickSelection": False,  # Allow row clicks to select
+                    "rowSelection": "multiple",
+                    "suppressRowClickSelection": False,
                 }
             ).style("height: 400px; width: 100%;")
 
-            # Action Buttons
-            with ui.row().classes("gap-4 mt-4"):
-                ui.button("Delete Selected", on_click=self.delete_selected).classes(
-                    "bg-red-500 text-white"
-                )
+            # Toolbar
+            with ui.row().classes(
+                "w-full gap-4 py-2 bg-gray-100 border-b items-center justify-center"
+            ):
                 ui.button("Export CSV", on_click=self.export_csv).classes(
-                    "bg-blue-500 text-white"
+                    "bg-blue-500 text-white px-4 py-2 rounded flex-1"
                 )
-                ui.upload(
-                    label="Import CSV",
-                    on_upload=self.process_uploaded_file,
-                ).props("accept='.csv'")
+                ui.button("Delete Selected", on_click=self.delete_selected).classes(
+                    "bg-red-500 text-white px-4 py-2 rounded flex-1"
+                )
+
+            ui.upload(
+                label="Import CSV",
+                on_upload=self.process_uploaded_file,
+            ).props(
+                "accept='.csv'"
+            ).classes("bg-blue-400 text-white px-4 py-2 rounded w-full")
 
     def add_credential(self):
         username = self.username_input.value
@@ -207,8 +213,6 @@ class CredentialStore:
         Process the uploaded file and import credentials.
         """
         try:
-            import pandas as pd
-            from io import StringIO
 
             # Access the uploaded file content
             file = StringIO(event.content.read().decode("utf-8"))
@@ -228,18 +232,14 @@ class CredentialStore:
             # Convert DataFrame to list of dictionaries
             credentials = df.to_dict(orient="records")
 
-            ui.notify(
-                "DICT IS EMPTY WHEN BEING SENT TO SERVER - FIX ME, credstore line 231"
-            )
-            ## DICT IS EMPTY WHEN BEING SENT TO SERVER
-
             # Send each credential to the server
             for cred in credentials:
+                # Keynames are diffrenrt/capatalized as that's how the Aggrid exports them
                 data = {
-                    "username": cred.get("username"),
-                    "password": cred.get("password"),
-                    "realm": cred.get("realm", None),
-                    "notes": cred.get("notes", None),
+                    "username": cred.get("Username"),
+                    "password": cred.get("Password"),
+                    "realm": cred.get("Realm", None),
+                    "notes": cred.get("Date Added", None),
                 }
                 self.add_cred_to_server(data)
 
