@@ -40,6 +40,7 @@ class BaseListener:
                 "listener": {
                     "name": None,  # Unique name for the listener
                     "id": None,  # UUID for listener
+                    "pid": None,
                 },
                 "network": {
                     "address": None,  # IP address to bind (e.g., "0.0.0.0" for all interfaces)
@@ -59,11 +60,9 @@ class BaseListener:
             logger.warning(f"No listener ID provided, settings as: {uuid}")
             self.data.listener.id = uuid  ## UUID generate
 
-        # Check if name is provided
-        if self.data.listener.name == None:
-            name = generate_mashed_name()
-            logger.warning(f"No name provided, setting as '{name}'")
-            self.data.listener.name = name
+        else:
+            self.data.listener.id = listener_id
+            self.load_data()
 
     @property
     def data(self):
@@ -86,7 +85,7 @@ class BaseListener:
 
     def register(self):
         """
-        Registers a client to ...
+        Registers a listener to ...
             - redis?
 
         Can be whatever we need
@@ -94,9 +93,16 @@ class BaseListener:
         """
         logger.info(f"Registering listener: {self.data.listener.id}")
 
+        # Check if name is provided
+        if self.data.listener.name == None:
+            name = generate_mashed_name()
+            logger.warning(f"No name provided, setting as '{name}'")
+            self.data.listener.name = name
+
         listener_model = Listener(
             listener_id=self.data.listener.id, name=self.data.listener.name
         )
+        logger.debug("SAVING LISTENER MODEL")
         listener_model.save()
         self.unload_data()
 
@@ -137,10 +143,14 @@ class BaseListener:
             logger.debug(
                 f"Loading data for listener {self.data.listener.id} from redis"
             )
+
             fetched_instance = ListenerData.get(self.data.listener.id)
             # JSON blob is stored as a json string in redis, need to convert back to dict
             new_dict = json.loads(fetched_instance.json_blob)
-            self.data = new_dict
+
+            # set self_data back to munched data.
+            self._data = munch.munchify(new_dict)
+
             return True
 
         except Exception as e:
