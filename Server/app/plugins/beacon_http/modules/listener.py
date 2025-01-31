@@ -45,9 +45,6 @@ class Listener(BaseListener):
         # init super
         super().__init__(listener_id)
 
-        # should prolly get a process ID in here to track it...
-        # problem tho, if that ID is not updated correctly, it could kill the wrong process.
-
     def spawn(
         self,
         port: int,

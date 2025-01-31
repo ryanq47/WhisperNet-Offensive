@@ -18,13 +18,13 @@ logger = log(__name__)
 
 # Inherit BaseAgent into your class
 class Agent(BaseAgent):
-    def __init__(self, agent_id, config_file_path, client_socket):
-        super().__init__(
-            agent_id=agent_id, config_file_path=config_file_path
-        )  # Ensure BaseAgent is properly initialized
+    def __init__(
+        self,
+        agent_id,
+    ):
+        super().__init__(agent_id=agent_id)  # Ensure BaseAgent is properly initialized
         # Note, load_config will auto be called in BaseAgent
 
-        self.client_socket = client_socket
         # Register the client
         self.register()
 
@@ -38,20 +38,24 @@ class Agent(BaseAgent):
         self.send(next_command)
 
     def send(self, command):
-        # The syntax for this may change as well
-        # example command: exec:powershell whoami
-        command_header = command.split()[
-            0
-        ]  # get command (in this case, exec:powershell)
-        # Split on whitespace -> ["exec:powershell", "whoami", "/all??"]
-        # Take everything after index 0, then rejoin
-        command_arg = " ".join(command.split()[1:])
+        # # The syntax for this may change as well
+        # # example command: exec:powershell whoami
+        # command_header = command.split()[
+        #     0
+        # ]  # get command (in this case, exec:powershell)
+        # # Split on whitespace -> ["exec:powershell", "whoami", "/all??"]
+        # # Take everything after index 0, then rejoin
+        # command_arg = " ".join(command.split()[1:])
 
-        # Then format the command according to the config file
-        formatted_command = self.format_command(
-            command=command_header, arguments=command_arg
-        )
-        # finally send the command off
-        self.client_socket.sendall(formatted_command.encode("utf-8"))
+        # # Then format the command according to the config file
+        # formatted_command = self.format_command(
+        #     command=command_header, arguments=command_arg
+        # )
+        # # finally send the command off
+        # self.client_socket.sendall(formatted_command.encode("utf-8"))
+
+        ...
+
+        # magic queue into redis
 
     def receive(self): ...  # some receive logic

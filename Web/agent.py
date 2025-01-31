@@ -203,12 +203,38 @@ class AgentView:
                 ui.plotly(fig).classes("w-full h-40")
 
     def render_shell_tab(self):
-        with ui.row().classes("w-full h-full flex items-center justify-center"):
-            self.search_field = (
-                ui.input(placeholder="Command...")
-                .props('autofocus outlined item-aligned input-class="ml-3"')
-                .classes("w-full mt-24 transition-all")
-            )
+        #
+        # ui.label("NOT REAL COMMANDS, JUST FAKE STANDINS")
+        # temp_list_of_dicts = [
+        #     {"command": "SOMECOMMAND", "response": "SOMERESPONSE"},
+        #     {"command": "ANOTHERCOMMAND", "response": None},  # Simulate waiting
+        #     {"command": "PING", "response": "PONG"},
+        #     {"command": "WHOAMI", "response": "User: admin"},
+        #     {"command": "LS", "response": None},  # Simulate waiting
+        # ]
+        temp_list_of_dicts = api_call(
+            url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
+        ).get("data", {})
+
+        with ui.column().classes("w-full h-full p-4 bg-gray-900 text-white rounded-lg"):
+
+            # Scrollable command history
+            with ui.scroll_area().classes(
+                "w-full h-96 overflow-y-auto border border-gray-700 p-2 rounded-lg"
+            ):
+                for entry in temp_list_of_dicts:
+                    ui.markdown(f"**{entry['command']}**").classes("text-lg font-bold")
+                    response_text = (
+                        entry["response"]
+                        if entry["response"]
+                        else "_Waiting on output..._"
+                    )
+                    ui.markdown(response_text).classes("text-gray-400 mb-2")
+
+            # Command Input Field
+            ui.input(placeholder="Type a command...").props(
+                'autofocus outlined item-aligned input-class="ml-3"'
+            ).classes("w-full mt-4 text-black")
 
     def render_notes_tab(self):
         ...

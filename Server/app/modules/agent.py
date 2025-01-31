@@ -6,7 +6,8 @@ import redis
 import yaml
 from modules.config import Config
 from modules.log import log
-from modules.redis_models import Agent, AgentData
+from modules.redis_models import Agent, AgentData, AgentCommand
+from modules.utils import generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 logger = log(__name__)
@@ -17,7 +18,7 @@ class BaseAgent:
     A base class that provides common functionality for all models.
     """
 
-    def __init__(self, agent_id, config_file_path, **kwargs):
+    def __init__(self, agent_id, config_file_path=None, **kwargs):
         # connect to redis
         self.redis_client = get_redis_connection(  # switch to config values
             host=Config().config.redis.bind.ip,
@@ -28,11 +29,11 @@ class BaseAgent:
         # for key, value in kwargs.items():
         #     setattr(self, key, value)
 
-        # may or may not be needed
-        self.config_file_path = config_file_path
-        self.alias = None
-        self.template = None
-        self.load_config()
+        # may or may not be needed - exclusing for now for simplicity
+        # self.config_file_path = config_file_path
+        # self.alias = None
+        # self.template = None
+        # self.load_config()
 
         # info stuff - munch object
         self._data = munch.munchify(
@@ -316,10 +317,14 @@ class BaseAgent:
         Registers an agent in the system and stores it in Redis.
         Uses the Agent model from `modules.redis_models` and `self.data.agent.id` to ensure unique keys.
         """
-        logger.info(f"Registering agent: {self.data.agent.id}")
-        self.unload_data()  # temp, auto unload data on register
-        agent_model = Agent(agent_id=self.data.agent.id)
-        agent_model.save()
+        try:
+            logger.info(f"Registering agent: {self.data.agent.id}")
+            self.unload_data()  # temp, auto unload data on register
+            agent_model = Agent(agent_id=self.data.agent.id)
+            agent_model.save()
+        except Exception as e:
+            logger.error(e)
+            raise e
 
     def unregister(self):
         """
@@ -353,57 +358,12 @@ class BaseAgent:
             fetched_instance = AgentData.get(self.data.agent.id)
             # JSON blob is stored as a json string in redis, need to convert back to dict
             new_dict = json.loads(fetched_instance.json_blob)
-            self.data = new_dict
+            self.data = munch.munchify(new_dict)
             return True
 
         except Exception as e:
             logger.error(f"Could not load data from redis, error occured: {e}")
             raise e
-
-    # def load_data(self):
-    #     """
-    #     Fetch and set the data (as a dict) from Redis by self.data.agent.id, into self._data
-    #     """
-    #     # note, the function is set to NOT overwrite self._data if it can't load data,
-    #     # can eithe rdo this, or make a fucntion that sets self._data to the blank dict, instead of
-    #     # doing it in init.
-
-    #     agent_id = self.data.agent.id
-    #     logger.debug(f"Attempting to load data for agent ID: {agent_id} from Redis.")
-
-    #     try:
-    #         fetched_instance = AgentData.get(
-    #             agent_id
-    #         )  # This should return a JSON string or None
-    #         if not fetched_instance:
-    #             logger.warning(f"No data found for agent ID: {agent_id}")
-    #             # self._data = {} # DO NOT overwrite default dict if empty.
-    #             return
-
-    #         try:
-    #             new_dict = json.loads(fetched_instance)
-    #             if not isinstance(new_dict, dict):
-    #                 logger.warning(
-    #                     f"Data returned for agent ID: {agent_id} is not a dict. "
-    #                 )
-    #                 # self._data = {} # DO NOT overwrite default dict if empty.
-    #             else:
-    #                 self._data = new_dict
-    #                 logger.info(f"Successfully loaded data for agent ID: {agent_id}.")
-    #             return self._data
-
-    #         except json.JSONDecodeError:
-    #             logger.error(f"Invalid JSON data returned for agent ID: {agent_id}. ")
-    #             # self._data = {} # DO NOT overwrite default dict if empty.
-    #             return self._data
-
-    #     except Exception as exc:
-    #         logger.error(
-    #             f"Unexpected error occurred while retrieving data for "
-    #             f"agent ID: {agent_id}: {exc}"
-    #         )
-    #         self._data = {}
-    #         return self._data
 
     #########
     # Command Queues
@@ -415,41 +375,131 @@ class BaseAgent:
     # NOTE! queue is right to left
     # POP <-- item1 <-- item2 <-- item3 <-- push
 
-    def enqueue_command(self, command: str):  # , queue_name: str = "c2_queue"):
+    # chagne to command ID
+    def enqueue_command(self, command):
         """
         Adds a command (string) to the Redis list (queue).
+
+        returns command ID
         """
-        logger.debug(f"Enqueing command: '{command}'")
-        self.redis_client.rpush(self.data.agent.id, command)
+        try:
 
-    def dequeue_command(self):  # queue_name: str = "c2_queue"):
+            command_id = generate_unique_id()
+
+            # what's the key for this...?
+            logger.debug(f"Enqueing command: '{command_id}'")
+            self.redis_client.rpush(self.data.agent.id, command_id)
+            self._store_command(command=command, command_id=command_id)
+            return command_id
+
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    def dequeue_command(self):
         """
-        Continuously pops commands off the queue from the left side (head).
+        Pops a command ID from the Redis queue and retrieves the full command.
 
+        Returns:
+            - command (str) if found
+            - False if no command exists
+        """
+        try:
+            logger.debug("Dequeuing command id")
 
-        if a command exists, returns the command (str), else returns False (bool)
+            # Pop the command_id from Redis queue
+            command_id = self.redis_client.lpop(self.data.agent.id)
+
+            if not command_id:
+                return False  # No command in queue
+
+            # Retrieve the full command object from Redis OM
+            command_obj = AgentCommand.get(command_id)
+
+            if not command_obj:
+                logger.warning(
+                    f"Command ID {command_id} not found in AgentCommand store."
+                )
+                return False
+
+            print(f"Dequeued Command: {command_obj.command}")
+
+            return command_obj.command  # Return the actual command string
+
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    def get_all_commands_and_responses(self):
+        """
+        Gets all commands and responses for a specific agent.
+
+        Returns:
+            List of dictionaries with command_id, command, and response.
+        """
+        try:
+            logger.debug(f"Fetching all commands for agent {self.data.agent.id}")
+
+            # Construct key pattern (assuming the storage format follows `whispernet:agent:command:<command_id>`)
+            key_pattern = f"whispernet:agent:command:*"
+
+            # Use SCAN to iterate over matching keys
+            command_keys = list(self.redis_client.scan_iter(key_pattern))
+
+            result = []
+            for key in command_keys:
+                command_obj = AgentCommand.get(
+                    key.split(":")[-1]
+                )  # Extract ID from key
+
+                # basically just check that the agent id matches the current agent id before returning the commands.
+                if command_obj and command_obj.agent_id == self.data.agent.id:
+                    result.append(
+                        {
+                            "command_id": command_obj.command_id,
+                            "command": command_obj.command,
+                            "response": (
+                                command_obj.response if command_obj.response else None
+                            ),
+                            "timestamp": command_obj.timestamp,
+                        }
+                    )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            raise e
+
+    def _store_command(self, command_id, command):
+        """
+        Store command key
+
+        INTERNAL METHOD.
 
         """
-        # while True:
-        # BLPOP returns a tuple: (queue_name, command)
-        # It blocks until a value is available.
+        try:
 
-        # changed up to if not a command, reutrn false
-        logger.debug("Dequeuing command")
-        # print(self.data.agent)
-        result = self.redis_client.blpop(self.data.agent.id)
+            ac = AgentCommand(
+                command_id=command_id,
+                command=command,
+                agent_id=self.data.agent.id,
+                response="",
+            )
 
-        if result:
-            queue, command = result
-            # queue == b'c2_queue' (bytes)
-            # command == b'list_system_users' (bytes)
-            command_str = command  # .decode("utf-8")
-            logger.debug(f"dequeued command: {command_str}")
-            return command_str
-            # Process the command
-            # ...
-        else:
-            return False
+            ac.save()
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    def _store_response(self, command_id, response):
+        """
+        Stores response for client
+
+        INTERAL METHOD
+
+        """
+        ...
 
 
 # ## Basic example of usage

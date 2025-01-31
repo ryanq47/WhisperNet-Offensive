@@ -2,6 +2,8 @@
 from flask import Flask
 from flask_restx import Api, Namespace, Resource, fields
 from waitress import serve
+from modules.config import Config
+from plugins.beacon_http.modules.agent import Agent
 
 app = Flask("MYSECONDAPP")
 api = Api(
@@ -11,6 +13,7 @@ api = Api(
     description="Whispernet HTTP Endpoint",
     doc="/docs",
 )
+
 
 # ------------------------------------------------------------------------------------
 #   Namespace
@@ -75,8 +78,19 @@ class PostResource(Resource):
     @beacon_http_ns.marshal_with(post_output_model)
     def post(self):
         """Receives JSON data and returns it in a response."""
-        data = beacon_http_ns.payload
-        print("Received POST data:", data)
+        response = beacon_http_ns.payload
+        print("Received POST data:", response)
+
+        uuid = response.get("id", "")
+        data = response.get("data", "")
+
+        # put into somewhere, prolly redis.
+        a = Agent(uuid)
+
+        a.store_response(data)
+
+        # print(a.get_latest_response())
+
         return {"status": "received", "data": data}, 200
 
 
