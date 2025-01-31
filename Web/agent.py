@@ -226,7 +226,7 @@ class AgentView:
         - Auto-refreshes every 1 second.
         """
         ui.markdown(
-            "FIXME:<br> - Sizing<br> - order of commands<br> - Enter button sends command<br> -AutoFocus on input bar<br> - width of skeleton bar<br>"
+            "FIXME:<br> - Sizing<br> - flip order of commands<br> - Enter button sends command<br> -AutoFocus on input bar<br>"
         )
 
         # We store the scroll area in self.shell_container
