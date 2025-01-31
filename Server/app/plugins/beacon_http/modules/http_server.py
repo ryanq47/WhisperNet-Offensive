@@ -80,7 +80,10 @@ class AgentDequeueCommandResource(Resource):
         """
 
         a = Agent(agent_id=agent_uuid)
-        command = a.dequeue_command()
+        command_object = a.dequeue_command()
+
+        command = command_object.command
+        command_id = command_object.command_id
 
         # Ensure command is a string
         if not command or not isinstance(command, str):
@@ -92,7 +95,11 @@ class AgentDequeueCommandResource(Resource):
         command_name = parts[0]  # First word
         args = parts[1] if len(parts) > 1 else ""  # Everything else
 
-        response_dict = {"command": command_name, "args": args}
+        response_dict = {
+            "command_id": command_id,
+            "command": command_name,
+            "args": args,
+        }
         return response_dict
 
 

@@ -424,7 +424,7 @@ class BaseAgent:
 
             print(f"Dequeued Command: {command_obj.command}")
 
-            return command_obj.command  # Return the actual command string
+            return command_obj  # Return the command object
 
         except Exception as e:
             logger.error(e)
