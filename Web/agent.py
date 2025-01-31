@@ -217,34 +217,48 @@ class AgentView:
     #     {"command": "LS", "response": None},  # Simulate waiting
     # ]
     # 1) Get existing command data from API
+    import time
+
     def render_shell_tab(self):
         """
-        A shell tab that:
-        - Fills the entire browser window (via h-screen, w-screen).
-        - Has a scrollable history at the top.
-        - A sticky input row at the bottom.
+        A shell tab with:
+        - A scrollable command history (with auto-scroll if the user is at the bottom).
+        - A command input area.
         - Auto-refreshes every 1 second.
         """
         ui.markdown(
             "FIXME:<br> - Sizing<br> - flip order of commands<br> - Enter button sends command<br> -AutoFocus on input bar<br>"
         )
 
-        # We store the scroll area in self.shell_container
+        # Store the scroll area in self.shell_container and a flag for auto-scroll
         self.shell_container = None
+        self.auto_scroll_enabled = True  # assume true initially
+
+        # Define an on_scroll handler to update auto-scroll state
+        def on_scroll(e):
+            # If the user has scrolled away from the bottom, disable auto-scroll.
+            # The event provides a 'vertical_percentage' (0.0 - 1.0) value.
+            # this keeps the shell window from refreshing when not at the bottom
+            if e.vertical_percentage < 0.95:
+                self.auto_scroll_enabled = False
+            else:
+                self.auto_scroll_enabled = True
 
         def update_shell_data():
             """
-            Fetches the latest commands, clears the scroll area, and re-populates it.
+            Fetches and rebuilds the shell data. Only scrolls to the bottom if the
+            user hasn't manually scrolled away.
             """
             data = api_call(
                 url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
             ).get("data", [])
 
-            # Clear old content
+            # Sort the data by timestamp (oldest first so the latest is at the bottom)
+            data.sort(key=lambda entry: entry.get("timestamp", ""))
+
             if self.shell_container is not None:
                 self.shell_container.clear()
 
-                # Rebuild UI inside the scroll container
                 with self.shell_container:
                     for entry in data:
                         cmd = entry.get("command", "")
@@ -252,15 +266,17 @@ class AgentView:
 
                         response_value = entry.get("response")
                         if response_value:
-                            # If we have a response, show it as a label
                             ui.label(response_value).style(
                                 "white-space: pre; font-family: monospace;"
                             )
                         else:
-                            # Otherwise, show a skeleton placeholder
                             ui.skeleton().style(
                                 "width: 50%; height: 1.2em; margin: 4px 0;"
                             )
+
+                # Only auto-scroll if the user is already at (or near) the bottom.
+                if self.auto_scroll_enabled:
+                    self.shell_container.scroll_to(percent=1.0)
 
         def send_command():
             """
@@ -275,40 +291,31 @@ class AgentView:
 
         # -------------------------------------------------------------------------
         # MAIN LAYOUT:
-        # A full-page column (h-screen, w-screen).
-        # Top: scrollable command history (flex-grow).
-        # Bottom: row with command input + send button.
         # -------------------------------------------------------------------------
-        # moved these to full, isntead of screen. h-screen - navbar size might work too
-        with ui.column().classes("h-full w-full bg-gray-900 text-white flex"):
+        with ui.column().classes("h-screen w-full bg-gray-900 text-white flex"):
 
-            # 1) The scrollable area fills remaining space (flex-grow)
+            # 1) The scrollable area (command history)
             with ui.row().classes("grow w-full p-4"):
-                with ui.scroll_area().classes(
-                    "w-full border border-gray-700 rounded-lg p-2 overflow-y-auto"
+                with ui.scroll_area(on_scroll=on_scroll).classes(
+                    "w-full border border-gray-700 rounded-lg p-2 overflow-y-auto h-3/4"
                 ) as self.shell_container:
-                    # We'll populate this initially and via the timer
+                    # Initially empty; populated by update_shell_data
                     pass
 
             # 2) Bottom row: command input + button
             with ui.row().classes("w-full items-center p-4"):
-                # Textarea input
                 command_input = (
                     ui.textarea(placeholder="Type a command...")
                     .props('autofocus outlined input-class="ml-3"')
                     .classes("text-black grow mr-4")
                 )
-
-                # Send Button
-                ui.button("Send Command", on_click=send_command).classes(
-                    "w-32"
-                )  # fixed width for the button
+                ui.button("Send Command", on_click=send_command).classes("w-32")
 
         # -------------------------------------------------------------------------
         # INITIAL LOAD + AUTO-REFRESH
         # -------------------------------------------------------------------------
-        update_shell_data()  # Load data once immediately
-        ui.timer(interval=1.0, callback=update_shell_data)  # Refresh every 1 second
+        update_shell_data()  # Initial load
+        ui.timer(interval=1.0, callback=update_shell_data)  # Refresh every second
 
     def render_notes_tab(self):
         ...
