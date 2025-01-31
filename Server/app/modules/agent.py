@@ -475,7 +475,7 @@ class BaseAgent:
         """
         Store command key
 
-        INTERNAL METHOD.
+        INTERNAL METHOD - shuold be caled from enqueue_command, as that generates the UUID for you
 
         """
         try:
@@ -492,14 +492,30 @@ class BaseAgent:
             logger.error(e)
             raise e
 
-    def _store_response(self, command_id, response):
+    def store_response(self, command_id, response):
         """
-        Stores response for client
+        Stores response for a command.
 
-        INTERAL METHOD
-
+        Finds the command by command_id and updates the response field.
         """
-        ...
+        try:
+            # Retrieve the command entry by ID
+            command_entry = AgentCommand.get(command_id)
+
+            if not command_entry:
+                logger.error(f"Command ID {command_id} not found.")
+                return False  # Command not found
+
+            # Update the response field
+            command_entry.response = response
+            command_entry.save()  # Save back to Redis
+
+            logger.debug(f"Response stored for Command ID {command_id}")
+            return True  # Successfully updated
+
+        except Exception as e:
+            logger.error(f"Error storing response for Command ID {command_id}: {e}")
+            raise e
 
 
 # ## Basic example of usage

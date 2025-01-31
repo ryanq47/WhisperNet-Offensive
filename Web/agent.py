@@ -202,39 +202,113 @@ class AgentView:
                 ui.plotly(fig).classes("w-full h-40")
                 ui.plotly(fig).classes("w-full h-40")
 
+    # ------------------------------------------------------------------------
+    #                      Shell Tab
+    # ------------------------------------------------------------------------
+
+    # def render_shell_tab(self):
+    #
+    # ui.label("NOT REAL COMMANDS, JUST FAKE STANDINS")
+    # temp_list_of_dicts = [
+    #     {"command": "SOMECOMMAND", "response": "SOMERESPONSE"},
+    #     {"command": "ANOTHERCOMMAND", "response": None},  # Simulate waiting
+    #     {"command": "PING", "response": "PONG"},
+    #     {"command": "WHOAMI", "response": "User: admin"},
+    #     {"command": "LS", "response": None},  # Simulate waiting
+    # ]
+    # 1) Get existing command data from API
     def render_shell_tab(self):
-        #
-        # ui.label("NOT REAL COMMANDS, JUST FAKE STANDINS")
-        # temp_list_of_dicts = [
-        #     {"command": "SOMECOMMAND", "response": "SOMERESPONSE"},
-        #     {"command": "ANOTHERCOMMAND", "response": None},  # Simulate waiting
-        #     {"command": "PING", "response": "PONG"},
-        #     {"command": "WHOAMI", "response": "User: admin"},
-        #     {"command": "LS", "response": None},  # Simulate waiting
-        # ]
-        temp_list_of_dicts = api_call(
-            url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
-        ).get("data", {})
+        """
+        A shell tab that:
+        - Fills the entire browser window (via h-screen, w-screen).
+        - Has a scrollable history at the top.
+        - A sticky input row at the bottom.
+        - Auto-refreshes every 1 second.
+        """
+        ui.markdown(
+            "FIXME:<br> - Sizing<br> - order of commands<br> - Enter button sends command<br> -AutoFocus on input bar<br> - width of skeleton bar<br>"
+        )
 
-        with ui.column().classes("w-full h-full p-4 bg-gray-900 text-white rounded-lg"):
+        # We store the scroll area in self.shell_container
+        self.shell_container = None
 
-            # Scrollable command history
-            with ui.scroll_area().classes(
-                "w-full h-96 overflow-y-auto border border-gray-700 p-2 rounded-lg"
-            ):
-                for entry in temp_list_of_dicts:
-                    ui.markdown(f"**{entry['command']}**").classes("text-lg font-bold")
-                    response_text = (
-                        entry["response"]
-                        if entry["response"]
-                        else "_Waiting on output..._"
-                    )
-                    ui.markdown(response_text).classes("text-gray-400 mb-2")
+        def update_shell_data():
+            """
+            Fetches the latest commands, clears the scroll area, and re-populates it.
+            """
+            data = api_call(
+                url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
+            ).get("data", [])
 
-            # Command Input Field
-            ui.input(placeholder="Type a command...").props(
-                'autofocus outlined item-aligned input-class="ml-3"'
-            ).classes("w-full mt-4 text-black")
+            # Clear old content
+            if self.shell_container is not None:
+                self.shell_container.clear()
+
+                # Rebuild UI inside the scroll container
+                with self.shell_container:
+                    for entry in data:
+                        cmd = entry.get("command", "")
+                        ui.markdown(f"> {cmd}").style("font-family: monospace")
+
+                        response_value = entry.get("response")
+                        if response_value:
+                            # If we have a response, show it as a label
+                            ui.label(response_value).style(
+                                "white-space: pre; font-family: monospace;"
+                            )
+                        else:
+                            # Otherwise, show a skeleton placeholder
+                            ui.skeleton().style(
+                                "width: 50%; height: 1.2em; margin: 4px 0;"
+                            )
+
+        def send_command():
+            """
+            POST the new command, then clear the input and refresh.
+            """
+            api_post_call(
+                url=f"/agent/{self.agent_id}/command/enqueue",
+                data={"command": command_input.value},
+            )
+            command_input.value = ""  # Clear the textarea after sending
+            update_shell_data()
+
+        # -------------------------------------------------------------------------
+        # MAIN LAYOUT:
+        # A full-page column (h-screen, w-screen).
+        # Top: scrollable command history (flex-grow).
+        # Bottom: row with command input + send button.
+        # -------------------------------------------------------------------------
+        # moved these to full, isntead of screen. h-screen - navbar size might work too
+        with ui.column().classes("h-full w-full bg-gray-900 text-white flex"):
+
+            # 1) The scrollable area fills remaining space (flex-grow)
+            with ui.row().classes("grow w-full p-4"):
+                with ui.scroll_area().classes(
+                    "w-full border border-gray-700 rounded-lg p-2 overflow-y-auto"
+                ) as self.shell_container:
+                    # We'll populate this initially and via the timer
+                    pass
+
+            # 2) Bottom row: command input + button
+            with ui.row().classes("w-full items-center p-4"):
+                # Textarea input
+                command_input = (
+                    ui.textarea(placeholder="Type a command...")
+                    .props('autofocus outlined input-class="ml-3"')
+                    .classes("text-black grow mr-4")
+                )
+
+                # Send Button
+                ui.button("Send Command", on_click=send_command).classes(
+                    "w-32"
+                )  # fixed width for the button
+
+        # -------------------------------------------------------------------------
+        # INITIAL LOAD + AUTO-REFRESH
+        # -------------------------------------------------------------------------
+        update_shell_data()  # Load data once immediately
+        ui.timer(interval=1.0, callback=update_shell_data)  # Refresh every 1 second
 
     def render_notes_tab(self):
         ...
@@ -348,6 +422,26 @@ class AgentsView:
 # ------------------------------------------------------------------------
 #                      Network Stuff
 # ------------------------------------------------------------------------
+
+
+def api_post_call(data, url):
+    headers = {
+        "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
+        "Content-Type": "application/json",
+    }
+
+    print(f"SENIDNG: {data}")
+
+    r = requests.post(
+        url=f"{Config.API_HOST}/{url}",
+        json=data,  # data needs to be json string
+        headers=headers,
+    )
+    if r.status_code == 200 or r.status_code == 201:
+        ui.notify("Successfully queued command")
+
+    else:
+        ui.notify(f"{r.status_code} Error somewhere")
 
 
 def api_call(url, timeout=3):

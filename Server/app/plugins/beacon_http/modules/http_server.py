@@ -78,29 +78,32 @@ class AgentDequeueCommandResource(Resource):
             JSON: {"command": <command>, "args": <args>}
 
         """
+        try:
+            a = Agent(agent_id=agent_uuid)
+            command_object = a.dequeue_command()
 
-        a = Agent(agent_id=agent_uuid)
-        command_object = a.dequeue_command()
+            command = command_object.command
+            command_id = command_object.command_id
 
-        command = command_object.command
-        command_id = command_object.command_id
+            # Ensure command is a string
+            if not command or not isinstance(command, str):
+                return {"command": None, "args": None}  # Handle empty commands
 
-        # Ensure command is a string
-        if not command or not isinstance(command, str):
-            return {"command": None, "args": None}  # Handle empty commands
+            # Split command into parts
+            parts = command.strip().split(" ", 1)  # Split at first space
 
-        # Split command into parts
-        parts = command.strip().split(" ", 1)  # Split at first space
+            command_name = parts[0]  # First word
+            args = parts[1] if len(parts) > 1 else ""  # Everything else
 
-        command_name = parts[0]  # First word
-        args = parts[1] if len(parts) > 1 else ""  # Everything else
-
-        response_dict = {
-            "command_id": command_id,
-            "command": command_name,
-            "args": args,
-        }
-        return response_dict
+            response_dict = {
+                "command_id": command_id,
+                "command": command_name,
+                "args": args,
+            }
+            return response_dict
+        except Exception as e:
+            print(e)
+            return "", 500
 
 
 @beacon_http_ns.route("/post/<string:agent_uuid>")
@@ -109,22 +112,26 @@ class PostResource(Resource):
     @beacon_http_ns.marshal_with(post_output_model)
     def post(self, agent_uuid):
         """Receives JSON data and returns it in a response."""
-        response = beacon_http_ns.payload
-        print("Received POST data:", response)
+        try:
+            response = beacon_http_ns.payload
+            print("Received POST data:", response)
 
-        # uuid = response.get("id", "")
-        data = response.get("data", "")
-        command_id = response.get("command_id", "")
+            # uuid = response.get("id", "")
+            data = response.get("data", "")
+            command_id = response.get("command_id", "")
 
-        a = Agent(agent_uuid)
+            a = Agent(agent_uuid)
 
-        # change
+            # change
 
-        # need to get COMMAND ID here... maybe have agent send back.
-        # note, not actually storing yet.
-        a._store_response("command_id", data)
+            # need to get COMMAND ID here... maybe have agent send back.
+            # note, not actually storing yet.
+            a.store_response(command_id, data)
 
-        return {"status": "received", "data": data}, 200
+            return {"status": "received", "data": data}, 200
+        except Exception as e:
+            print(e)
+            return "", 500
 
 
 # 5) Register the Namespace
