@@ -12,15 +12,25 @@ from nicegui import ui, app
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
-    # calling apply_settings for local settings stored in users sessions
+    # Apply per-user settings.
     LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})
-    # Have to include this so error message gets centered
-    if current_settings.get("More Fun Mode", False):
-        fun_navbar()
+    # ui.label("WOW THIS WORKS SO MUCH BETTER WITH NO NAVBAR")
+    # if current_settings.get("More Fun Mode", False):
+    #     fun_navbar()  # creates a top-level header
+    # else:
+    #     normal_navbar()  # creates a top-level header
 
-    else:
-        normal_navbar()
+    # Create the main container that all page content will use.
+    # Adjust the subtraction values to match your header (and sidebar, if any) heights.
+    main_container = (
+        ui.element()
+        .classes(" border ")  # overflow-auto for scroll if it goes long
+        .style(
+            "border-color: red; height: calc(100vh - 150px); width: calc(100vw - 25px);"
+        )
+    )
+    return main_container
 
 
 def fun_navbar():

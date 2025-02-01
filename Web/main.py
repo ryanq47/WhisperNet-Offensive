@@ -102,9 +102,10 @@ def about():
 @ui.page("/agent/{uuid}")
 def agent_view_page(uuid: str):
     check_login()
-    navbar()
-    a = AgentView(agent_id=uuid)
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = AgentView(agent_id=uuid)
+        a.render()
 
 
 @ui.page("/agents")
