@@ -4,6 +4,8 @@ import requests
 from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
 
+from navbar import *
+
 
 # ---------------------------
 #   API Helper Functions
@@ -86,24 +88,8 @@ class AgentView:
         Renders the complete agent view including header, tabs, and tab panels.
         """
         with ui.element().classes("w-full h-full"):
-            current_settings = app.storage.user.get("settings", {})
 
-            # Agent Header Section
-            hostname = (
-                self.agent_data.get("data", {})
-                .get("system", {})
-                .get("hostname", "Unknown Hostname")
-            )
-            with ui.row().classes("text-5xl"):
-                ui.icon("computer")
-                ui.label(str(hostname)).classes("h-10")
-            with ui.row().classes("w-full text-2xl"):
-                ui.icon("badge")
-                ui.label(self.agent_id).classes("h-6")
-                ui.space()
-                ui.icon("timer")
-                ui.label("Last Checkin: 01:01:01").classes("h-6")
-            ui.separator()
+            current_settings = app.storage.user.get("settings", {})
 
             # Tabs Section
             with ui.tabs() as tabs:
@@ -131,6 +117,25 @@ class AgentView:
         """
         Renders the MAIN tab with agent details and command history grid.
         """
+
+        # Agent Header Section
+        hostname = (
+            self.agent_data.get("data", {})
+            .get("system", {})
+            .get("hostname", "Unknown Hostname")
+        )
+        ui.label("kinda cursed but fixes the layout prob...")
+        with ui.row().classes("text-5xl"):
+            ui.icon("computer")
+            ui.label(str(hostname)).classes("h-10")
+        with ui.row().classes("w-full text-2xl"):
+            ui.icon("badge")
+            ui.label(self.agent_id).classes("h-6")
+            ui.space()
+            ui.icon("timer")
+            ui.label("Last Checkin: 01:01:01").classes("h-6")
+        ui.separator()
+
         current_settings = app.storage.user.get("settings", {})
         with ui.row().classes("w-full h-full flex"):
             # Left: Agent details.
