@@ -139,11 +139,13 @@ class AgentView:
         current_settings = app.storage.user.get("settings", {})
         with ui.row().classes("w-full h-full flex"):
             # Left: Agent details.
+
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
                     ui.label("Details").classes("h-6")
                 ui.separator()
-                create_ui_from_json(self.agent_data)
+                with ui.scroll_area().classes("h-full"):
+                    create_ui_from_json(self.agent_data)
             # Right: Command history grid.
             with ui.column().classes("flex-1 h-full"):
                 aggrid_theme = (
