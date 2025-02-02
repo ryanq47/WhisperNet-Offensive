@@ -27,7 +27,8 @@ def api_post_call(data, url):
     if r.status_code in (200, 201):
         ui.notify("Successfully queued command")
     else:
-        ui.notify(f"{r.status_code} Error somewhere")
+        error_message = r.json().get("message", "")
+        ui.notify(f"{r.status_code}: {error_message}")
 
 
 def api_call(url, timeout=3):
