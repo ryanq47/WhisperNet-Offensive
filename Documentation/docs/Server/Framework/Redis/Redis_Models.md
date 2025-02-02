@@ -53,7 +53,7 @@ redis_agent_class.save()
 
 ## [X] AgentData Model
 
-The AgentData model is used to store data for agents. 
+The `AgentData` model is used to store data for agents. 
 
 `agent_id`: The unique field used to distinguish Agents. Should be the same as the one used in the Agent Model if the Agents are the same.
 
@@ -78,6 +78,46 @@ json_blob = json.dumps(mydict)
 redis_agent_class = AgentData(agent_id="SOMEID", json_blob=json_blob)
 redis_agent_class.save()
 ```
+
+## AgentCommand Model
+
+The `AgentCommand` model is used to store commands for the agents. 
+
+`command_id`: The command ID (UUID). This is generated in code when `BaseAgent.enqueue_command()` is called
+
+`agent_id`: The agent ID (UUID). 
+
+`command`: The actual command in which to run on the agent. 
+
+`response`: A placeholder/field for the response from running the command. Initially empty, is updated upon completion of the command
+
+`timestamp`: A timestamp for tracking the time *when the command was enqueued*. NOT when it was run. In ISO format, ex: `2023-11-28T17:45:03.123456+00:00`
+
+
+
+#### Key Format: `whispernet:agent:command:328bdc4c-b85f-4ca0-8293-b8be36438d61`
+
+
+
+Note: The order at which these commands are retireved are dictedated by a per-client command queue. 
+
+```py
+class AgentCommand(HashModel):
+    command_id: str = Field(index=True, primary_key=True)  # Indexed field
+    agent_id: str  # For which agent this command is
+    command: str
+    response: str
+    timestamp: str = Field(
+        index=True, default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
+    class Meta:
+        model_key_prefix = "agent:command"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+```
+
+
 
 ## [X] Listener Model
 
@@ -104,7 +144,6 @@ Example Usage:
 redis_listener_class = Listener(listener_id="SOMEID")
 redis_listener_class.save()
 ```
-
 
 THe client model is meant to be a standard way to store light details on a client, such as checkin times, and type. 
 
@@ -220,4 +259,3 @@ class Plugin(JsonModel):
         database = redis                            # The Redis connection
         global_key_prefix = "plugin"                # Prefix of key
 ```
-
