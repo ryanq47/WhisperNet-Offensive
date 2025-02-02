@@ -201,6 +201,10 @@ class ListenersView:
         self.request_data = self.request_data.get("data", {})
 
     def render(self):
+        ui.button(
+            text="Spawn Listener",
+            on_click=lambda: self.render_spawn_listener_dialogue(),
+        ).classes("w-full")
         self.render_listeners_grid()
 
     def render_listeners_grid(self):
@@ -293,6 +297,68 @@ class ListenersView:
         except Exception as e:
             print(f"Error rendering grid: {e}")
 
+    async def render_spawn_listener_dialogue(self):
+        """
+        Opens a dialog for spawning a new listener.
+        When the user submits, the dialog closes and spawn_listener() is called with values from the dialog.
+        """
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Spawn a New Listener")
+            # Input fields for the dialog
+            with ui.element().classes(
+                "w-full"
+            ):  # make sure fields are full width of parent dialogue container
+                name_input = ui.input(label="Listener Name")
+                protocol_input = ui.input(label="Listener Type [dropdown me later]")
+                address_input = ui.input(label="Listener Address")
+                port_input = ui.input(label="Listener Port")
+
+            with ui.row():
+                # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+                ui.button(
+                    "Start Listener",
+                    on_click=lambda: dialog.submit(
+                        {
+                            "name": name_input.value,
+                            "port": port_input.value,
+                            "protocol": protocol_input.value,
+                            "address": address_input.value,
+                        }
+                    ),
+                )
+                # When "Cancel" is clicked, simply close the dialog returning None
+                ui.button("Cancel", on_click=lambda: dialog.submit(None))
+
+        dialog.open()  # Display the dialog
+
+        # Wait for the dialog to close and capture the result
+        result = await dialog
+        if result is not None:
+            # Call a different function (e.g., spawn_listener) with the collected values
+            self.spawn_listener(
+                result.get("name", ""),
+                result.get("port", ""),
+                result.get("protocol", ""),
+                result.get("address", ""),
+            )
+        else:
+            ui.notify("Listener creation was canceled.")
+
+    # Example function to be called with the dialog values
+    def spawn_listener(self, name: str, port: str, protocol: str, address: str):
+        print(
+            f"Spawning {protocol} listener with name: {name} @ {address} on port: {port}"
+        )
+        # network call + stuff
+
+        listener_dict = {"port": port, "host": address, "name": name}
+
+        # will need to move to a universal listener spawner, or have a per protocol call here.
+        # first sounds better, but is harder/takes longer, 2nd is the easy fix.
+
+        api_post_call(data=listener_dict, url="/plugin/beacon-http/listener/spawn")
+
 
 # ------------------------------------------------------------------------
 #                      Misc Stuff
@@ -321,6 +387,27 @@ def create_ui_from_json(json_data, parent=None):
 # ------------------------------------------------------------------------
 #                      Network Stuff
 # ------------------------------------------------------------------------
+
+
+def api_post_call(data, url):
+    """
+    POSTs data to the specified URL.
+    """
+    headers = {
+        "Authorization": f"Bearer {app.storage.user.get('jwt_token', '')}",
+        "Content-Type": "application/json",
+    }
+    print(f"SENDING: {data}")
+    r = requests.post(
+        url=f"{Config.API_HOST}/{url}",
+        json=data,
+        headers=headers,
+    )
+    if r.status_code in (200, 201):
+        ui.notify("Successful request")
+    else:
+        error_message = r.json().get("message", "")
+        ui.notify(f"{r.status_code}: {error_message}")
 
 
 def api_call(url, timeout=3):
