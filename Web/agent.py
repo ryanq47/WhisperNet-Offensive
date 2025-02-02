@@ -283,7 +283,7 @@ class AgentView:
             # Command History Area:
             with ui.row().classes("grow w-full p-4"):
                 with ui.scroll_area(on_scroll=on_scroll).classes(
-                    "w-full border border-gray-700 rounded-lg p-2"
+                    "w-full h-full border border-gray-700 rounded-lg p-2"
                 ) as self.shell_container:
                     # The shell command history will be dynamically added here.
                     pass
@@ -291,7 +291,7 @@ class AgentView:
             with ui.row().classes("w-full items-center p-4"):
                 command_input = (
                     ui.textarea(placeholder="Type a command...")
-                    .props('autofocus outlined input-class="ml-3"')
+                    .props('autofocus outlined input-class="ml-3" input-class=h-12')
                     .classes("text-black grow mr-4")
                 )
                 ui.button("Send Command", on_click=send_command).classes("w-32")
