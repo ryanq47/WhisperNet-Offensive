@@ -40,24 +40,26 @@ class Users:
         self.user_table = None  # Placeholder for the table
 
     def render(self):
-        with ui.tabs() as tabs:
-            ui.tab("REGISTER")
-            ui.tab("USER LIST")
+        with ui.element().classes("w-full h-full"):
 
-        with ui.tab_panels(tabs, value="REGISTER").classes("w-full"):
-            # Tab for registering users
-            with ui.tab_panel("REGISTER"):
-                self.register_user_view()
+            with ui.tabs() as tabs:
+                ui.tab("REGISTER")
+                ui.tab("USER LIST")
 
-            # Tab for listing users
-            with ui.tab_panel("USER LIST"):
-                self.list_users_view()
+            with ui.tab_panels(tabs, value="REGISTER").classes("w-full h-full"):
+                # Tab for registering users
+                with ui.tab_panel("REGISTER"):
+                    self.register_user_view()
+
+                # Tab for listing users
+                with ui.tab_panel("USER LIST"):
+                    self.list_users_view()
 
     def register_user_view(self):
         """
         Render the user registration view.
         """
-        with ui.column().classes("items-center justify-center w-full"):
+        with ui.column().classes("items-center justify-center w-full h-full"):
             ui.label("Register a user").classes("text-2xl font-bold text-center mb-4")
             ui.separator().classes("mb-4")
 
@@ -198,39 +200,45 @@ class LocalSettings:
     def render(self):
         # ui.label("A clear settings button would be nice")
         try:
-            # Load settings from session storage or use defaults
-            current_settings = app.storage.user.get("settings", self.default_settings)
+            with ui.element().classes("w-full h-full"):
 
-            with ui.column().classes("w-full items-center p-4 gap-4"):
-                # Page Header
-                ui.markdown("# Settings").classes("text-center text-2xl")
+                # Load settings from session storage or use defaults
+                current_settings = app.storage.user.get(
+                    "settings", self.default_settings
+                )
 
-                # Settings Toggles
-                for setting_name, setting_data in current_settings.items():
-                    with ui.row().classes("justify-between w-full max-w-screen-md"):
-                        with ui.column():
-                            ui.label(setting_name).classes("text-lg")
-                            ui.label(setting_data["description"]).classes(
-                                "text-sm text-gray-500"
+                with ui.column().classes("w-full h-full items-center p-4 gap-4"):
+                    # Page Header
+                    ui.markdown("# Settings").classes("text-center text-2xl")
+
+                    # Settings Toggles
+                    for setting_name, setting_data in current_settings.items():
+                        with ui.row().classes(
+                            "justify-between h-full w-full max-w-screen-md"  # max-w-screen-md keeps items in the middle
+                        ):
+                            with ui.column():
+                                ui.label(setting_name).classes("text-lg")
+                                ui.label(setting_data["description"]).classes(
+                                    "text-sm text-gray-500"
+                                )
+                            ui.switch(value=setting_data["value"]).bind_value(
+                                current_settings[setting_name], "value"
                             )
-                        ui.switch(value=setting_data["value"]).bind_value(
-                            current_settings[setting_name], "value"
+
+                    # Save and Clear Buttons
+                    with ui.row().classes("gap-4"):
+                        ui.button(
+                            "Clear Local Settings", on_click=self.clear_settings
+                        ).classes(
+                            "mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
                         )
 
-                # Save and Clear Buttons
-                with ui.row().classes("gap-4"):
-                    ui.button(
-                        "Clear Local Settings", on_click=self.clear_settings
-                    ).classes(
-                        "mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                    )
-
-                    ui.button(
-                        "Save",
-                        on_click=lambda: self.save_settings(current_settings),
-                    ).classes(
-                        "mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                    )
+                        ui.button(
+                            "Save",
+                            on_click=lambda: self.save_settings(current_settings),
+                        ).classes(
+                            "mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        )
 
         except Exception as e:
             print(f"Error rendering settings page: {e}")

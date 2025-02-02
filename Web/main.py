@@ -70,9 +70,10 @@ def index():
 @ui.page("/settings")
 def settings():
     check_login()
-    navbar()
-    s = Settings()
-    s.render()
+    main_container = navbar()
+    with main_container:
+        s = Settings()
+        s.render()
 
 
 @ui.page("/credstore")

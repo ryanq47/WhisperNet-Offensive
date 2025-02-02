@@ -103,12 +103,13 @@ class AgentView:
             with ui.tab_panels(tabs, value="MAIN").classes("w-full h-full border"):
                 with ui.tab_panel("MAIN").classes("h-full"):
                     self.render_main_tab()
+                with ui.tab_panel("SHELL").classes("h-full"):
+                    self.render_shell_tab()
                 if current_settings.get("Dev Mode", False):
                     with ui.tab_panel("STATS").classes("h-full"):
                         self.render_stats_tab()
-                if current_settings.get("Dev Mode", False):
-                    with ui.tab_panel("SHELL").classes("h-full"):
-                        self.render_shell_tab()
+                # if current_settings.get("Dev Mode", False):
+
                 if current_settings.get("Dev Mode", False):
                     with ui.tab_panel("NOTES").classes("h-full"):
                         self.render_notes_tab()
@@ -124,7 +125,6 @@ class AgentView:
             .get("system", {})
             .get("hostname", "Unknown Hostname")
         )
-        ui.label("kinda cursed but fixes the layout prob...")
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
             ui.label(str(hostname)).classes("h-10")
@@ -146,6 +146,7 @@ class AgentView:
                 ui.separator()
                 with ui.scroll_area().classes("h-full"):
                     create_ui_from_json(self.agent_data)
+
             # Right: Command history grid.
             with ui.column().classes("flex-1 h-full"):
                 aggrid_theme = (
@@ -153,16 +154,14 @@ class AgentView:
                     if current_settings.get("Dark Mode", False)
                     else "ag-theme-balham"
                 )
-                ui.label("Command History").classes("h-6")
+                ui.label("Command History - refresh page to refresh me").classes("h-6")
                 ui.separator()
-                # Sample row data for testing.
-                mydict = [
-                    {"command": "exec:powershell:whoami", "result": "bob_boberson"}
-                    for i in range(1, 100)
-                ]
-                mydict.append(
-                    {"command": "exec:powershell:whoami /all", "result": "john_doe"}
-                )
+
+                # Get the data
+                data_list = api_call(
+                    url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
+                ).get("data", [])
+
                 self.command_grid = (
                     ui.aggrid(
                         {
@@ -180,18 +179,19 @@ class AgentView:
                                     "floatingFilter": True,
                                 },
                                 {
-                                    "headerName": "Result",
-                                    "field": "result",
+                                    "headerName": "Response",
+                                    "field": "response",
                                     "filter": "agTextColumnFilter",
                                     "floatingFilter": True,
                                 },
                             ],
-                            "rowData": mydict,
+                            "rowData": data_list,
                         }
                     )
                     .style("height: 750px")
                     .classes(f"{aggrid_theme}")
                 )
+
                 ui.button(
                     "Export",
                     on_click=lambda: self.command_grid.run_grid_method(
