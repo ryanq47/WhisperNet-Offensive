@@ -45,11 +45,7 @@ class Listener(BaseListener):
         # init super
         super().__init__(listener_id)
 
-    def spawn(
-        self,
-        port: int,
-        host: str,
-    ):
+    def spawn(self, port: int, host: str, name: str):
         """
         Start the server as a child process and let the parent continue.
         """
@@ -59,6 +55,7 @@ class Listener(BaseListener):
 
         self.data.network.port = port
         self.data.network.address = host
+        self.data.listener.name = name
 
         proc = self._spawn_beacon_http_listener()
         if not proc:
@@ -70,7 +67,7 @@ class Listener(BaseListener):
 
         # DO NOT JOIN here or you'll block the parent process.
         logger.info(
-            f"Beacon HTTP listener spawned. PID={proc.pid}, port={self.data.network.port}"
+            f"Beacon HTTP listener spawned. Name={self.data.listener.name}, PID={proc.pid}, port={self.data.network.port}"
         )
 
         self.register()  # to store in redis

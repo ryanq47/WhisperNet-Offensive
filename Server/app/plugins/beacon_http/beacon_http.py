@@ -61,47 +61,6 @@ beacon_http_response = beacon_http_ns.model(
 # ------------------------------------------------------------------------------------
 
 
-@beacon_http_ns.route("/agent/<string:agent_uuid>/command")
-class BeaconHttpAgentCommandResource(Resource):
-    """
-    POST /plugin/beacon-http/agent/<string:agent_uuid>/command
-    """
-
-    @beacon_http_ns.doc(
-        responses={
-            200: "Success",
-            400: "Bad Request",
-            401: "Unauthorized",
-            500: "Server Error",
-        },
-        description="Enqueue a command for the specified agent.",
-    )
-    @beacon_http_ns.expect(  # optional: define an input model if desired
-        beacon_http_ns.model(
-            "AgentCommandInput",
-            {
-                "command": fields.String(
-                    required=True, description="Command to enqueue"
-                ),
-            },
-        )
-    )
-    @beacon_http_ns.marshal_with(beacon_http_response, code=200)
-    # @jwt_required  # If your API is protected by JWT
-    def post(self, agent_uuid):
-        """
-        POST a command to a specific agent.
-        For example: {"command": "whoami"}
-        """
-        data = request.get_json() or {}
-        command = data.get("command")
-
-        # Use your BaseAgent logic to enqueue the command
-        # e.g., BaseAgent.enqueue_command(agent_uuid, command)
-
-        return api_response(data=f"Received command '{command}' for agent {agent_uuid}")
-
-
 @beacon_http_ns.route("/listener/spawn")
 class BeaconHttpListenerSpawnResource(Resource):
     """
@@ -140,10 +99,11 @@ class BeaconHttpListenerSpawnResource(Resource):
         data = request.get_json() or {}
         listener_port = data.get("port")
         listener_host = data.get("host")
+        listener_name = data.get("name")
 
         # Instantiate your custom Listener class (from your plugin)
         new_listener = Listener()
-        new_listener.spawn(port=listener_port, host=listener_host)
+        new_listener.spawn(port=listener_port, host=listener_host, name=listener_name)
 
         return api_response(data=f"Spawned listener on {listener_host}:{listener_port}")
 
