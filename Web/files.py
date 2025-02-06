@@ -98,13 +98,13 @@ def api_delete_call(url):
         return {}
 
 
-# ---------------------------
-#   FileView Class
-# ---------------------------
+## Filevliew
+
+
 class FileView:
     """
     Displays a page for managing files in the static-serve plugin,
-    with multi-file upload, multi-row selection, and 'Delete Selected'.
+    now split into two tabs: 'Files' (AG Grid) and 'Upload'.
     """
 
     def __init__(self):
@@ -112,67 +112,40 @@ class FileView:
         self.aggrid_element = None
 
     def fetch_file_list(self):
-        """
-        Calls GET /static-serve/files to get the list of files.
-        Expects JSON like:
-        {
-          "status": 200,
-          "data": [
-            { "filename": "file1.txt", "filehash": "...", "filepath": "/static/file1.txt" },
-            ...
-          ],
-          "message": "..."
-        }
-        """
         resp = api_call("static-serve/files")
         self.file_list = resp.get("data", [])
 
     def on_refresh(self):
-        """
-        Refresh the grid with the latest file list.
-        """
         self.fetch_file_list()
         self.update_aggrid()
 
     def update_aggrid(self):
-        """
-        Convert self.file_list -> row data for AG Grid.
-        We'll store both 'FilenameLink' for display (HTML)
-        and 'FilenameRaw' for actual deletion reference.
-        """
+        """Convert self.file_list -> row data for AG Grid."""
         row_data = []
         for f in self.file_list:
             raw_name = f.get("filename", "")
             filehash = f.get("filehash", "")
             web_path = f.get("filepath", "")  # e.g. "/static/file.exe"
-
-            # Create clickable link for direct download
             clickable_link = (
                 f"<a href='{Config.API_HOST}/{web_path}' target='_blank'>{raw_name}</a>"
             )
-
-            # We'll store the raw filename in a separate field for deletion
             row_data.append(
                 {
                     "FilenameLink": clickable_link,
                     "FilenameRaw": raw_name,
                     "Hash": filehash,
-                    "WebPath": web_path,
+                    # has a / inbetween the 2
+                    "WebPath": f"{Config.API_HOST}{web_path}",
                 }
             )
-
         self.aggrid_element.options["rowData"] = row_data
         self.aggrid_element.update()
 
     def on_file_upload(self, upload_result):
-        """
-        Called for each file if multiple=True.
-        We'll send it to POST /static-serve/upload as multipart/form-data.
-        """
+        """Send uploaded file(s) to POST /static-serve/upload."""
         files = {
             "file": (upload_result.name, upload_result.content),
         }
-        # If you want to rename server-side, pass "filename" in data
         data = {}
         resp = api_post_call("static-serve/upload", data=data, files=files)
         if not resp or resp.get("status") != 200:
@@ -183,89 +156,110 @@ class FileView:
         else:
             ui.notify("File uploaded successfully!", type="positive")
 
-        # Optionally refresh after each file upload:
+        # Refresh after each file upload
         self.on_refresh()
 
     def render(self):
         """
-        Renders the NiceGUI page:
-         - Title/Labels
-         - 'Refresh' + 'Delete Selected' + 'Upload' controls
-         - AG Grid with checkboxes
+        Main render method: sets up the page background, headers, and two tabs.
         """
-        with ui.column().classes("w-full h-full space-y-4"):
-            ui.label(
-                "*REMEMBER*, everything hosted here can be accessed by anyone who can reach the server."
-            )
-            ui.label("Static Serve Plugin").classes("text-3xl")
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("dns")
+                ui.label("Files").classes("h-10")
 
-            # Buttons row
-            with ui.row().classes("gap-4"):
-                ui.button("Refresh", on_click=self.on_refresh).props("outline")
-                ui.button(
-                    "Delete Selected - BROKEN", on_click=...  # self.on_delete_selected
-                ).props("outline")
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("warning")
+                ui.label(
+                    "Hosted Files - Publicly available to anyone who can access the server address"
+                ).classes("h-6")
+                ui.space()
+            ui.separator()
 
-                ui.upload(
-                    label="Upload File(s)",
-                    on_upload=self.on_file_upload,
-                    auto_upload=True,
-                    multiple=True,  # allow selecting multiple files at once
-                )
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Files")
+                ui.tab("Upload")
 
-            # Setup AG Grid
-            current_settings = app.storage.user.get("settings", {})
-            aggrid_theme = (
-                "ag-theme-balham-dark"
-                if current_settings.get("Dark Mode", False)
-                else "ag-theme-balham"
-            )
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
+                with ui.tab_panel("Files").classes("h-full"):
+                    self.render_files_tab()  # First tab
+                with ui.tab_panel("Upload"):
+                    self.render_upload_tab()  # Second tab
 
-            self.aggrid_element = (
-                ui.aggrid(
-                    {
-                        # Let AG Grid automatically adjust height
-                        "domLayout": "autoHeight",
-                        "columnDefs": [
-                            # Checkbox selection column
-                            {
-                                "headerName": "",
-                                "checkboxSelection": True,
-                                "headerCheckboxSelection": True,
-                                "width": 50,
-                                "pinned": "left",
-                            },
-                            {
-                                "headerName": "Filename",
-                                "field": "FilenameLink",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                                "width": 250,
-                            },
-                            {
-                                "headerName": "Hash",
-                                "field": "Hash",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                                "width": 240,
-                            },
-                            {
-                                "headerName": "Web Path",
-                                "field": "WebPath",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                                "width": 300,
-                            },
-                        ],
-                        # Enable multiple row selection
-                        "rowSelection": "multiple",
-                        "rowData": [],
-                    },
-                    html_columns=[1],
-                )
-                .classes(f"{aggrid_theme} w-full")
-                .style("height: 600px")
-            )
-
-        # Initial load
+        # Initial data load
         self.on_refresh()
+
+    def render_files_tab(self):
+        """
+        The 'Files' tab: AG Grid, Refresh, Delete.
+        """
+        # Create the AG Grid with row selection
+        current_settings = app.storage.user.get("settings", {})
+        aggrid_theme = (
+            "ag-theme-balham-dark"
+            if current_settings.get("Dark Mode", False)
+            else "ag-theme-balham"
+        )
+
+        with ui.column().classes("w-full h-full overflow-auto"):
+            self.aggrid_element = ui.aggrid(
+                {
+                    "columnDefs": [
+                        {
+                            "headerName": "",
+                            "checkboxSelection": True,
+                            "headerCheckboxSelection": True,
+                            "width": 50,
+                            "pinned": "left",
+                            "floatingFilter": True,
+                        },
+                        {
+                            "headerName": "Filename",
+                            "field": "FilenameLink",
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                            "width": 250,
+                        },
+                        {
+                            "headerName": "Hash",
+                            "field": "Hash",
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                            "width": 240,
+                        },
+                        {
+                            "headerName": "Web Path",
+                            "field": "WebPath",
+                            "filter": "agTextColumnFilter",
+                            "floatingFilter": True,
+                            "width": 300,
+                        },
+                    ],
+                    "rowSelection": "multiple",
+                    "rowData": [],
+                },
+                html_columns=[1],
+            ).classes(f"{aggrid_theme} w-full h-full")
+
+        # Refresh / Delete row, keep it below the aggrid
+        with ui.row().classes("w-full justify-end gap-4 mt-4"):
+            ui.button("Refresh", on_click=self.on_refresh).props("outline")
+            ui.button("Delete Selected - BROKEN", on_click=...).props("outline")
+
+    def render_upload_tab(self):
+        """
+        The 'Upload' tab: a big area for uploading.
+        """
+        with ui.column().classes("w-full h-full items-center justify-center"):
+            ui.upload(
+                label="Upload File(s)",
+                on_upload=self.on_file_upload,
+                auto_upload=True,
+                multiple=True,
+            ).classes(
+                "w-1/2"
+            )  # or "w-full" for an even bigger area
