@@ -111,6 +111,14 @@ def fun_navbar():
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
+        ui.button(
+            "Hosted Files",
+            on_click=lambda: ui.navigate.to("/files"),
+            color="bg-neutral-600",
+            icon="headphones",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
         # if current_settings.get("Dev Mode", False):
         ui.button(
             "Logs",
