@@ -147,7 +147,9 @@ class FileView:
             web_path = f.get("filepath", "")  # e.g. "/static/file.exe"
 
             # Create clickable link for direct download
-            clickable_link = f"<a href='{web_path}' target='_blank'>{raw_name}</a>"
+            clickable_link = (
+                f"<a href='{Config.API_HOST}/{web_path}' target='_blank'>{raw_name}</a>"
+            )
 
             # We'll store the raw filename in a separate field for deletion
             row_data.append(
@@ -236,7 +238,6 @@ class FileView:
                             {
                                 "headerName": "Filename",
                                 "field": "FilenameLink",
-                                "cellRenderer": "htmlCellRenderer",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 250,
@@ -251,7 +252,6 @@ class FileView:
                             {
                                 "headerName": "Web Path",
                                 "field": "WebPath",
-                                "cellRenderer": "htmlCellRenderer",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 300,
@@ -261,6 +261,7 @@ class FileView:
                         "rowSelection": "multiple",
                         "rowData": [],
                     },
+                    html_columns=[1],
                 )
                 .classes(f"{aggrid_theme} w-full")
                 .style("height: 600px")

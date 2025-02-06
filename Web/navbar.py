@@ -115,7 +115,7 @@ def fun_navbar():
             "Hosted Files",
             on_click=lambda: ui.navigate.to("/files"),
             color="bg-neutral-600",
-            icon="headphones",
+            icon="dns",
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 

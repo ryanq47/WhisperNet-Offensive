@@ -172,7 +172,7 @@ class StaticServeDeleteFileResource(Resource):
 # ------------------------------------------------------------------------------------
 # Simple Serve Resource (Optional)
 # ------------------------------------------------------------------------------------
-@static_serve_file_ns.route("<path:filename>")
+@static_serve_file_ns.route("/<path:filename>")
 class StaticServeFileResource(Resource):
     """
     GET /<filename>
