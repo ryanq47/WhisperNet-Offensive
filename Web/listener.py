@@ -284,7 +284,13 @@ class ListenersView:
                                 "floatingFilter": True,
                             },
                             {
-                                "headerName": "Protocol",
+                                "headerName": "Status (Alive/Dead/Unresponsive, etc)",
+                                "field": "Status",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Protocol (HTTP, HTTPS, DNS, etc)",
                                 "field": "Protocol",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,

@@ -18,6 +18,20 @@ from plugins.beacon_http.modules.listener import Listener
 # from modules.redis_models import ActiveService
 from modules.utils import api_response, generate_timestamp, generate_unique_id
 
+# ------------------------------------------------------------------------------------
+#   Docs
+# ------------------------------------------------------------------------------------
+"""
+# Pre Docs:
+
+## Responses: 
+  All responses from this listener are very primitive, either basic JSON, or just text.
+  This is intentional, the agent cannot understand more complex responses (such as the API's FormJ).
+
+
+
+"""
+
 
 logger = log(__name__)
 
@@ -145,6 +159,32 @@ class BeaconHttpListenerKillResource(Resource):
         listener.kill()
 
         return api_response(data=f"Listener {listener_uuid} killed (placeholder).")
+
+
+@beacon_http_ns.route("")
+@beacon_http_ns.doc(description="Ping endpoint for basic health checks")
+class BeaconHttpListenerPingResource(Resource):
+    """
+    GET /ping
+    """
+
+    @beacon_http_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @jwt_required
+    def get(self):
+        """
+        A super simple, basic upcheck endpoint.
+        """
+        print(api_response)
+        # return api_response(data="pong")
+        return "pong"
+        # "pong", 200
 
 
 # ------------------------------------------------------------------------------------

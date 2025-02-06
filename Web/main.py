@@ -11,6 +11,7 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore
+from files import FileView
 import argparse
 
 
@@ -145,6 +146,15 @@ def agent_view_page():
     main_container = navbar()
     with main_container:
         a = LogsView()
+        a.render()
+
+
+@ui.page("/files")
+def agent_view_page():
+    check_login()
+    main_container = navbar()
+    with main_container:
+        a = FileView()
         a.render()
 
 
