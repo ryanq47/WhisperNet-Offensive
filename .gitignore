@@ -191,3 +191,6 @@ Server/app/ftp/test.txt
 
 *build_tmp*
 *logs_export*
+
+# remove everyhting in hosted static dir
+*Server/data/static/*
