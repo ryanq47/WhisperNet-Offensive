@@ -53,7 +53,6 @@ post_output_model = beacon_http_ns.model(
 # ------------------------------------------------------------------------------------
 
 
-## MOVE ME TO BEACON_HTTP. TEMP TESTING HERE!!!
 @beacon_http_ns.route("/get/<string:agent_uuid>")
 @beacon_http_ns.doc(description="")
 class AgentDequeueCommandResource(Resource):
@@ -117,7 +116,7 @@ class PostResource(Resource):
             print("Received POST data:", response)
 
             # uuid = response.get("id", "")
-            data = response.get("data", "")
+            data = response.get("command_result_data", "")
             command_id = response.get("command_id", "")
 
             a = Agent(agent_uuid)

@@ -251,25 +251,32 @@ class AgentView:
             data = api_call(
                 url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
             ).get("data", [])
-            # Sort entries so that older entries are first.
-            data.sort(key=lambda entry: entry.get("timestamp", ""))
-            if self.shell_container is not None:
-                self.shell_container.clear()
-                with self.shell_container:
-                    for entry in data:
-                        cmd = entry.get("command", "")
-                        ui.markdown(f"> {cmd}").style("font-family: monospace")
-                        response_value = entry.get("response")
-                        if response_value:
-                            ui.label(response_value).style(
-                                "white-space: pre; font-family: monospace;"
-                            )
-                        else:
-                            ui.skeleton().style(
-                                "width: 50%; height: 1.2em; margin: 4px 0;"
-                            )
-                if self.auto_scroll_enabled:
-                    self.shell_container.scroll_to(percent=1.0)
+
+            # shitty bug fix for if there's no command data from the client
+            # otherwise it 500's
+            if not data:
+                pass
+                # ui.label("No command history yet...")
+            else:
+                # Sort entries so that older entries are first.
+                data.sort(key=lambda entry: entry.get("timestamp", ""))
+                if self.shell_container is not None:
+                    self.shell_container.clear()
+                    with self.shell_container:
+                        for entry in data:
+                            cmd = entry.get("command", "")
+                            ui.markdown(f"> {cmd}").style("font-family: monospace")
+                            response_value = entry.get("response")
+                            if response_value:
+                                ui.label(response_value).style(
+                                    "white-space: pre; font-family: monospace;"
+                                )
+                            else:
+                                ui.skeleton().style(
+                                    "width: 50%; height: 1.2em; margin: 4px 0;"
+                                )
+                    if self.auto_scroll_enabled:
+                        self.shell_container.scroll_to(percent=1.0)
 
         def send_command():
             api_post_call(
