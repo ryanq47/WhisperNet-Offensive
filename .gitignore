@@ -10,7 +10,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+#build/
 develop-eggs/
 dist/
 downloads/
@@ -194,3 +194,4 @@ Server/app/ftp/test.txt
 
 # remove everyhting in hosted static dir
 *Server/data/static/*
+*Server/data/build/*
