@@ -359,6 +359,56 @@ class StatsListenerResource(Resource):
 
 
 # ------------------------------------------------------------------------
+#                      Stats - Agents temp
+# ------------------------------------------------------------------------
+
+
+@stats_ns.route("/agents/commands")
+class AgentCommandsResource(Resource):
+    """
+    GET /agents/commands
+    """
+
+    @stats_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @stats_ns.marshal_with(stats_response, code=200)
+    # @jwt_required
+    def get(self):
+        """
+        Get data of ONE agent currently registered in the Redis DB.
+
+        Returns:
+            JSON in the specified format.
+        """
+        logger.warning("UNAUTH ENDPOINT: Stats/clients")
+
+        try:
+            temp_list_of_dicts = [
+                {"command": "SOMECOMMAND", "response": "SOMEREPSONSE"},
+                {"command": "SOMECOMMAND", "response": "SOMEREPSONSE"},
+                {"command": "SOMECOMMAND", "response": "SOMEREPSONSE"},
+                {"command": "SOMECOMMAND", "response": "SOMEREPSONSE"},
+                {"command": "SOMECOMMAND", "response": "SOMEREPSONSE"},
+            ]
+
+            # Return the response
+            return api_response(data=temp_list_of_dicts)
+
+        except ValueError as e:
+            logger.error(f"Input validation error: {e}")
+            return api_response(status=400, data={"error": str(e)})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return api_response(status=500, data={"error": "Internal Server Error"})
+
+
+# ------------------------------------------------------------------------
 #                      Stats - All
 #
 # ------------------------------------------------------------------------

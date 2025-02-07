@@ -1,0 +1,824 @@
+┌──(pentester㉿CPTC10-Finals-t12-vdi-kali01)-[~]
+└─$ nmap 10.0.1.0/24 -p- -sVC -T 5 
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2025-01-18 10:17 EST
+Stats: 0:00:50 elapsed; 253 hosts completed (3 up), 3 undergoing Service Scan
+Service scan Timing: About 38.13% done; ETC: 10:19 (0:00:45 remaining)
+Nmap scan report for 10.0.1.5
+Host is up (0.0012s latency).
+Not shown: 65528 closed tcp ports (conn-refused)
+PORT     STATE SERVICE        VERSION
+22/tcp   open  ssh            OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 87:bc:ca:8f:1a:0b:41:f1:9b:a1:df:9b:86:ee:6b:f7 (ECDSA)
+|_  256 98:ce:a3:f8:04:3e:28:5a:ef:5b:ab:c5:5c:63:a9:ea (ED25519)
+80/tcp   open  http           Caddy httpd
+|_http-server-header: Caddy
+|_http-title: Site doesn't have a title.
+5000/tcp open  upnp?
+| fingerprint-strings: 
+|   GenericLines: 
+|     HTTP/1.1 400 Bad Request
+|     Connection: close
+|     Content-Type: text/html
+|     Content-Length: 193
+|     <html>
+|     <head>
+|     <title>Bad Request</title>
+|     </head>
+|     <body>
+|     <h1><p>Bad Request</p></h1>
+|     Invalid Request Line &#x27;Invalid HTTP request line: &#x27;&#x27;&#x27;
+|     </body>
+|     </html>
+|   GetRequest: 
+|     HTTP/1.0 404 NOT FOUND
+|     Server: gunicorn
+|     Date: Sat, 18 Jan 2025 15:18:03 GMT
+|     Connection: close
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 207
+|     <!doctype html>
+|     <html lang=en>
+|     <title>404 Not Found</title>
+|     <h1>Not Found</h1>
+|     <p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+|   HTTPOptions: 
+|     HTTP/1.0 404 NOT FOUND
+|     Server: gunicorn
+|     Date: Sat, 18 Jan 2025 15:18:18 GMT
+|     Connection: close
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 207
+|     <!doctype html>
+|     <html lang=en>
+|     <title>404 Not Found</title>
+|     <h1>Not Found</h1>
+|     <p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+|   Help: 
+|     HTTP/1.1 400 Bad Request
+|     Connection: close
+|     Content-Type: text/html
+|     Content-Length: 197
+|     <html>
+|     <head>
+|     <title>Bad Request</title>
+|     </head>
+|     <body>
+|     <h1><p>Bad Request</p></h1>
+|     Invalid Request Line &#x27;Invalid HTTP request line: &#x27;HELP&#x27;&#x27;
+|     </body>
+|     </html>
+|   RTSPRequest: 
+|     HTTP/1.1 400 Bad Request
+|     Connection: close
+|     Content-Type: text/html
+|     Content-Length: 196
+|     <html>
+|     <head>
+|     <title>Bad Request</title>
+|     </head>
+|     <body>
+|     <h1><p>Bad Request</p></h1>
+|     Invalid HTTP Version &#x27;Invalid HTTP Version: &#x27;RTSP/1.0&#x27;&#x27;
+|     </body>
+|_    </html>
+5001/tcp open  commplex-link?
+| fingerprint-strings: 
+|   GetRequest, HTTPOptions: 
+|     HTTP/1.1 404 NOT FOUND
+|     Server: Werkzeug/3.0.4 Python/3.12.8
+|     Date: Sat, 18 Jan 2025 15:18:13 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 207
+|     Connection: close
+|     <!doctype html>
+|     <html lang=en>
+|     <title>404 Not Found</title>
+|     <h1>Not Found</h1>
+|     <p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+|   Help: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request syntax ('HELP').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|     </html>
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+5432/tcp open  postgresql     PostgreSQL DB 9.6.0 or later
+| fingerprint-strings: 
+|   SMBProgNeg: 
+|     SFATAL
+|     VFATAL
+|     C0A000
+|     Munsupported frontend protocol 65363.19778: server supports 3.0 to 3.0
+|     Fpostmaster.c
+|     L2145
+|_    RProcessStartupPacket
+5433/tcp open  postgresql     PostgreSQL DB 9.6.0 or later
+| fingerprint-strings: 
+|   Kerberos: 
+|     SFATAL
+|     VFATAL
+|     C0A000
+|     Munsupported frontend protocol 27265.28208: server supports 3.0 to 3.0
+|     Fbackend_startup.c
+|     L679
+|     RProcessStartupPacket
+|   SMBProgNeg: 
+|     SFATAL
+|     VFATAL
+|     C0A000
+|     Munsupported frontend protocol 65363.19778: server supports 3.0 to 3.0
+|     Fbackend_startup.c
+|     L679
+|_    RProcessStartupPacket
+9999/tcp open  abyss?
+| fingerprint-strings: 
+|   FourOhFourRequest: 
+|     HTTP/1.0 404 Not Found
+|     Access-Control-Allow-Credentials: true
+|     Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With
+|     Access-Control-Allow-Methods: POST, OPTIONS, GET, PUT
+|     Access-Control-Allow-Origin: *
+|     Content-Type: text/plain
+|     Date: Sat, 18 Jan 2025 15:18:03 GMT
+|     Content-Length: 18
+|     page not found
+|   GenericLines, Help, RTSPRequest: 
+|     HTTP/1.1 400 Bad Request
+|     Content-Type: text/plain; charset=utf-8
+|     Connection: close
+|     Request
+|   GetRequest: 
+|     HTTP/1.0 200 OK
+|     Access-Control-Allow-Credentials: true
+|     Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With
+|     Access-Control-Allow-Methods: POST, OPTIONS, GET, PUT
+|     Access-Control-Allow-Origin: *
+|     Content-Type: application/json; charset=utf-8
+|     Date: Sat, 18 Jan 2025 15:18:03 GMT
+|     Content-Length: 47
+|     {"message":"Identity Access Management Server"}
+|   HTTPOptions: 
+|     HTTP/1.0 204 No Content
+|     Access-Control-Allow-Credentials: true
+|     Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With
+|     Access-Control-Allow-Methods: POST, OPTIONS, GET, PUT
+|     Access-Control-Allow-Origin: *
+|_    Date: Sat, 18 Jan 2025 15:18:03 GMT
+5 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5000-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC62A%P=x86_64-pc-linux-gnu%r
+SF:(GenericLines,11E,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nConnection:\x2
+SF:0close\r\nContent-Type:\x20text/html\r\nContent-Length:\x20193\r\n\r\n<
+SF:html>\n\x20\x20<head>\n\x20\x20\x20\x20<title>Bad\x20Request</title>\n\
+SF:x20\x20</head>\n\x20\x20<body>\n\x20\x20\x20\x20<h1><p>Bad\x20Request</
+SF:p></h1>\n\x20\x20\x20\x20Invalid\x20Request\x20Line\x20&#x27;Invalid\x2
+SF:0HTTP\x20request\x20line:\x20&#x27;&#x27;&#x27;\n\x20\x20</body>\n</htm
+SF:l>\n")%r(GetRequest,170,"HTTP/1\.0\x20404\x20NOT\x20FOUND\r\nServer:\x2
+SF:0gunicorn\r\nDate:\x20Sat,\x2018\x20Jan\x202025\x2015:18:03\x20GMT\r\nC
+SF:onnection:\x20close\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\n
+SF:Content-Length:\x20207\r\n\r\n<!doctype\x20html>\n<html\x20lang=en>\n<t
+SF:itle>404\x20Not\x20Found</title>\n<h1>Not\x20Found</h1>\n<p>The\x20requ
+SF:ested\x20URL\x20was\x20not\x20found\x20on\x20the\x20server\.\x20If\x20y
+SF:ou\x20entered\x20the\x20URL\x20manually\x20please\x20check\x20your\x20s
+SF:pelling\x20and\x20try\x20again\.</p>\n")%r(RTSPRequest,121,"HTTP/1\.1\x
+SF:20400\x20Bad\x20Request\r\nConnection:\x20close\r\nContent-Type:\x20tex
+SF:t/html\r\nContent-Length:\x20196\r\n\r\n<html>\n\x20\x20<head>\n\x20\x2
+SF:0\x20\x20<title>Bad\x20Request</title>\n\x20\x20</head>\n\x20\x20<body>
+SF:\n\x20\x20\x20\x20<h1><p>Bad\x20Request</p></h1>\n\x20\x20\x20\x20Inval
+SF:id\x20HTTP\x20Version\x20&#x27;Invalid\x20HTTP\x20Version:\x20&#x27;RTS
+SF:P/1\.0&#x27;&#x27;\n\x20\x20</body>\n</html>\n")%r(HTTPOptions,170,"HTT
+SF:P/1\.0\x20404\x20NOT\x20FOUND\r\nServer:\x20gunicorn\r\nDate:\x20Sat,\x
+SF:2018\x20Jan\x202025\x2015:18:18\x20GMT\r\nConnection:\x20close\r\nConte
+SF:nt-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length:\x20207\r\n\r
+SF:\n<!doctype\x20html>\n<html\x20lang=en>\n<title>404\x20Not\x20Found</ti
+SF:tle>\n<h1>Not\x20Found</h1>\n<p>The\x20requested\x20URL\x20was\x20not\x
+SF:20found\x20on\x20the\x20server\.\x20If\x20you\x20entered\x20the\x20URL\
+SF:x20manually\x20please\x20check\x20your\x20spelling\x20and\x20try\x20aga
+SF:in\.</p>\n")%r(Help,122,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nConnecti
+SF:on:\x20close\r\nContent-Type:\x20text/html\r\nContent-Length:\x20197\r\
+SF:n\r\n<html>\n\x20\x20<head>\n\x20\x20\x20\x20<title>Bad\x20Request</tit
+SF:le>\n\x20\x20</head>\n\x20\x20<body>\n\x20\x20\x20\x20<h1><p>Bad\x20Req
+SF:uest</p></h1>\n\x20\x20\x20\x20Invalid\x20Request\x20Line\x20&#x27;Inva
+SF:lid\x20HTTP\x20request\x20line:\x20&#x27;HELP&#x27;&#x27;\n\x20\x20</bo
+SF:dy>\n</html>\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5001-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC634%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,184,"HTTP/1\.1\x20404\x20NOT\x20FOUND\r\nServer:\x20Werkzeu
+SF:g/3\.0\.4\x20Python/3\.12\.8\r\nDate:\x20Sat,\x2018\x20Jan\x202025\x201
+SF:5:18:13\x20GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nConte
+SF:nt-Length:\x20207\r\nConnection:\x20close\r\n\r\n<!doctype\x20html>\n<h
+SF:tml\x20lang=en>\n<title>404\x20Not\x20Found</title>\n<h1>Not\x20Found</
+SF:h1>\n<p>The\x20requested\x20URL\x20was\x20not\x20found\x20on\x20the\x20
+SF:server\.\x20If\x20you\x20entered\x20the\x20URL\x20manually\x20please\x2
+SF:0check\x20your\x20spelling\x20and\x20try\x20again\.</p>\n")%r(HTTPOptio
+SF:ns,184,"HTTP/1\.1\x20404\x20NOT\x20FOUND\r\nServer:\x20Werkzeug/3\.0\.4
+SF:\x20Python/3\.12\.8\r\nDate:\x20Sat,\x2018\x20Jan\x202025\x2015:18:13\x
+SF:20GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length
+SF::\x20207\r\nConnection:\x20close\r\n\r\n<!doctype\x20html>\n<html\x20la
+SF:ng=en>\n<title>404\x20Not\x20Found</title>\n<h1>Not\x20Found</h1>\n<p>T
+SF:he\x20requested\x20URL\x20was\x20not\x20found\x20on\x20the\x20server\.\
+SF:x20If\x20you\x20entered\x20the\x20URL\x20manually\x20please\x20check\x2
+SF:0your\x20spelling\x20and\x20try\x20again\.</p>\n")%r(RTSPRequest,16C,"<
+SF:!DOCTYPE\x20HTML>\n<html\x20lang=\"en\">\n\x20\x20\x20\x20<head>\n\x20\
+SF:x20\x20\x20\x20\x20\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20\x20\x2
+SF:0\x20\x20\x20\x20<title>Error\x20response</title>\n\x20\x20\x20\x20</he
+SF:ad>\n\x20\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20<h1>Error\
+SF:x20response</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code:\x20
+SF:400</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x20request\
+SF:x20version\x20\('RTSP/1\.0'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p
+SF:>Error\x20code\x20explanation:\x20400\x20-\x20Bad\x20request\x20syntax\
+SF:x20or\x20unsupported\x20method\.</p>\n\x20\x20\x20\x20</body>\n</html>\
+SF:n")%r(Help,167,"<!DOCTYPE\x20HTML>\n<html\x20lang=\"en\">\n\x20\x20\x20
+SF:\x20<head>\n\x20\x20\x20\x20\x20\x20\x20\x20<meta\x20charset=\"utf-8\">
+SF:\n\x20\x20\x20\x20\x20\x20\x20\x20<title>Error\x20response</title>\n\x2
+SF:0\x20\x20\x20</head>\n\x20\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\
+SF:x20\x20<h1>Error\x20response</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>E
+SF:rror\x20code:\x20400</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\x
+SF:20Bad\x20request\x20syntax\x20\('HELP'\)\.</p>\n\x20\x20\x20\x20\x20\x2
+SF:0\x20\x20<p>Error\x20code\x20explanation:\x20400\x20-\x20Bad\x20request
+SF:\x20syntax\x20or\x20unsupported\x20method\.</p>\n\x20\x20\x20\x20</body
+SF:>\n</html>\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5432-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC62A%P=x86_64-pc-linux-gnu%r
+SF:(SMBProgNeg,8C,"E\0\0\0\x8bSFATAL\0VFATAL\0C0A000\0Munsupported\x20fron
+SF:tend\x20protocol\x2065363\.19778:\x20server\x20supports\x203\.0\x20to\x
+SF:203\.0\0Fpostmaster\.c\0L2145\0RProcessStartupPacket\0\0");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5433-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC62A%P=x86_64-pc-linux-gnu%r
+SF:(Kerberos,90,"E\0\0\0\x8fSFATAL\0VFATAL\0C0A000\0Munsupported\x20fronte
+SF:nd\x20protocol\x2027265\.28208:\x20server\x20supports\x203\.0\x20to\x20
+SF:3\.0\0Fbackend_startup\.c\0L679\0RProcessStartupPacket\0\0")%r(SMBProgN
+SF:eg,90,"E\0\0\0\x8fSFATAL\0VFATAL\0C0A000\0Munsupported\x20frontend\x20p
+SF:rotocol\x2065363\.19778:\x20server\x20supports\x203\.0\x20to\x203\.0\0F
+SF:backend_startup\.c\0L679\0RProcessStartupPacket\0\0");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port9999-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC62A%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,1C4,"HTTP/1\.0\x20200\x20OK\r\nAccess-Control-Allow-Credent
+SF:ials:\x20true\r\nAccess-Control-Allow-Headers:\x20Content-Type,\x20Cont
+SF:ent-Length,\x20Accept-Encoding,\x20X-CSRF-Token,\x20Authorization,\x20a
+SF:ccept,\x20origin,\x20Cache-Control,\x20X-Requested-With\r\nAccess-Contr
+SF:ol-Allow-Methods:\x20POST,\x20OPTIONS,\x20GET,\x20PUT\r\nAccess-Control
+SF:-Allow-Origin:\x20\*\r\nContent-Type:\x20application/json;\x20charset=u
+SF:tf-8\r\nDate:\x20Sat,\x2018\x20Jan\x202025\x2015:18:03\x20GMT\r\nConten
+SF:t-Length:\x2047\r\n\r\n{\"message\":\"Identity\x20Access\x20Management\
+SF:x20Server\"}")%r(HTTPOptions,15A,"HTTP/1\.0\x20204\x20No\x20Content\r\n
+SF:Access-Control-Allow-Credentials:\x20true\r\nAccess-Control-Allow-Heade
+SF:rs:\x20Content-Type,\x20Content-Length,\x20Accept-Encoding,\x20X-CSRF-T
+SF:oken,\x20Authorization,\x20accept,\x20origin,\x20Cache-Control,\x20X-Re
+SF:quested-With\r\nAccess-Control-Allow-Methods:\x20POST,\x20OPTIONS,\x20G
+SF:ET,\x20PUT\r\nAccess-Control-Allow-Origin:\x20\*\r\nDate:\x20Sat,\x2018
+SF:\x20Jan\x202025\x2015:18:03\x20GMT\r\n\r\n")%r(FourOhFourRequest,199,"H
+SF:TTP/1\.0\x20404\x20Not\x20Found\r\nAccess-Control-Allow-Credentials:\x2
+SF:0true\r\nAccess-Control-Allow-Headers:\x20Content-Type,\x20Content-Leng
+SF:th,\x20Accept-Encoding,\x20X-CSRF-Token,\x20Authorization,\x20accept,\x
+SF:20origin,\x20Cache-Control,\x20X-Requested-With\r\nAccess-Control-Allow
+SF:-Methods:\x20POST,\x20OPTIONS,\x20GET,\x20PUT\r\nAccess-Control-Allow-O
+SF:rigin:\x20\*\r\nContent-Type:\x20text/plain\r\nDate:\x20Sat,\x2018\x20J
+SF:an\x202025\x2015:18:03\x20GMT\r\nContent-Length:\x2018\r\n\r\n404\x20pa
+SF:ge\x20not\x20found")%r(GenericLines,67,"HTTP/1\.1\x20400\x20Bad\x20Requ
+SF:est\r\nContent-Type:\x20text/plain;\x20charset=utf-8\r\nConnection:\x20
+SF:close\r\n\r\n400\x20Bad\x20Request")%r(RTSPRequest,67,"HTTP/1\.1\x20400
+SF:\x20Bad\x20Request\r\nContent-Type:\x20text/plain;\x20charset=utf-8\r\n
+SF:Connection:\x20close\r\n\r\n400\x20Bad\x20Request")%r(Help,67,"HTTP/1\.
+SF:1\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/plain;\x20charset=u
+SF:tf-8\r\nConnection:\x20close\r\n\r\n400\x20Bad\x20Request");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Nmap scan report for 10.0.1.6
+Host is up (0.0014s latency).
+Not shown: 65504 closed tcp ports (conn-refused)
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2025-01-18 15:18:03Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: oui.local0., Site: Default-First-Site-Name)
+443/tcp   open  ssl/http      Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server
+|_ssl-date: TLS randomness does not represent time
+|_http-server-header: Microsoft-IIS/10.0
+| ssl-cert: Subject: commonName=PowerShellWebAccessTestWebSite
+| Not valid before: 2025-01-17T10:59:10
+|_Not valid after:  2025-04-17T10:59:10
+| http-methods: 
+|_  Potentially risky methods: TRACE
+| tls-alpn: 
+|_  http/1.1
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: oui.local0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| rdp-ntlm-info: 
+|   Target_Name: OUI
+|   NetBIOS_Domain_Name: OUI
+|   NetBIOS_Computer_Name: FLAKEAD
+|   DNS_Domain_Name: oui.local
+|   DNS_Computer_Name: flakead.oui.local
+|   DNS_Tree_Name: oui.local
+|   Product_Version: 10.0.20348
+|_  System_Time: 2025-01-18T15:21:34+00:00
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakead.oui.local
+| Not valid before: 2025-01-16T20:48:41
+|_Not valid after:  2025-07-18T20:48:41
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+5986/tcp  open  ssl/http      Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_ssl-date: TLS randomness does not represent time
+|_http-title: Not Found
+| ssl-cert: Subject: commonName=Cloudbase-Init WinRM
+| Not valid before: 2025-01-16T15:30:28
+|_Not valid after:  2035-01-15T15:30:28
+| tls-alpn: 
+|_  http/1.1
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49670/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  msrpc         Microsoft Windows RPC
+60351/tcp open  msrpc         Microsoft Windows RPC
+63437/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+63438/tcp open  msrpc         Microsoft Windows RPC
+63443/tcp open  msrpc         Microsoft Windows RPC
+63454/tcp open  msrpc         Microsoft Windows RPC
+63462/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: FLAKEAD; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2025-01-18T15:21:31
+|_  start_date: N/A
+|_nbstat: NetBIOS name: FLAKEAD, NetBIOS user: <unknown>, NetBIOS MAC: 00:16:3e:f5:ed:de (Xensource)
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+
+Nmap scan report for flakemail.prod.oui.local (10.0.1.7)
+Host is up (0.0014s latency).
+Not shown: 65434 closed tcp ports (conn-refused)
+PORT      STATE SERVICE              VERSION
+25/tcp    open  smtp                 Microsoft Exchange smtpd
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, STARTTLS, X-ANONYMOUSTLS, AUTH NTLM, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING, XRDST
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+80/tcp    open  http                 Microsoft IIS httpd 10.0
+|_http-title: Site doesn't have a title.
+|_http-server-header: Microsoft-IIS/10.0
+81/tcp    open  http                 Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: 403 - Forbidden: Access is denied.
+110/tcp   open  pop3                 Microsoft Exchange 2007-2010 pop3d
+|_pop3-capabilities: TOP SASL(PLAIN) UIDL USER STLS
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+135/tcp   open  msrpc                Microsoft Windows RPC
+139/tcp   open  netbios-ssn          Microsoft Windows netbios-ssn
+143/tcp   open  imap                 Microsoft Exchange 2007-2010 imapd
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+|_imap-capabilities: SASL-IR OK IMAP4rev1 completed LOGINDISABLED IMAP4 CAPABILITY LITERAL+A0001 ID NAMESPACE UIDPLUS IDLE UNSELECT STARTTLS CHILDREN MOVE
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+443/tcp   open  ssl/http             Microsoft IIS httpd 10.0
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+| http-title: Outlook
+|_Requested resource was https://flakemail.prod.oui.local/owa/auth/logon.aspx?url=https%3a%2f%2fflakemail.prod.oui.local%2fowa%2f&reason=0
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+| tls-alpn: 
+|   h2
+|_  http/1.1
+|_http-server-header: Microsoft-IIS/10.0
+444/tcp   open  ssl/http             Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Runtime Error
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+| http-methods: 
+|_  Potentially risky methods: TRACE
+| tls-alpn: 
+|   h2
+|_  http/1.1
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+445/tcp   open  microsoft-ds         Windows Server 2016 Standard 14393 microsoft-ds
+465/tcp   open  smtp                 Microsoft Exchange smtpd
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, STARTTLS, X-ANONYMOUSTLS, AUTH GSSAPI NTLM, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING, XEXCH50, XRDST, XSHADOWREQUEST
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+| smtp-ntlm-info: 
+|   Target_Name: OUI
+|   NetBIOS_Domain_Name: OUI
+|   NetBIOS_Computer_Name: FLAKEMAIL
+|   DNS_Domain_Name: oui.local
+|   DNS_Computer_Name: flakemail.oui.local
+|   DNS_Tree_Name: oui.local
+|_  Product_Version: 10.0.14393
+475/tcp   open  smtp
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, X-ANONYMOUSTLS, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+| fingerprint-strings: 
+|   GenericLines: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+|     5.3.3 Unrecognized command 'unknown'
+|     5.3.3 Unrecognized command 'unknown'
+|   GetRequest: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:14 -0500
+|     5.3.3 Unrecognized command 'GET'
+|     5.3.3 Unrecognized command 'unknown'
+|   Hello: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:19 -0500
+|     250-flakemail.oui.local Hello [10.0.254.201]
+|     250-SIZE 37748736
+|     250-PIPELINING
+|     250-DSN
+|     250-ENHANCEDSTATUSCODES
+|     250-X-ANONYMOUSTLS
+|     250-X-EXPS GSSAPI NTLM
+|     250-8BITMIME
+|     250-BINARYMIME
+|     CHUNKING
+|   Help: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:27 -0500
+|     214-This server supports the following commands:
+|     HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+|   NULL: 
+|_    220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+476/tcp   open  smtp
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, X-ANONYMOUSTLS, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+| fingerprint-strings: 
+|   GenericLines: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+|     5.3.3 Unrecognized command 'unknown'
+|     5.3.3 Unrecognized command 'unknown'
+|   GetRequest: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:14 -0500
+|     5.3.3 Unrecognized command 'GET'
+|     5.3.3 Unrecognized command 'unknown'
+|   Hello: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:19 -0500
+|     250-flakemail.oui.local Hello [10.0.254.201]
+|     250-SIZE 37748736
+|     250-PIPELINING
+|     250-DSN
+|     250-ENHANCEDSTATUSCODES
+|     250-X-ANONYMOUSTLS
+|     250-X-EXPS GSSAPI NTLM
+|     250-8BITMIME
+|     250-BINARYMIME
+|     CHUNKING
+|   Help: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:27 -0500
+|     214-This server supports the following commands:
+|     HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+|   NULL: 
+|_    220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+477/tcp   open  smtp
+| fingerprint-strings: 
+|   GenericLines: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+|     5.3.3 Unrecognized command 'unknown'
+|     5.3.3 Unrecognized command 'unknown'
+|   GetRequest: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:14 -0500
+|     5.3.3 Unrecognized command 'GET'
+|     5.3.3 Unrecognized command 'unknown'
+|   Hello: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:19 -0500
+|     250-flakemail.oui.local Hello [10.0.254.201]
+|     250-SIZE 37748736
+|     250-PIPELINING
+|     250-DSN
+|     250-ENHANCEDSTATUSCODES
+|     250-X-ANONYMOUSTLS
+|     250-X-EXPS GSSAPI NTLM
+|     250-8BITMIME
+|     250-BINARYMIME
+|     CHUNKING
+|   Help: 
+|     220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:27 -0500
+|     214-This server supports the following commands:
+|     HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+|   NULL: 
+|_    220 flakemail.oui.local MICROSOFT ESMTP MAIL SERVICE READY AT Sat, 18 Jan 2025 10:18:03 -0500
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, X-ANONYMOUSTLS, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+587/tcp   open  smtp                 Microsoft Exchange smtpd
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, STARTTLS, AUTH GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+593/tcp   open  ncacn_http           Microsoft Windows RPC over HTTP 1.0
+717/tcp   open  smtp                 Microsoft Exchange smtpd
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE 37748736, PIPELINING, DSN, ENHANCEDSTATUSCODES, STARTTLS, X-ANONYMOUSTLS, AUTH NTLM, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING, XRDST
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+|_smtp-ntlm-info: ERROR: Script execution failed (use -d to debug)
+808/tcp   open  ccproxy-http?
+890/tcp   open  mc-nmf               .NET Message Framing
+993/tcp   open  ssl/imap             Microsoft Exchange 2007-2010 imapd
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_imap-capabilities: CAPABILITY
+995/tcp   open  ssl/pop3             Microsoft Exchange 2007-2010 pop3d
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_ssl-date: 2025-01-18T15:21:55+00:00; +2s from scanner time.
+1993/tcp  open  ssl/imap             Microsoft Exchange 2007-2010 imapd
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+1995/tcp  open  ssl/pop3             Microsoft Exchange 2007-2010 pop3d
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+2525/tcp  open  smtp                 Microsoft Exchange smtpd
+| smtp-commands: flakemail.oui.local Hello [10.0.254.201], SIZE, PIPELINING, DSN, ENHANCEDSTATUSCODES, STARTTLS, X-ANONYMOUSTLS, AUTH NTLM, X-EXPS GSSAPI NTLM, 8BITMIME, BINARYMIME, CHUNKING, XEXCH50, XRDST, XSHADOWREQUEST
+|_ This server supports the following commands: HELO EHLO STARTTLS RCPT DATA RSET MAIL QUIT HELP AUTH BDAT
+| smtp-ntlm-info: 
+|   Target_Name: OUI
+|   NetBIOS_Domain_Name: OUI
+|   NetBIOS_Computer_Name: FLAKEMAIL
+|   DNS_Domain_Name: oui.local
+|   DNS_Computer_Name: flakemail.oui.local
+|   DNS_Tree_Name: oui.local
+|_  Product_Version: 10.0.14393
+| ssl-cert: Subject: commonName=flakemail
+| Subject Alternative Name: DNS:flakemail, DNS:flakemail.oui.local
+| Not valid before: 2025-01-17T16:26:22
+|_Not valid after:  2030-01-17T16:26:22
+|_ssl-date: 2025-01-18T15:21:55+00:00; +2s from scanner time.
+3389/tcp  open  ms-wbt-server        Microsoft Terminal Services
+| ssl-cert: Subject: commonName=flakemail.oui.local
+| Not valid before: 2025-01-16T21:09:21
+|_Not valid after:  2025-07-18T21:09:21
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+3800/tcp  open  http                 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+3801/tcp  open  mc-nmf               .NET Message Framing
+3803/tcp  open  mc-nmf               .NET Message Framing
+3823/tcp  open  mc-nmf               .NET Message Framing
+3828/tcp  open  mc-nmf               .NET Message Framing
+3843/tcp  open  mc-nmf               .NET Message Framing
+3863/tcp  open  mc-nmf               .NET Message Framing
+3867/tcp  open  mc-nmf               .NET Message Framing
+3875/tcp  open  msexchange-logcopier Microsoft Exchange 2010 log copier
+5060/tcp  open  sip?
+5062/tcp  open  na-localise?
+5065/tcp  open  ca-2?
+5985/tcp  open  http                 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+5986/tcp  open  ssl/http             Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_ssl-date: 2025-01-18T15:21:54+00:00; +1s from scanner time.
+|_http-title: Not Found
+| ssl-cert: Subject: commonName=Cloudbase-Init WinRM
+| Not valid before: 2025-01-16T15:42:07
+|_Not valid after:  2035-01-15T15:42:07
+|_http-server-header: Microsoft-HTTPAPI/2.0
+| tls-alpn: 
+|   h2
+|_  http/1.1
+6001/tcp  open  ncacn_http           Microsoft Windows RPC over HTTP 1.0
+6400/tcp  open  msrpc                Microsoft Windows RPC
+6401/tcp  open  msrpc                Microsoft Windows RPC
+6402/tcp  open  msrpc                Microsoft Windows RPC
+6405/tcp  open  msrpc                Microsoft Windows RPC
+6429/tcp  open  msrpc                Microsoft Windows RPC
+6439/tcp  open  msrpc                Microsoft Windows RPC
+6478/tcp  open  msrpc                Microsoft Windows RPC
+6489/tcp  open  msrpc                Microsoft Windows RPC
+6495/tcp  open  msrpc                Microsoft Windows RPC
+6500/tcp  open  msrpc                Microsoft Windows RPC
+6502/tcp  open  msrpc                Microsoft Windows RPC
+6513/tcp  open  msrpc                Microsoft Windows RPC
+6514/tcp  open  msrpc                Microsoft Windows RPC
+6559/tcp  open  msrpc                Microsoft Windows RPC
+6561/tcp  open  msrpc                Microsoft Windows RPC
+6574/tcp  open  msrpc                Microsoft Windows RPC
+6576/tcp  open  msrpc                Microsoft Windows RPC
+6591/tcp  open  msrpc                Microsoft Windows RPC
+6592/tcp  open  msrpc                Microsoft Windows RPC
+6593/tcp  open  msrpc                Microsoft Windows RPC
+6594/tcp  open  msrpc                Microsoft Windows RPC
+6595/tcp  open  msrpc                Microsoft Windows RPC
+6628/tcp  open  msrpc                Microsoft Windows RPC
+6629/tcp  open  msrpc                Microsoft Windows RPC
+6630/tcp  open  msrpc                Microsoft Windows RPC
+6631/tcp  open  msrpc                Microsoft Windows RPC
+6632/tcp  open  msrpc                Microsoft Windows RPC
+6661/tcp  open  msrpc                Microsoft Windows RPC
+6707/tcp  open  msrpc                Microsoft Windows RPC
+6709/tcp  open  msrpc                Microsoft Windows RPC
+6730/tcp  open  msrpc                Microsoft Windows RPC
+6738/tcp  open  msrpc                Microsoft Windows RPC
+6743/tcp  open  msrpc                Microsoft Windows RPC
+6750/tcp  open  msrpc                Microsoft Windows RPC
+6781/tcp  open  msrpc                Microsoft Windows RPC
+6789/tcp  open  msrpc                Microsoft Windows RPC
+6804/tcp  open  msrpc                Microsoft Windows RPC
+6832/tcp  open  msrpc                Microsoft Windows RPC
+7354/tcp  open  msrpc                Microsoft Windows RPC
+7377/tcp  open  msrpc                Microsoft Windows RPC
+7613/tcp  open  msrpc                Microsoft Windows RPC
+7637/tcp  open  msrpc                Microsoft Windows RPC
+7648/tcp  open  msrpc                Microsoft Windows RPC
+7685/tcp  open  msrpc                Microsoft Windows RPC
+7737/tcp  open  msrpc                Microsoft Windows RPC
+7750/tcp  open  msrpc                Microsoft Windows RPC
+7772/tcp  open  msrpc                Microsoft Windows RPC
+7800/tcp  open  msrpc                Microsoft Windows RPC
+7876/tcp  open  msrpc                Microsoft Windows RPC
+8114/tcp  open  msrpc                Microsoft Windows RPC
+8172/tcp  open  ssl/http             Microsoft IIS httpd 10.0
+| tls-alpn: 
+|   h2
+|_  http/1.1
+|_http-title: Site doesn't have a title.
+|_http-server-header: Microsoft-IIS/10.0
+|_ssl-date: 2025-01-18T15:21:55+00:00; +1s from scanner time.
+| ssl-cert: Subject: commonName=WMSvc-WIN-7E3112TIM5E
+| Not valid before: 2025-01-17T15:27:52
+|_Not valid after:  2035-01-15T15:27:52
+9075/tcp  open  msrpc                Microsoft Windows RPC
+9710/tcp  open  mc-nmf               .NET Message Framing
+10671/tcp open  msrpc                Microsoft Windows RPC
+10696/tcp open  msrpc                Microsoft Windows RPC
+10723/tcp open  msrpc                Microsoft Windows RPC
+10735/tcp open  msrpc                Microsoft Windows RPC
+22930/tcp open  unknown
+47001/tcp open  http                 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+64327/tcp open  msexchange-logcopier Microsoft Exchange 2010 log copier
+64337/tcp open  mc-nmf               .NET Message Framing
+3 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port475-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC630%P=x86_64-pc-linux-gnu%r(
+SF:NULL,5F,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20
+SF:SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:03\x20-050
+SF:0\r\n")%r(GenericLines,B3,"220\x20flakemail\.oui\.local\x20MICROSOFT\x2
+SF:0ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x
+SF:2010:18:03\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'un
+SF:known'\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%
+SF:r(GetRequest,AF,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20
+SF:MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:14
+SF:\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'GET'\r\n500\
+SF:x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%r(Hello,12A,"2
+SF:20\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x2
+SF:0READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:19\x20-0500\r\n250-f
+SF:lakemail\.oui\.local\x20Hello\x20\[10\.0\.254\.201\]\r\n250-SIZE\x20377
+SF:48736\r\n250-PIPELINING\r\n250-DSN\r\n250-ENHANCEDSTATUSCODES\r\n250-X-
+SF:ANONYMOUSTLS\r\n250-X-EXPS\x20GSSAPI\x20NTLM\r\n250-8BITMIME\r\n250-BIN
+SF:ARYMIME\r\n250\x20CHUNKING\r\n")%r(Help,D1,"220\x20flakemail\.oui\.loca
+SF:l\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018
+SF:\x20Jan\x202025\x2010:18:27\x20-0500\r\n214-This\x20server\x20supports\
+SF:x20the\x20following\x20commands:\r\n214\x20HELO\x20EHLO\x20STARTTLS\x20
+SF:RCPT\x20DATA\x20RSET\x20MAIL\x20QUIT\x20HELP\x20AUTH\x20BDAT\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port476-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC630%P=x86_64-pc-linux-gnu%r(
+SF:NULL,5F,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20
+SF:SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:03\x20-050
+SF:0\r\n")%r(GenericLines,B3,"220\x20flakemail\.oui\.local\x20MICROSOFT\x2
+SF:0ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x
+SF:2010:18:03\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'un
+SF:known'\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%
+SF:r(GetRequest,AF,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20
+SF:MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:14
+SF:\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'GET'\r\n500\
+SF:x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%r(Hello,12A,"2
+SF:20\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x2
+SF:0READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:19\x20-0500\r\n250-f
+SF:lakemail\.oui\.local\x20Hello\x20\[10\.0\.254\.201\]\r\n250-SIZE\x20377
+SF:48736\r\n250-PIPELINING\r\n250-DSN\r\n250-ENHANCEDSTATUSCODES\r\n250-X-
+SF:ANONYMOUSTLS\r\n250-X-EXPS\x20GSSAPI\x20NTLM\r\n250-8BITMIME\r\n250-BIN
+SF:ARYMIME\r\n250\x20CHUNKING\r\n")%r(Help,D1,"220\x20flakemail\.oui\.loca
+SF:l\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018
+SF:\x20Jan\x202025\x2010:18:27\x20-0500\r\n214-This\x20server\x20supports\
+SF:x20the\x20following\x20commands:\r\n214\x20HELO\x20EHLO\x20STARTTLS\x20
+SF:RCPT\x20DATA\x20RSET\x20MAIL\x20QUIT\x20HELP\x20AUTH\x20BDAT\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port477-TCP:V=7.94SVN%I=7%D=1/18%Time=678BC630%P=x86_64-pc-linux-gnu%r(
+SF:NULL,5F,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20
+SF:SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:03\x20-050
+SF:0\r\n")%r(GenericLines,B3,"220\x20flakemail\.oui\.local\x20MICROSOFT\x2
+SF:0ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x
+SF:2010:18:03\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'un
+SF:known'\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%
+SF:r(GetRequest,AF,"220\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20
+SF:MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:14
+SF:\x20-0500\r\n500\x205\.3\.3\x20Unrecognized\x20command\x20'GET'\r\n500\
+SF:x205\.3\.3\x20Unrecognized\x20command\x20'unknown'\r\n")%r(Hello,12A,"2
+SF:20\x20flakemail\.oui\.local\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x2
+SF:0READY\x20AT\x20Sat,\x2018\x20Jan\x202025\x2010:18:19\x20-0500\r\n250-f
+SF:lakemail\.oui\.local\x20Hello\x20\[10\.0\.254\.201\]\r\n250-SIZE\x20377
+SF:48736\r\n250-PIPELINING\r\n250-DSN\r\n250-ENHANCEDSTATUSCODES\r\n250-X-
+SF:ANONYMOUSTLS\r\n250-X-EXPS\x20GSSAPI\x20NTLM\r\n250-8BITMIME\r\n250-BIN
+SF:ARYMIME\r\n250\x20CHUNKING\r\n")%r(Help,D1,"220\x20flakemail\.oui\.loca
+SF:l\x20MICROSOFT\x20ESMTP\x20MAIL\x20SERVICE\x20READY\x20AT\x20Sat,\x2018
+SF:\x20Jan\x202025\x2010:18:27\x20-0500\r\n214-This\x20server\x20supports\
+SF:x20the\x20following\x20commands:\r\n214\x20HELO\x20EHLO\x20STARTTLS\x20
+SF:RCPT\x20DATA\x20RSET\x20MAIL\x20QUIT\x20HELP\x20AUTH\x20BDAT\r\n");
+Service Info: Host: flakemail.oui.local; OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_nbstat: NetBIOS name: FLAKEMAIL, NetBIOS user: <unknown>, NetBIOS MAC: 00:16:3e:cf:60:2b (Xensource)
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: flakemail
+|   NetBIOS computer name: FLAKEMAIL\x00
+|   Domain name: oui.local
+|   Forest name: oui.local
+|   FQDN: flakemail.oui.local
+|_  System time: 2025-01-18T10:21:32-05:00
+|_clock-skew: mean: 14m18s, deviation: 1h05m28s, median: 0s
+| smb2-time: 
+|   date: 2025-01-18T15:21:32
+|_  start_date: 2025-01-17T21:58:29
+
+Post-scan script results:
+| clock-skew: 
+|   0s: 
+|     10.0.1.6
+|_    10.0.1.7 (flakemail.prod.oui.local)
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 256 IP addresses (3 hosts up) scanned in 262.90 seconds

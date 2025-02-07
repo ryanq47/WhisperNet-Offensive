@@ -168,7 +168,8 @@ def start():
 # Used when calling whispernet.py directly
 if __name__ == "__main__":
     try:
-        app.run(debug=True, port=8081, host="0.0.0.0", threaded=True)
+        ## CANNOT have debug mode on for multiple instances/http listeners. yay
+        app.run(debug=False, port=8081, host="0.0.0.0", threaded=True)
 
     except Exception as e:
         print(e)

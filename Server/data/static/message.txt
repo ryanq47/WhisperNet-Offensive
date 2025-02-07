@@ -1,0 +1,13 @@
+At the request of Oui Croissant, a comprehensive penetration test was conducted to evaluate the security posture of its operations, encompassing internal networks, external assets, and employee susceptibility to social engineering attacks. This assessment aimed to identify vulnerabilities across these domains that could pose risks to critical systems, sensitive data, and organizational reputation.
+
+The engagement was structured into three primary phases to ensure a thorough evaluation of the organization’s security measures:
+
+    Pre-Engagement Operations: Extensive open-source intelligence gathering was conducted to identify potential external threats and publicly accessible vulnerabilities. This phase provided an understanding of risks that could impact the organization’s external-facing assets.
+
+    Assessment Phase: This phase included active reconnaissance and controlled exploitation techniques targeting internal networks, external systems, and the organization’s new social media product, yyy.chat. The focus was on uncovering vulnerabilities such as misconfigurations, weak access controls, and insecure code practices. Specific attention was paid to Active Directory environments, web applications, and API security.
+
+    Social Engineering Simulation: A vishing campaign was conducted to evaluate employee awareness and resilience to social engineering attacks. The campaign successfully demonstrated the ability to extract sensitive information from employees, highlighting areas for improvement in awareness training.
+
+The report details critical findings, including vulnerabilities in internal systems such as misconfigured delegation rights in Active Directory, external threats such as exposed APIs and weak authentication mechanisms, and susceptibility to social engineering techniques. Specific recommendations are provided to address these findings, with immediate actions focusing on remediation of critical vulnerabilities and long-term strategies for enhancing security awareness and system defenses.
+
+This assessment underscores the importance of a holistic security approach, addressing technical, operational, and human factors to protect Oui Croissant’s assets and reputation effectively. We appreciated the opportunity to collaborate with the organization’s teams and are confident that implementing the recommendations will significantly enhance its overall security posture.

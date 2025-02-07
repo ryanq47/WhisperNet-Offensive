@@ -1,4 +1,5 @@
 from modules.config import Config
+from datetime import datetime, timezone
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
 # fix this
@@ -48,6 +49,21 @@ class AgentData(HashModel):
 
     class Meta:
         model_key_prefix = "agent:data"
+        database = redis
+        global_key_prefix = "whispernet"  # Prefix for keys
+
+
+class AgentCommand(HashModel):
+    command_id: str = Field(index=True, primary_key=True)  # Indexed field
+    agent_id: str  # For which agent this command is
+    command: str
+    response: str
+    timestamp: str = Field(
+        index=True, default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
+    class Meta:
+        model_key_prefix = "agent:command"
         database = redis
         global_key_prefix = "whispernet"  # Prefix for keys
 

@@ -2,131 +2,166 @@ from nicegui import ui, app
 import asyncio
 import requests
 from cards import agent_card, unknown_card
-
 from config import Config, ThemeConfig
 
+from navbar import *
 
+
+# ---------------------------
+#   API Helper Functions
+# ---------------------------
+def api_post_call(data, url):
+    """
+    POSTs data to the specified URL.
+    """
+    headers = {
+        "Authorization": f"Bearer {app.storage.user.get('jwt_token', '')}",
+        "Content-Type": "application/json",
+    }
+    print(f"SENDING: {data}")
+    r = requests.post(
+        url=f"{Config.API_HOST}/{url}",
+        json=data,
+        headers=headers,
+    )
+    if r.status_code in (200, 201):
+        ui.notify("Successfully queued command")
+    else:
+        error_message = r.json().get("message", "")
+        ui.notify(f"{r.status_code}: {error_message}")
+
+
+def api_call(url, timeout=3):
+    """
+    Makes a synchronous GET request to the specified URL.
+    """
+    if not url:
+        raise ValueError("A valid URL must be provided.")
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except requests.JSONDecodeError:
+        raise ValueError("The response is not valid JSON.")
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        raise
+
+
+# ---------------------------
+#   UI Helper Function
+# ---------------------------
+def create_ui_from_json(json_data, parent=None):
+    """
+    Recursively creates UI elements from a JSON/dict structure.
+    """
+    for key, value in json_data.items():
+        with ui.column() if parent is None else parent:
+            if isinstance(value, dict):
+                ui.label(f"• {key}:").style("font-weight: bold; font-size: 1.1em;")
+                with ui.column().style(
+                    "margin-left: 20px; padding-left: 10px; border-left: 2px solid #ccc;"
+                ):
+                    create_ui_from_json(value)
+            else:
+                ui.label(f"• {key}: {value}").style("font-size: 1em;")
+
+
+# ---------------------------
+#   Agent View
+# ---------------------------
 class AgentView:
     """
-    Individual agent view
+    Displays detailed information about an individual agent.
     """
 
     def __init__(self, agent_id: str = None):
         self.agent_id = str(agent_id)
-
         self.request_data = api_call(
             url=f"{Config.API_HOST}/stats/agent/{self.agent_id}"
         )
-
         data = self.request_data.get("data", {})
-        first_key = next(iter(data))  # Get the first key dynamically
+        first_key = next(iter(data))
         self.agent_data = data.get(first_key, {})
-        # print(type(self.agent_data))
-        # print(self.agent_data)
-        # puts the data so you can access with self.agent_data["data"]["system"]["hostname"]
-
-    # ------------------------------------------------------------------------
-    #                      Render
-    # ------------------------------------------------------------------------
 
     def render(self):
-        current_settings = app.storage.user.get("settings", {})
+        """
+        Renders the complete agent view including header, tabs, and tab panels.
+        """
+        with ui.element().classes("w-full h-full"):
 
-        # fun bug: Everything still works tho???
-        #   File "/home/kali/Documents/GitHub/WN-NewWeb/agent.py", line 23, in render
-        #     self.agent_data.get("data", {})
-        #     ^^^^^^^^^^^^^^^^^^^
-        # AttributeError: 'str' object has no attribute 'get'
+            current_settings = app.storage.user.get("settings", {})
 
+            # Tabs Section
+            with ui.tabs() as tabs:
+                ui.tab("MAIN")
+                if current_settings.get("Dev Mode", False):
+                    ui.tab("STATS")
+                    ui.tab("SHELL")
+                    ui.tab("NOTES")
+
+            # Tab Panels Container – note the explicit h-full for proper expansion.
+            with ui.tab_panels(tabs, value="MAIN").classes("w-full h-full border"):
+                with ui.tab_panel("MAIN").classes("h-full"):
+                    self.render_main_tab()
+                with ui.tab_panel("SHELL").classes("h-full"):
+                    self.render_shell_tab()
+                if current_settings.get("Dev Mode", False):
+                    with ui.tab_panel("STATS").classes("h-full"):
+                        self.render_stats_tab()
+                # if current_settings.get("Dev Mode", False):
+
+                if current_settings.get("Dev Mode", False):
+                    with ui.tab_panel("NOTES").classes("h-full"):
+                        self.render_notes_tab()
+
+    def render_main_tab(self):
+        """
+        Renders the MAIN tab with agent details and command history grid.
+        """
+
+        # Agent Header Section
         hostname = (
             self.agent_data.get("data", {})
             .get("system", {})
             .get("hostname", "Unknown Hostname")
         )
-
-        # with ui.header().classes(replace='row items-center').classes('bg-neutral-800') as header:
-        # ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').props('flat color=white')
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
-            ui.label(str(hostname)).classes("h-10  600")
-        # reduce space here
+            ui.label(str(hostname)).classes("h-10")
         with ui.row().classes("w-full text-2xl"):
             ui.icon("badge")
-            ui.label(self.agent_id).classes("h-6  400")
+            ui.label(self.agent_id).classes("h-6")
             ui.space()
             ui.icon("timer")
-            ui.label("Last Checkin: 01:01:01 ").classes("h-6  400")
-
+            ui.label("Last Checkin: 01:01:01").classes("h-6")
         ui.separator()
-        with ui.tabs() as tabs:
-            ui.tab("MAIN")
-            # ui.tab('OTHER')
 
-            # DEV Tabs - can do one if per tab if you want to maintain an order
-            if current_settings.get("Dev Mode", False):
-                ui.tab(
-                    "STATS"
-                )  # Graphs N Stuff? There's examples of this in nicegui examples
-                # ui.tab('FileExplorer')
-                ui.tab("SHELL")
-                ui.tab("NOTES")
-
-        with ui.tab_panels(tabs, value="MAIN").classes("w-full border"):
-            with ui.tab_panel("MAIN"):
-                # ui.label('Content of A')
-                self.render_main_tab()
-
-            if current_settings.get("Dev Mode", False):
-                with ui.tab_panel("STATS"):
-                    # ui.label('Content of A')
-                    self.render_stats_tab()
-
-            if current_settings.get("Dev Mode", False):
-                with ui.tab_panel("SHELL"):
-                    # ui.label('Content of A')
-                    self.render_shell_tab()
-
-            if current_settings.get("Dev Mode", False):
-                with ui.tab_panel("NOTES"):
-                    # ui.label('Content of A')
-                    self.render_notes_tab()
-
-    # ------------------------------------------------------------------------
-    #                      Main Tab
-    # ------------------------------------------------------------------------
-
-    def render_main_tab(self):
         current_settings = app.storage.user.get("settings", {})
-
         with ui.row().classes("w-full h-full flex"):
-            # Details Section
+            # Left: Agent details.
+
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("Details").classes("h-6  400")
+                    ui.label("Details").classes("h-6")
                 ui.separator()
-                create_ui_from_json(self.agent_data)
+                with ui.scroll_area().classes("h-full"):
+                    create_ui_from_json(self.agent_data)
 
-            # Command History Section
+            # Right: Command history grid.
             with ui.column().classes("flex-1 h-full"):
                 aggrid_theme = (
                     "ag-theme-balham-dark"
                     if current_settings.get("Dark Mode", False)
                     else "ag-theme-balham"
                 )
-                # Header for Command History
-                ui.label("Command History").classes("h-6  400")
+                ui.label("Command History - refresh page to refresh me").classes("h-6")
                 ui.separator()
 
-                mydict = []
-                for i in range(1, 100):
-                    mydict.append(
-                        {"command": "exec:powershell:whoami", "result": "bob_boberson"}
-                    )
-
-                # Unique command for testing
-                mydict.append(
-                    {"command": "exec:powershell:whoami /all", "result": "john_doe"}
-                )
+                # Get the data
+                data_list = api_call(
+                    url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
+                ).get("data", [])
 
                 self.command_grid = (
                     ui.aggrid(
@@ -145,20 +180,19 @@ class AgentView:
                                     "floatingFilter": True,
                                 },
                                 {
-                                    "headerName": "Result",
-                                    "field": "result",
+                                    "headerName": "Response",
+                                    "field": "response",
                                     "filter": "agTextColumnFilter",
                                     "floatingFilter": True,
                                 },
                             ],
-                            "rowData": mydict,  # Pass the list as rowData
+                            "rowData": data_list,
                         }
                     )
                     .style("height: 750px")
                     .classes(f"{aggrid_theme}")
                 )
 
-                # Full-width Button: Below Command History section
                 ui.button(
                     "Export",
                     on_click=lambda: self.command_grid.run_grid_method(
@@ -166,14 +200,13 @@ class AgentView:
                     ),
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
-    # ------------------------------------------------------------------------
-    #                      Stats Tab
-    # ------------------------------------------------------------------------
-
     def render_stats_tab(self):
+        """
+        Renders the STATS tab with sample graphs.
+        """
         with ui.row().classes("w-full h-full flex"):
             with ui.row().classes("flex-1 h-full"):
-                ui.label("Test Graph - Average Checkin Times").classes("h-6  400")
+                ui.label("Test Graph - Average Checkin Times").classes("h-6")
                 fig = {
                     "data": [
                         {
@@ -197,36 +230,101 @@ class AgentView:
                         "yaxis": {"gridcolor": "white"},
                     },
                 }
-                ui.plotly(fig).classes("w-full h-40")
-                ui.plotly(fig).classes("w-full h-40")
-                ui.plotly(fig).classes("w-full h-40")
-                ui.plotly(fig).classes("w-full h-40")
+                # Render multiple plots.
+                for _ in range(4):
+                    ui.plotly(fig).classes("w-full h-40")
 
     def render_shell_tab(self):
-        with ui.row().classes("w-full h-full flex items-center justify-center"):
-            self.search_field = (
-                ui.input(placeholder="Command...")
-                .props('autofocus outlined item-aligned input-class="ml-3"')
-                .classes("w-full mt-24 transition-all")
+        """
+        Renders the SHELL tab with a scrollable command history and an input area.
+        Auto-refresh occurs every second.
+        """
+        # Attributes for auto-scroll behavior.
+        self.shell_container = None
+        self.auto_scroll_enabled = True
+
+        def on_scroll(e):
+            # Disable auto-scroll if the user scrolls away from the bottom.
+            self.auto_scroll_enabled = e.vertical_percentage >= 0.95
+
+        def update_shell_data():
+            data = api_call(
+                url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
+            ).get("data", [])
+
+            # shitty bug fix for if there's no command data from the client
+            # otherwise it 500's
+            if not data:
+                pass
+                # ui.label("No command history yet...")
+            else:
+                # Sort entries so that older entries are first.
+                data.sort(key=lambda entry: entry.get("timestamp", ""))
+                if self.shell_container is not None:
+                    self.shell_container.clear()
+                    with self.shell_container:
+                        for entry in data:
+                            cmd = entry.get("command", "")
+                            ui.markdown(f"> {cmd}").style("font-family: monospace")
+                            response_value = entry.get("response")
+                            if response_value:
+                                ui.label(response_value).style(
+                                    "white-space: pre; font-family: monospace;"
+                                )
+                            else:
+                                ui.skeleton().style(
+                                    "width: 50%; height: 1.2em; margin: 4px 0;"
+                                )
+                    if self.auto_scroll_enabled:
+                        self.shell_container.scroll_to(percent=1.0)
+
+        def send_command():
+            api_post_call(
+                url=f"/agent/{self.agent_id}/command/enqueue",
+                data={"command": command_input.value},
             )
+            command_input.value = ""
+            update_shell_data()
+
+        # Shell tab layout: Fill parent container (using h-full).
+        with ui.column().classes("h-full w-full bg-gray-900 text-white flex flex-col"):
+            # Command History Area:
+            with ui.row().classes("grow w-full p-4"):
+                with ui.scroll_area(on_scroll=on_scroll).classes(
+                    "w-full h-full border border-gray-700 rounded-lg p-2"
+                ) as self.shell_container:
+                    # The shell command history will be dynamically added here.
+                    pass
+            # Command Input Area:
+            with ui.row().classes("w-full items-center p-4"):
+                command_input = (
+                    ui.textarea(placeholder="Type a command...")
+                    .props('autofocus outlined input-class="ml-3" input-class=h-12')
+                    .classes("text-black grow mr-4")
+                )
+                ui.button("Send Command", on_click=send_command).classes("w-32")
+        update_shell_data()
+        ui.timer(interval=1.0, callback=update_shell_data)
 
     def render_notes_tab(self):
-        ...
-        # with ui.row().classes('w-full h-full flex'):
-        #     # Move to somethign server based, or find a better way to save these session wise?
-        #     ui.textarea('User notes. NOTE! These are stored in the current session, aka only YOU can see these, in this browser. THEY WILL DISAPPEAR ON DIFFERENT BROWSERS - Fix This to have a notes endpoint for agents + save, etc').classes('w-full').bind_value(app.storage.user, 'note')
+        """
+        Renders the NOTES tab (placeholder for user notes).
+        """
+        ui.textarea(
+            "User notes. NOTE: These are stored in your session and will disappear on a new browser session."
+        ).classes("w-full").bind_value(app.storage.user, "note")
 
 
+# ---------------------------
+#   Agents List View
+# ---------------------------
 class AgentsView:
     """
-    A list of agents
+    Displays a list of agents.
     """
 
     def __init__(self):
-
         self.request_data = api_call(url=f"{Config.API_HOST}/stats/agents")
-
-        # get top level data key from response
         self.request_data = self.request_data.get("data", {})
 
     def render(self):
@@ -235,15 +333,6 @@ class AgentsView:
     def render_agents_grid(self):
         try:
             current_settings = app.storage.user.get("settings", {})
-            # NOTES:
-            #     Holy Shitballs aggrids are so much fun -_-
-
-            #     I originally had a similar setupto the /search here, but that didn't include granular filtering.
-            #     As for URL's, I had to render an HTML element in the Agent ID field. It's a little weird,
-            #     as I can't use ui.navigate.to, so the whole path has to go into it. Currently hardocded,
-            #     will be fixed later
-
-            # Extract the relevant data
             agents = self.request_data
             row_data = []
             for key, agent_info in agents.items():
@@ -254,11 +343,6 @@ class AgentsView:
                     "internal_ip", "Unknown"
                 )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
-
-                # Append formatted row
-                print(
-                    "WARNING: Path busted with clickable aggrid, doesn't work outside of localhost"
-                )
                 row_data.append(
                     {
                         "Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
@@ -268,8 +352,6 @@ class AgentsView:
                         "Last Seen": last_seen,
                     }
                 )
-
-            # Render the aggrid
             with ui.element().classes("gap-0 w-full"):
                 aggrid_theme = (
                     "ag-theme-balham-dark"
@@ -317,61 +399,3 @@ class AgentsView:
                 ).style("height: 750px").classes(f"{aggrid_theme}")
         except Exception as e:
             print(f"Error rendering grid: {e}")
-
-
-# ------------------------------------------------------------------------
-#                      Network Stuff
-# ------------------------------------------------------------------------
-
-
-def api_call(url, timeout=3):
-    """
-    Makes a synchronous GET request to the specified URL and returns the JSON response.
-
-    Args:
-        url (str): The URL to request.
-        timeout (int): The timeout for the request in seconds (default: 3).
-
-    Returns:
-        dict: Parsed JSON response from the server.
-
-    Raises:
-        ValueError: If the response cannot be parsed as JSON.
-        requests.RequestException: For network-related errors or timeouts.
-    """
-    if not url:
-        raise ValueError("A valid URL must be provided.")
-
-    try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()  # Raise an error for HTTP errors (4xx/5xx)
-        return response.json()  # Parse and return the JSON response
-    except requests.JSONDecodeError:
-        raise ValueError("The response is not valid JSON.")
-    except requests.RequestException as e:
-        print(f"Request failed: {e}")
-        raise  # Re-raise the exception for the caller to handle
-
-
-# ------------------------------------------------------------------------
-#                      Misc Stuff
-# ------------------------------------------------------------------------
-
-
-# Recursive function to create UI elements based on JSON
-def create_ui_from_json(json_data, parent=None):
-    for key, value in json_data.items():
-        # Add label for the key with bullet point
-        with ui.column() if parent is None else parent:
-            if isinstance(value, dict):
-                # Bold key for better visibility
-                ui.label(f"• {key}:").style("font-weight: bold; font-size: 1.1em;")
-
-                # Recursively handle nested dictionaries with indentation
-                with ui.column().style(
-                    "margin-left: 20px; padding-left: 10px; border-left: 2px solid #ccc;"
-                ):
-                    create_ui_from_json(value)
-            else:
-                # Add value with bullet point and bolded key
-                ui.label(f"• {key}: {value}").style("font-size: 1em;")

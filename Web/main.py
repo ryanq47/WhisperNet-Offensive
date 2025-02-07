@@ -11,6 +11,7 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore
+from files import FileView
 import argparse
 
 
@@ -70,73 +71,91 @@ def index():
 @ui.page("/settings")
 def settings():
     check_login()
-    navbar()
-    s = Settings()
-    s.render()
+    main_container = navbar()
+    with main_container:
+        s = Settings()
+        s.render()
 
 
 @ui.page("/credstore")
 def settings():
     check_login()
-    navbar()
-    c = CredentialStore()
-    c.render()
+    main_container = navbar()
+    with main_container:
+        c = CredentialStore()
+        c.render()
 
 
 @ui.page("/search")
 def search():
     check_login()
-    navbar()
-    s = Search()
-    s.spawn_search_bar()
+    main_container = navbar()
+    with main_container:
+        s = Search()
+        s.spawn_search_bar()
 
 
 @ui.page("/about")
 def about():
     check_login()
-    navbar()
-    a = AboutView()
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = AboutView()
+        a.render()
 
 
 @ui.page("/agent/{uuid}")
 def agent_view_page(uuid: str):
     check_login()
-    navbar()
-    a = AgentView(agent_id=uuid)
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = AgentView(agent_id=uuid)
+        a.render()
 
 
 @ui.page("/agents")
 def agent_view_page():
     check_login()
-    navbar()
-    a = AgentsView()
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = AgentsView()
+        a.render()
 
 
 @ui.page("/listener/{uuid}")
 def listener_view_page(uuid: str):
     check_login()
-    navbar()
-    a = ListenerView(listener_id=uuid)
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = ListenerView(listener_id=uuid)
+        a.render()
 
 
 @ui.page("/listeners")
 def agent_view_page():
     check_login()
-    navbar()
-    a = ListenersView()
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = ListenersView()
+        a.render()
 
 
 @ui.page("/logs")
 def agent_view_page():
     check_login()
-    navbar()
-    a = LogsView()
-    a.render()
+    main_container = navbar()
+    with main_container:
+        a = LogsView()
+        a.render()
+
+
+@ui.page("/files")
+def agent_view_page():
+    check_login()
+    main_container = navbar()
+    with main_container:
+        a = FileView()
+        a.render()
 
 
 @ui.page("/auth")

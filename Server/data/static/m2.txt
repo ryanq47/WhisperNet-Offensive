@@ -1,0 +1,23 @@
+At the request of Oui Croissant, a reassessment of its security posture was conducted, focusing on internal networks, external assets, and social engineering vulnerabilities. This penetration test aimed to evaluate progress since the last assessment while identifying new risks that could impact critical operations, sensitive data, and user trust. The scope included the internal networks (Production and Development), the yyy.chat platform, and a vishing campaign targeting employee awareness.
+Engagement Overview
+
+The assessment was divided into three key phases:
+
+    Pre-Engagement Operations: This phase involved open-source intelligence gathering to uncover publicly accessible vulnerabilities and external threats.
+    Assessment Phase: Controlled exploitation techniques were applied to validate risks, focusing on areas such as internal network configurations, APIs, and employee access controls. Special attention was given to Active Directory misconfigurations and insecure features in yyy.chat.
+    Social Engineering Simulation: A vishing attack targeted employee susceptibility to manipulation. The campaign exposed weak points in employee awareness, resulting in sensitive information disclosure.
+
+Key Findings
+
+    Unpatched Vulnerabilities: 58% of identified vulnerabilities remain unresolved, with a 50% increase in findings since the last assessment. Critical issues include misconfigured Active Directory permissions, insecure API endpoints, and social engineering susceptibility.
+    Data Breaches: Approximately 2,000 users on the yyy.chat platform were affected due to insecure APIs exposing Personally Identifiable Information (PII).
+    Employee Awareness: The vishing campaign revealed significant gaps in security training, allowing attackers to extract credentials and sensitive details.
+
+Recommendations
+
+To address these findings, we recommend:
+
+    Immediate Actions: Patch all critical and high-risk vulnerabilities, implement stricter API authentication, and secure Active Directory configurations.
+    Long-Term Strategies: Strengthen employee training programs, enforce multi-factor authentication, and adopt continuous monitoring tools to ensure future compliance with security standards.
+
+This reassessment highlights the need for ongoing vigilance and proactive measures to mitigate emerging threats. Oui Croissant is encouraged to implement these recommendations to safeguard its assets, enhance user trust, and solidify its security posture.

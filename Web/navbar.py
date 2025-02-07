@@ -12,15 +12,25 @@ from nicegui import ui, app
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
-    # calling apply_settings for local settings stored in users sessions
+    # Apply per-user settings.
     LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})
-    # Have to include this so error message gets centered
+    # # ui.label("WOW THIS WORKS SO MUCH BETTER WITH NO NAVBAR")
     if current_settings.get("More Fun Mode", False):
-        fun_navbar()
-
+        fun_navbar()  # creates a top-level header
     else:
-        normal_navbar()
+        normal_navbar()  # creates a top-level header
+
+    # Create the main container that all page content will use.
+    # Adjust the subtraction values to match your header (and sidebar, if any) heights.
+    main_container = (
+        ui.element()
+        .classes("")  # overflow-auto for scroll if it goes long
+        .style(
+            "border-color: red; height: calc(100vh - 150px); width: calc(100vw - 25px);"
+        )
+    )
+    return main_container
 
 
 def fun_navbar():
@@ -31,7 +41,9 @@ def fun_navbar():
     # You can also do background-size: cover; or whichever suits your design.
     # A fixed height for your header (h-20 = 5rem).
     # Also note the color=white in props for buttons and text classes to ensure visibility.
-    with ui.header().classes("flex items-center justify-between h-20 px-4").style(
+    with ui.header(elevated=True, wrap=True).classes(
+        "flex items-center justify-between h-20 px-4"
+    ).style(
         """
         /* Example gradient from purple-500 to teal-400 */
         background: linear-gradient(to right,rgb(45, 45, 46),rgb(179, 179, 179));
@@ -99,6 +111,14 @@ def fun_navbar():
         ).classes("w-full text-slate-50").props("square flat condensed")
         ui.separator()
 
+        ui.button(
+            "Hosted Files",
+            on_click=lambda: ui.navigate.to("/files"),
+            color="bg-neutral-600",
+            icon="dns",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+        ui.separator()
+
         # if current_settings.get("Dev Mode", False):
         ui.button(
             "Logs",
@@ -134,7 +154,7 @@ def fun_navbar():
 
 
 def normal_navbar():
-    with ui.header().classes(
+    with ui.header(elevated=True).classes(
         "items-center justify-between bg-neutral-800 h-20 px-4 h-1/6"
     ):
         ui.button(on_click=lambda: left_drawer.toggle(), icon="menu").props(
