@@ -366,6 +366,35 @@ class ListenersView:
         api_post_call(data=listener_dict, url="/plugin/beacon-http/listener/spawn")
 
 
+# page itself
+class ListenersPage:
+    def __init__(self): ...
+
+    def render(self):
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("computer")
+                ui.label("Listeners").classes("h-10")
+
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("construction")
+                ui.label("Monitor, Access, and Spawn Listeners").classes("h-6")
+                ui.space()
+            ui.separator()
+
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Listeners")
+
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Listeners").classes("w-full h-full border"):
+                with ui.tab_panel("Listeners"):
+                    a = ListenersView()
+                    a.render()
+
+
 # ------------------------------------------------------------------------
 #                      Misc Stuff
 # ------------------------------------------------------------------------

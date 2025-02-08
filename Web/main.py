@@ -1,7 +1,7 @@
 from nicegui import events, ui, app
 from searchbar import Search
 from agent import AgentView, AgentsView
-from listener import ListenerView, ListenersView
+from listener import ListenerView, ListenersView, ListenersPage
 from about import AboutView
 from home import HomeView
 from config import Config, ThemeConfig
@@ -138,7 +138,7 @@ def agent_view_page():
     check_login()
     main_container = navbar()
     with main_container:
-        a = ListenersView()
+        a = ListenersPage()
         a.render()
 
 
