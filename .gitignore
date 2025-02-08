@@ -195,3 +195,4 @@ Server/app/ftp/test.txt
 # remove everyhting in hosted static dir
 *Server/data/static/*
 *Server/data/build/*
+*Server/data/compiled*

@@ -116,16 +116,6 @@ def fun_navbar():
             icon="dns",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator().classes("my-2 border-slate-400")
-
-        # Development Section
-        ui.label("Development").classes("text-slate-200 text-lg font-bold px-4 py-2")
-        ui.button(
-            "Build Agents",
-            on_click=lambda: ui.navigate.to("/build"),
-            icon="construction",
-            color="bg-neutral-600",
-        ).classes("w-full text-slate-50").props("square flat condensed")
 
         # Info Section
         ui.separator().classes("my-2 border-slate-400")

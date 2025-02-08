@@ -1,6 +1,7 @@
 from nicegui import ui, app
 import requests
 from config import Config
+from agent import AgentsView
 
 
 # ---------------------------
@@ -148,27 +149,27 @@ class BuildView:
         with ui.column().classes("w-full h-full p-[10px]"):
             # HEADER 1
             with ui.row().classes("w-full text-5xl"):
-                ui.icon("dns")
-                ui.label("Build").classes("h-10")
+                ui.icon("computer")
+                ui.label("Agents").classes("h-10")
 
             # HEADER 2
             with ui.row().classes("w-full text-2xl"):
                 ui.icon("construction")
-                ui.label("Build Agents").classes("h-6")
+                ui.label("Monitor, Access, and Build Agent binaries").classes("h-6")
                 ui.space()
             ui.separator()
 
             # -- TABS --
             with ui.tabs() as tabs:
-                ui.tab("Files")
-                ui.tab("Build")
+                ui.tab("Agents")
+                ui.tab("Binaries + Builder")
 
             # -- TAB PANELS --
-            with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
-                with ui.tab_panel("Files").classes("h-full"):
-                    self.render_files_tab()  # First tab
-                with ui.tab_panel("Build"):
-                    self.render_build_tab()  # Second tab
+            with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
+                with ui.tab_panel("Agents").classes("h-full"):
+                    self.render_agents_tab()  # First tab
+                with ui.tab_panel("Binaries + Builder"):
+                    self.render_files_tab()  # Second tab
 
         # Initial data load
         self.on_refresh()
@@ -249,7 +250,10 @@ class BuildView:
             ui.button("Refresh", on_click=self.on_refresh).props("outline")
             ui.button("Delete Selected - BROKEN", on_click=...).props("outline")
 
-    def render_build_tab(self): ...
+    def render_agents_tab(self):
+        # just importing instead of copying full code
+        a = AgentsView()
+        a.render()
 
     async def render_build_agent_dialogue(self):
         """
@@ -273,7 +277,7 @@ class BuildView:
             with ui.element().classes(
                 "w-full"
             ):  # make sure fields are full width of parent dialogue container
-                name_input = ui.input(label="Listener Name")
+                name_input = ui.input(label="Agent Name (blank = random name)")
                 agent_type_input = ui.select(
                     options=agent_template_options, label="Agent Type"
                 )  # ui.input(label="Agent Type")
