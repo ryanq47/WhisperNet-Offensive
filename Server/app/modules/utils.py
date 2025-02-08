@@ -152,6 +152,8 @@ def generate_mashed_name():
         "Quick",
         "Wise",
         "Zealous",
+        "Slow",
+        "Curious",
     ]
 
     NOUNS = [
@@ -170,6 +172,9 @@ def generate_mashed_name():
         "Dolphin",
         "Cobra",
         "Viper",
+        "Snake",
+        "Panda",
+        "Gryffin",
     ]
     adjective = random.choice(ADJECTIVES)
     noun = random.choice(NOUNS)

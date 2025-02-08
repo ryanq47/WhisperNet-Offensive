@@ -32,6 +32,7 @@ else() # aka cross-compiling for Windows
     set(CMAKE_SYSTEM_NAME Windows)
     set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
     set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+    set(WINDOWS_LIBS -lwininet -lws2_32 -ladvapi32 -lkernel32)  # windows libs for linux comp
 endif()
 
 # Create DLL instead of an executable
@@ -42,7 +43,7 @@ set_target_properties(agent PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS TRUE
 )
 # Set the output name for the DLL
-set_target_properties(agent PROPERTIES OUTPUT_NAME "dll_x64.dll")
+set_target_properties(agent PROPERTIES OUTPUT_NAME "MACRO_OUTPUT_NAME")
 
 # Include necessary directories
 target_include_directories(agent PRIVATE ${CMAKE_SOURCE_DIR})

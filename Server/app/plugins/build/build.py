@@ -81,7 +81,11 @@ class BeaconHttpListenerSpawnResource(Resource):
 
         build_id = build_job.build()
 
-        return api_response(data=build_id)
+        build_response_dict = {
+            "build_id": build_id,
+        }
+
+        return api_response(data=build_response_dict)
 
 
 # ------------------------------------------------------------------------------------
