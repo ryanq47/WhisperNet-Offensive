@@ -174,7 +174,7 @@ class BuildView:
                             "headerName": "",
                             "checkboxSelection": True,
                             "headerCheckboxSelection": True,
-                            "width": 50,
+                            "width": 25,
                             "pinned": "left",
                             "floatingFilter": True,
                         },
@@ -183,7 +183,7 @@ class BuildView:
                             "field": "Filename",
                             "filter": "agTextColumnFilter",
                             "floatingFilter": True,
-                            "width": 250,
+                            "width": 225,
                         },
                         # { # would take extra tracking, just including in name of agent for now.
                         #     "headerName": "Callback Address",
@@ -204,7 +204,7 @@ class BuildView:
                             "field": "Hash",
                             "filter": "agTextColumnFilter",
                             "floatingFilter": True,
-                            "width": 240,
+                            "width": 150,
                         },
                         {
                             "headerName": "Web Path",

@@ -201,7 +201,7 @@ class FileView:
                             "headerName": "",
                             "checkboxSelection": True,
                             "headerCheckboxSelection": True,
-                            "width": 50,
+                            "width": 30,
                             "pinned": "left",
                             "floatingFilter": True,
                         },
@@ -217,7 +217,7 @@ class FileView:
                             "field": "Hash",
                             "filter": "agTextColumnFilter",
                             "floatingFilter": True,
-                            "width": 240,
+                            "width": 150,
                         },
                         {
                             "headerName": "Web Path",
