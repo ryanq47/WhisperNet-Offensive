@@ -26,24 +26,27 @@ set(AGENT_HEADERS
 # Check platform
 if (WIN32)
     message(STATUS "Compiling for Windows DLL")
-    set(WINDOWS_LIBS wininet)
-else() # aka cross-compiling for Windows
+    set(WINDOWS_LIBS wininet ws2_32 advapi32 kernel32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+else() # Cross-compiling for Windows
     message(STATUS "Compiling on Linux (Cross-Compiling for Windows)")
     set(CMAKE_SYSTEM_NAME Windows)
     set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
     set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
-    set(WINDOWS_LIBS -lwininet -lws2_32 -ladvapi32 -lkernel32)  # windows libs for linux comp
+    set(CMAKE_SHARED_LIBRARY_SUFFIX ".dll")  # Force DLL output
+    set(WINDOWS_LIBS -lwininet -lws2_32 -ladvapi32 -lkernel32)
 endif()
 
-# Create DLL instead of an executable
+# Create DLL
 add_library(agent SHARED ${AGENT_SOURCES})
 
 # Ensure function symbols are exported
 set_target_properties(agent PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS TRUE
+    OUTPUT_NAME "MACRO_OUTPUT_NAME"
+    PREFIX ""               # Remove 'lib' prefix (common for UNIX .so files)
+    SUFFIX ".dll"           # Ensure .dll extension
 )
-# Set the output name for the DLL
-set_target_properties(agent PROPERTIES OUTPUT_NAME "MACRO_OUTPUT_NAME")
 
 # Include necessary directories
 target_include_directories(agent PRIVATE ${CMAKE_SOURCE_DIR})

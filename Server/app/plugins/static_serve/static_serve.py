@@ -10,10 +10,13 @@ from modules.log import log
 from modules.utils import api_response, generate_timestamp
 from modules.config import Config
 import hashlib
+import pathlib
 
 logger = log(__name__)
 
 ## Note, serving should be safe due to flasks serve from directory
+
+# ALSO - Move me to pathlib
 
 
 # ------------------------------------------------------------------------------------
@@ -201,7 +204,7 @@ class StaticServeFileResource(Resource):
 def compute_file_md5(filepath, block_size=65536):
     """Compute the MD5 hash of a file, reading in chunks."""
     md5 = hashlib.md5()
-    with open(filepath, "rb") as f:
+    with filepath.open("rb") as f:
         for chunk in iter(lambda: f.read(block_size), b""):
             md5.update(chunk)
     return md5.hexdigest()
@@ -221,25 +224,24 @@ class StaticServeListFilesResource(Resource):
         logger.warning("UNAUTH, /files")
 
         # Example path: 'data/static' (adjust as needed)
-        static_dir = os.path.join(Config().root_project_path, "data/static")
+        static_dir = pathlib.Path(Config().root_project_path) / "data/static"
 
-        if not os.path.exists(static_dir):
+        if not static_dir.exists():
             return api_response(
                 data=[], message="No static directory found. No files are being served."
             )
 
         file_info_list = []
-        for item in os.listdir(static_dir):
-            full_path = os.path.join(static_dir, item)
-            if os.path.isfile(full_path):
+        for item in static_dir.iterdir():
+            if item.is_file():
                 # Compute file hash on the fly
-                file_hash = compute_file_md5(full_path)
+                file_hash = compute_file_md5(item)
                 # Build a dictionary for each file
                 file_info_list.append(
                     {
-                        "filename": item,
+                        "filename": item.name,
                         "filehash": file_hash,
-                        "filepath": f"/{item}",  # Webserver path
+                        "filepath": f"/static/{item.name}",  # Webserver path
                     }
                 )
 

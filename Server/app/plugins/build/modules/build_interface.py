@@ -11,7 +11,7 @@ logger = log(__name__)
 
 
 class HttpBuildInterface:
-    def __init__(self, agent_type):
+    def __init__(self, agent_type, callback_address, callback_port, agent_name=None):
         self.build_id = generate_unique_id()
         self.agent_type = agent_type
         self.project_root = pathlib.Path(Config().root_project_path)
@@ -36,10 +36,8 @@ class HttpBuildInterface:
             / "compiled"  # / self.agent_type # coulduse this later if you want per agent dropdowns/file seperationg
         )
 
-        # generate some name
-        self.binary_name = (
-            f"agent_{agent_type}_{generate_mashed_name()}"  # use in macro replace?
-        )
+        # generate some name w some mangling
+        self.binary_name = f"{generate_mashed_name() if not agent_name else agent_name}_{agent_type}_{callback_address}_{callback_port}"  # use in macro replace?
 
         logger.debug(
             f"Initialized HttpBuildInterface with agent path: {self.agent_template_path}"
@@ -54,7 +52,7 @@ class HttpBuildInterface:
     def _run_build(self):
         try:
             self.copy_from_template_files()
-            # self.macro_replace()  # Placeholder for macro replacement
+            self.macro_replace()  # Placeholder for macro replacement
             self.compile()
             self.copy_to_output_folder()
             logger.info(f"Build {self.build_id} completed successfully.")

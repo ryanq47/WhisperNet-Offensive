@@ -79,78 +79,86 @@ def fun_navbar():
 
     # drawer stuff
     with ui.left_drawer(value=False).classes("bg-neutral-600") as left_drawer:
+        # Dashboard Section
+        ui.label("Dashboard").classes("text-slate-200 text-lg font-bold px-4 py-2")
         ui.button(
             "Home",
             on_click=lambda: ui.navigate.to("/"),
             icon="home",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
         ui.button(
             "Search",
             on_click=lambda: ui.navigate.to("/search"),
-            color="bg-neutral-600",
             icon="search",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
+        ui.separator().classes("my-2 border-slate-400")
+
+        # Operations Section
+        ui.label("Operations").classes("text-slate-200 text-lg font-bold px-4 py-2")
 
         ui.button(
             "Agents",
             on_click=lambda: ui.navigate.to("/agents"),
-            color="bg-neutral-600",
             icon="computer",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
         ui.button(
             "Listeners",
             on_click=lambda: ui.navigate.to("/listeners"),
-            color="bg-neutral-600",
             icon="headphones",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
         ui.button(
             "Hosted Files",
             on_click=lambda: ui.navigate.to("/files"),
-            color="bg-neutral-600",
             icon="dns",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
+        ui.separator().classes("my-2 border-slate-400")
 
-        # if current_settings.get("Dev Mode", False):
+        # Development Section
+        ui.label("Development").classes("text-slate-200 text-lg font-bold px-4 py-2")
+        ui.button(
+            "Build Agents",
+            on_click=lambda: ui.navigate.to("/build"),
+            icon="construction",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
+        # Info Section
+        ui.separator().classes("my-2 border-slate-400")
+        ui.label("Misc").classes("text-slate-200 text-lg font-bold px-4 py-2")
         ui.button(
             "Logs",
             on_click=lambda: ui.navigate.to("/logs"),
-            color="bg-neutral-600",
             icon="article",
-        ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
-
-        ui.button(
-            "About",
-            on_click=lambda: ui.navigate.to("/about"),
             color="bg-neutral-600",
-            icon="help",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
 
         ui.button(
             "Settings",
             on_click=lambda: ui.navigate.to("/settings"),
-            color="bg-neutral-600",
             icon="settings",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
+        # ui.separator().classes("my-2 border-slate-400")
+        ui.button(
+            "About",
+            on_click=lambda: ui.navigate.to("/about"),
+            icon="help",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
 
+        # Account Section
+        # ui.label("👤 Account").classes("text-slate-200 text-lg font-bold px-4 py-2")
         ui.button(
             "Logout",
             on_click=lambda: ui.navigate.to("/logout"),
-            color="bg-neutral-600",
             icon="logout",
+            color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.separator()
 
 
 def normal_navbar():
