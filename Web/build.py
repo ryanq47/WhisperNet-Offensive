@@ -1,7 +1,6 @@
 from nicegui import ui, app
 import requests
 from config import Config
-from agent import AgentsView
 
 
 # ---------------------------
@@ -146,31 +145,8 @@ class BuildView:
         """
         Main render method: sets up the page background, headers, and two tabs.
         """
-        with ui.column().classes("w-full h-full p-[10px]"):
-            # HEADER 1
-            with ui.row().classes("w-full text-5xl"):
-                ui.icon("computer")
-                ui.label("Agents").classes("h-10")
-
-            # HEADER 2
-            with ui.row().classes("w-full text-2xl"):
-                ui.icon("construction")
-                ui.label("Monitor, Access, and Build Agent binaries").classes("h-6")
-                ui.space()
-            ui.separator()
-
-            # -- TABS --
-            with ui.tabs() as tabs:
-                ui.tab("Agents")
-                ui.tab("Binaries + Builder")
-
-            # -- TAB PANELS --
-            with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
-                with ui.tab_panel("Agents").classes("h-full"):
-                    self.render_agents_tab()  # First tab
-                with ui.tab_panel("Binaries + Builder"):
-                    self.render_files_tab()  # Second tab
-
+        # could combile this and render_files_tab prolly
+        self.render_files_tab()
         # Initial data load
         self.on_refresh()
 

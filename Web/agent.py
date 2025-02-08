@@ -3,7 +3,7 @@ import asyncio
 import requests
 from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
-
+from build import BuildView
 from navbar import *
 
 
@@ -398,3 +398,35 @@ class AgentsView:
                 ).classes(f"{aggrid_theme} w-full h-full")
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+
+class AgentsPage:
+    def __init__(self): ...
+
+    def render(self):
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("computer")
+                ui.label("Agents").classes("h-10")
+
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("construction")
+                ui.label("Monitor, Access, and Build Agent binaries").classes("h-6")
+                ui.space()
+            ui.separator()
+
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Agents")
+                ui.tab("Binaries + Builder")
+
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
+                with ui.tab_panel("Agents").classes("h-full"):
+                    a = AgentsView()
+                    a.render()
+                with ui.tab_panel("Binaries + Builder"):
+                    a = BuildView()
+                    a.render()
