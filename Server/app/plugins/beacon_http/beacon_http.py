@@ -104,7 +104,7 @@ class BeaconHttpListenerSpawnResource(Resource):
         )
     )
     @beacon_http_ns.marshal_with(beacon_http_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def post(self):
         """
         POST a request to spawn a new listener process.
@@ -138,7 +138,7 @@ class BeaconHttpListenerKillResource(Resource):
         description="Kill a running listener by UUID.",
     )
     @beacon_http_ns.marshal_with(beacon_http_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def post(self, listener_uuid):
         """
         POST to kill the specified listener.
@@ -176,7 +176,7 @@ class BeaconHttpListenerPingResource(Resource):
             500: "Server Side error",
         },
     )
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         A super simple, basic upcheck endpoint.

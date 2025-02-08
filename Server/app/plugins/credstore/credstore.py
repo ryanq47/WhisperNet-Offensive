@@ -80,6 +80,7 @@ class CredstoreCredentialResource(Resource):
 
     @credstore_ns.marshal_with(credstore_response, code=200)
     @credstore_ns.expect(credential_model)  # Attach the model here
+    @jwt_required()
     def post(self):
         """
         Add a credential to the credential list via a JSON payload.
@@ -146,7 +147,7 @@ class CredstoreCredentialResource(Resource):
         },
     )
     @credstore_ns.marshal_with(credstore_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self, credential_id):
         try:
             c = CredStore()
@@ -160,6 +161,7 @@ class CredstoreCredentialResource(Resource):
             return api_response(status=500)
 
     @credstore_ns.marshal_with(credstore_response, code=200)
+    @jwt_required()
     def delete(self, credential_id):
         """Delete Credential
 
@@ -199,7 +201,7 @@ class CredentialsResource(Resource):
         },
     )
     @credstore_ns.marshal_with(credstore_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         Retrieve all credentials and return as a JSON-compatible dictionary

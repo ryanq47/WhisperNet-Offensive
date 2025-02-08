@@ -97,7 +97,7 @@ class AgentDequeueCommandResource(Resource):
         },
     )
     # @ping_ns.marshal_with(ping_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self, agent_uuid):
         """
         Dequeue a command
@@ -129,7 +129,7 @@ class AgentEnqueueCommandResource(Resource):
         },
     )
     # @ping_ns.marshal_with(ping_response, code=200)
-    # @jwt_required
+    @jwt_required()
     @agent_ns.expect(command_request_model)
     def post(self, agent_uuid):
         """
@@ -178,6 +178,7 @@ class AgentEnqueueCommandResource(Resource):
     # @ping_ns.marshal_with(ping_response, code=200)
     # @jwt_required
     # @agent_ns.expect(command_request_model)
+    @jwt_required()
     def get(self, agent_uuid):
         """
         Enqueue command to agent
