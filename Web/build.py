@@ -1,6 +1,7 @@
 from nicegui import ui, app
 import requests
 from config import Config
+from agent import AgentsView
 
 
 # ---------------------------
@@ -47,7 +48,7 @@ def api_post_call(url, data=None, files=None):
 
     try:
         if files:
-            # Multipart/form-data request (for file uploads)
+            # Multipart/form-data request (for file Builds)
             r = requests.post(url=endpoint, data=data, files=files, headers=headers)
         else:
             # JSON-only request
@@ -101,10 +102,10 @@ def api_delete_call(url):
 ## Filevliew
 
 
-class FileView:
+class BuildView:
     """
     Displays a page for managing files in the static-serve plugin,
-    now split into two tabs: 'Files' (AG Grid) and 'Upload'.
+    now split into two tabs: 'Files' (AG Grid) and 'Build'.
     """
 
     def __init__(self):
@@ -112,7 +113,7 @@ class FileView:
         self.aggrid_element = None
 
     def fetch_file_list(self):
-        resp = api_call("static-serve/files")
+        resp = api_call("/build/compiled")
         self.file_list = resp.get("data", [])
 
     def on_refresh(self):
@@ -141,24 +142,6 @@ class FileView:
         self.aggrid_element.options["rowData"] = row_data
         self.aggrid_element.update()
 
-    def on_file_upload(self, upload_result):
-        """Send uploaded file(s) to POST /static-serve/upload."""
-        files = {
-            "file": (upload_result.name, upload_result.content),
-        }
-        data = {}
-        resp = api_post_call("static-serve/upload", data=data, files=files)
-        if not resp or resp.get("status") != 200:
-            ui.notify(
-                f"Upload failed: {resp.get('message', 'Unknown error')}",
-                type="negative",
-            )
-        else:
-            ui.notify("File uploaded successfully!", type="positive")
-
-        # Refresh after each file upload
-        self.on_refresh()
-
     def render(self):
         """
         Main render method: sets up the page background, headers, and two tabs.
@@ -166,29 +149,27 @@ class FileView:
         with ui.column().classes("w-full h-full p-[10px]"):
             # HEADER 1
             with ui.row().classes("w-full text-5xl"):
-                ui.icon("dns")
-                ui.label("Files").classes("h-10")
+                ui.icon("computer")
+                ui.label("Agents").classes("h-10")
 
             # HEADER 2
             with ui.row().classes("w-full text-2xl"):
-                ui.icon("warning")
-                ui.label(
-                    "Hosted Files - Publicly available to anyone who can access the server address"
-                ).classes("h-6")
+                ui.icon("construction")
+                ui.label("Monitor, Access, and Build Agent binaries").classes("h-6")
                 ui.space()
             ui.separator()
 
             # -- TABS --
             with ui.tabs() as tabs:
-                ui.tab("Files")
-                ui.tab("Upload")
+                ui.tab("Agents")
+                ui.tab("Binaries + Builder")
 
             # -- TAB PANELS --
-            with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
-                with ui.tab_panel("Files").classes("h-full"):
-                    self.render_files_tab()  # First tab
-                with ui.tab_panel("Upload"):
-                    self.render_upload_tab()  # Second tab
+            with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
+                with ui.tab_panel("Agents").classes("h-full"):
+                    self.render_agents_tab()  # First tab
+                with ui.tab_panel("Binaries + Builder"):
+                    self.render_files_tab()  # Second tab
 
         # Initial data load
         self.on_refresh()
@@ -205,6 +186,11 @@ class FileView:
             else "ag-theme-balham"
         )
 
+        ui.button(
+            text="Build Agent",
+            on_click=lambda: self.render_build_agent_dialogue(),
+        ).classes("w-full")
+
         with ui.column().classes("w-full h-full overflow-auto"):
             self.aggrid_element = ui.aggrid(
                 {
@@ -218,12 +204,26 @@ class FileView:
                             "floatingFilter": True,
                         },
                         {
-                            "headerName": "Filename",
+                            "headerName": "Filename (name_type_arch_callbackhost_callbackport)",
                             "field": "FilenameLink",
                             "filter": "agTextColumnFilter",
                             "floatingFilter": True,
                             "width": 250,
                         },
+                        # { # would take extra tracking, just including in name of agent for now.
+                        #     "headerName": "Callback Address",
+                        #     "field": "CallbackAddress",
+                        #     "filter": "agTextColumnFilter",
+                        #     "floatingFilter": True,
+                        #     "width": 200,
+                        # },
+                        # {
+                        #     "headerName": "Callback Port",
+                        #     "field": "CallbackPort",
+                        #     "filter": "agTextColumnFilter",
+                        #     "floatingFilter": True,
+                        #     "width": 100,
+                        # },
                         {
                             "headerName": "Hash (MD5)",
                             "field": "Hash",
@@ -250,16 +250,88 @@ class FileView:
             ui.button("Refresh", on_click=self.on_refresh).props("outline")
             ui.button("Delete Selected - BROKEN", on_click=...).props("outline")
 
-    def render_upload_tab(self):
+    def render_agents_tab(self):
+        # just importing instead of copying full code
+        a = AgentsView()
+        a.render()
+
+    async def render_build_agent_dialogue(self):
         """
-        The 'Upload' tab: a big area for uploading.
+        Opens a dialog for building a new agent
+        When the user submits, the dialog closes and spawn_listener() is called with values from the dialog.
+
+
+        Need: Endpoint for current agent types to build. Use this for a dropdown. Usees whats in  the folder to serve which
+
         """
-        with ui.column().classes("w-full h-full items-center justify-center"):
-            ui.upload(
-                label="Upload File(s)",
-                on_upload=self.on_file_upload,
-                auto_upload=True,
-                multiple=True,
-            ).classes(
-                "w-1/2"
-            )  # or "w-full" for an even bigger area
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+
+            # Get listeners options, from data key
+            agent_template_options = api_call(url="/build/agent-templates").get(
+                "data", ""
+            )
+
+            ui.label("Spawn a New Listener")
+            # Input fields for the dialog
+            with ui.element().classes(
+                "w-full"
+            ):  # make sure fields are full width of parent dialogue container
+                name_input = ui.input(label="Agent Name (blank = random name)")
+                agent_type_input = ui.select(
+                    options=agent_template_options, label="Agent Type"
+                )  # ui.input(label="Agent Type")
+                address_input = ui.input(label="Callback Address")
+                port_input = ui.input(label="Port Callback")
+
+            with ui.row():
+                # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+                ui.button(
+                    "Build Agent",
+                    on_click=lambda: dialog.submit(
+                        {
+                            "agent_name": name_input.value,
+                            "agent_type": agent_type_input.value,
+                            "callback_port": port_input.value,
+                            "callback_address": address_input.value,
+                        }
+                    ),
+                )
+                # When "Cancel" is clicked, simply close the dialog returning None
+                ui.button("Cancel", on_click=lambda: dialog.submit(None))
+
+        dialog.open()  # Display the dialog
+
+        # Wait for the dialog to close and capture the result
+        result = await dialog
+        if result is not None:
+            # Call a different function (e.g., spawn_listener) with the collected values
+            self.build_agent(
+                agent_name=result.get("agent_name", ""),
+                agent_type=result.get("agent_type", ""),
+                callback_address=result.get("callback_address", ""),
+                callback_port=result.get("callback_port", ""),
+            )
+        else:
+            ui.notify("Agent Builder was canceled.")
+
+    # Example function to be called with the dialog values
+    def build_agent(
+        self,
+        agent_name: str,
+        agent_type: str,
+        callback_address: str,
+        callback_port: str,
+    ):
+        ui.notify("Build started, wait a few seconds and refresh")
+        # network call + stuff
+
+        build_dict = {
+            "agent_name": agent_name,
+            "agent_type": agent_type,
+            "callback_address": callback_address,
+            "callback_port": callback_port,
+        }
+
+        # api_post_call(data=listener_dict, url="/plugin/beacon-http/listener/spawn")
+        api_post_call(url=f"/build/{agent_type}/build", data=build_dict)

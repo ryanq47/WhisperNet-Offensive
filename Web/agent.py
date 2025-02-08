@@ -352,7 +352,7 @@ class AgentsView:
                         "Last Seen": last_seen,
                     }
                 )
-            with ui.element().classes("gap-0 w-full"):
+            with ui.column().classes("w-full h-full overflow-auto"):
                 aggrid_theme = (
                     "ag-theme-balham-dark"
                     if current_settings.get("Dark Mode", False)
@@ -360,7 +360,6 @@ class AgentsView:
                 )
                 ui.aggrid(
                     {
-                        "domLayout": "autoHeight",
                         "columnDefs": [
                             {
                                 "headerName": "Agent ID",
@@ -396,6 +395,6 @@ class AgentsView:
                         "rowData": row_data,
                     },
                     html_columns=[0],
-                ).style("height: 750px").classes(f"{aggrid_theme}")
+                ).classes(f"{aggrid_theme} w-full h-full")
         except Exception as e:
             print(f"Error rendering grid: {e}")

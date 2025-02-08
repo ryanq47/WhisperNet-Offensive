@@ -12,6 +12,7 @@ from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore
 from files import FileView
+from build import BuildView
 import argparse
 
 
@@ -118,7 +119,8 @@ def agent_view_page():
     check_login()
     main_container = navbar()
     with main_container:
-        a = AgentsView()
+        # needs to be renamed, prolly re-factored too
+        a = BuildView()
         a.render()
 
 
@@ -156,6 +158,15 @@ def agent_view_page():
     with main_container:
         a = FileView()
         a.render()
+
+
+# @ui.page("/build")
+# def agent_view_page():
+#     check_login()
+#     main_container = navbar()
+#     with main_container:
+#         a = BuildView()
+#         a.render()
 
 
 @ui.page("/auth")
