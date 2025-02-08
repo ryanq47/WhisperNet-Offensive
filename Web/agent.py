@@ -95,9 +95,10 @@ class AgentView:
             # Tabs Section
             with ui.tabs() as tabs:
                 ui.tab("MAIN")
+                ui.tab("SHELL")
+
                 if current_settings.get("Dev Mode", False):
                     ui.tab("STATS")
-                    ui.tab("SHELL")
                     ui.tab("NOTES")
 
             # Tab Panels Container – note the explicit h-full for proper expansion.
@@ -272,7 +273,8 @@ class AgentView:
                                     "white-space: pre; font-family: monospace;"
                                 )
                             else:
-                                ui.skeleton().style(
+                                # not using animation at the moment due to the way the shell refreshes/updates
+                                ui.skeleton(animation="none").style(
                                     "width: 50%; height: 1.2em; margin: 4px 0;"
                                 )
                     if self.auto_scroll_enabled:
@@ -287,11 +289,13 @@ class AgentView:
             update_shell_data()
 
         # Shell tab layout: Fill parent container (using h-full).
-        with ui.column().classes("h-full w-full bg-gray-900 text-white flex flex-col"):
+        with ui.column().classes(
+            "h-full w-full flex flex-col"
+        ):  # bg-gray-900 text-white f
             # Command History Area:
             with ui.row().classes("grow w-full p-4"):
                 with ui.scroll_area(on_scroll=on_scroll).classes(
-                    "w-full h-full border border-gray-700 rounded-lg p-2"
+                    "w-full h-full border  rounded-lg p-2"  # border-gray-700
                 ) as self.shell_container:
                     # The shell command history will be dynamically added here.
                     pass

@@ -98,6 +98,39 @@ def api_delete_call(url):
         return {}
 
 
+class FilePage:
+    def __init__(self):
+        pass
+
+    def render(self):
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("dns")
+                ui.label("Files").classes("h-10")
+
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("warning")
+                ui.label(
+                    "Hosted Files - Publicly available to anyone who can access the server address"
+                ).classes("h-6")
+                ui.space()
+            ui.separator()
+
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Files")
+                ui.tab("Upload")
+
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
+                with ui.tab_panel("Files").classes("h-full"):
+                    a = FileView().render()
+                with ui.tab_panel("Upload"):
+                    a = FileUploadView().render()
+
+
 ## Filevliew
 
 
@@ -141,55 +174,11 @@ class FileView:
         self.aggrid_element.options["rowData"] = row_data
         self.aggrid_element.update()
 
-    def on_file_upload(self, upload_result):
-        """Send uploaded file(s) to POST /static-serve/upload."""
-        files = {
-            "file": (upload_result.name, upload_result.content),
-        }
-        data = {}
-        resp = api_post_call("static-serve/upload", data=data, files=files)
-        if not resp or resp.get("status") != 200:
-            ui.notify(
-                f"Upload failed: {resp.get('message', 'Unknown error')}",
-                type="negative",
-            )
-        else:
-            ui.notify("File uploaded successfully!", type="positive")
-
-        # Refresh after each file upload
-        self.on_refresh()
-
     def render(self):
         """
         Main render method: sets up the page background, headers, and two tabs.
         """
-        with ui.column().classes("w-full h-full p-[10px]"):
-            # HEADER 1
-            with ui.row().classes("w-full text-5xl"):
-                ui.icon("dns")
-                ui.label("Files").classes("h-10")
-
-            # HEADER 2
-            with ui.row().classes("w-full text-2xl"):
-                ui.icon("warning")
-                ui.label(
-                    "Hosted Files - Publicly available to anyone who can access the server address"
-                ).classes("h-6")
-                ui.space()
-            ui.separator()
-
-            # -- TABS --
-            with ui.tabs() as tabs:
-                ui.tab("Files")
-                ui.tab("Upload")
-
-            # -- TAB PANELS --
-            with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
-                with ui.tab_panel("Files").classes("h-full"):
-                    self.render_files_tab()  # First tab
-                with ui.tab_panel("Upload"):
-                    self.render_upload_tab()  # Second tab
-
+        self.render_files_tab()
         # Initial data load
         self.on_refresh()
 
@@ -250,16 +239,41 @@ class FileView:
             ui.button("Refresh", on_click=self.on_refresh).props("outline")
             ui.button("Delete Selected - BROKEN", on_click=...).props("outline")
 
-    def render_upload_tab(self):
+
+class FileUploadView:
+    def __init__(self):
+        pass
+
+    def render(self):
         """
         The 'Upload' tab: a big area for uploading.
         """
-        with ui.column().classes("w-full h-full items-center justify-center"):
+        with ui.column().classes("w-full h-full items-center"):
             ui.upload(
                 label="Upload File(s)",
                 on_upload=self.on_file_upload,
                 auto_upload=True,
                 multiple=True,
             ).classes(
-                "w-1/2"
+                "w-full h-full"
             )  # or "w-full" for an even bigger area
+
+            ui.label("Drag N Drop, or click the '+'")
+
+    def on_file_upload(self, upload_result):
+        """Send uploaded file(s) to POST /static-serve/upload."""
+        files = {
+            "file": (upload_result.name, upload_result.content),
+        }
+        data = {}
+        resp = api_post_call("static-serve/upload", data=data, files=files)
+        if not resp or resp.get("status") != 200:
+            ui.notify(
+                f"Upload failed: {resp.get('message', 'Unknown error')}",
+                type="negative",
+            )
+        else:
+            ui.notify("File uploaded successfully!", type="positive")
+
+        # Refresh after each file upload
+        # self.on_refresh()

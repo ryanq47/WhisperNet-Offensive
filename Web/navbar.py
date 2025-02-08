@@ -120,12 +120,12 @@ def fun_navbar():
         # Info Section
         ui.separator().classes("my-2 border-slate-400")
         ui.label("Misc").classes("text-slate-200 text-lg font-bold px-4 py-2")
-        ui.button(
-            "Logs",
-            on_click=lambda: ui.navigate.to("/logs"),
-            icon="article",
-            color="bg-neutral-600",
-        ).classes("w-full text-slate-50").props("square flat condensed")
+        # ui.button(
+        #     "Logs",
+        #     on_click=lambda: ui.navigate.to("/logs"),
+        #     icon="article",
+        #     color="bg-neutral-600",
+        # ).classes("w-full text-slate-50").props("square flat condensed")
 
         ui.button(
             "Settings",

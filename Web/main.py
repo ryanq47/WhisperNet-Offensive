@@ -1,7 +1,7 @@
 from nicegui import events, ui, app
 from searchbar import Search
-from agent import AgentView, AgentsView, AgentsPage
-from listener import ListenerView, ListenersView, ListenersPage
+from agent import AgentView, AgentsPage
+from listener import ListenerView, ListenersPage
 from about import AboutView
 from home import HomeView
 from config import Config, ThemeConfig
@@ -11,8 +11,7 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore
-from files import FileView
-from build import BuildView
+from files import FilePage
 import argparse
 
 
@@ -142,13 +141,13 @@ def agent_view_page():
         a.render()
 
 
-@ui.page("/logs")
-def agent_view_page():
-    check_login()
-    main_container = navbar()
-    with main_container:
-        a = LogsView()
-        a.render()
+# @ui.page("/logs")
+# def agent_view_page():
+#     check_login()
+#     main_container = navbar()
+#     with main_container:
+#         a = LogsView()
+#         a.render()
 
 
 @ui.page("/files")
@@ -156,7 +155,7 @@ def agent_view_page():
     check_login()
     main_container = navbar()
     with main_container:
-        a = FileView()
+        a = FilePage()
         a.render()
 
 
