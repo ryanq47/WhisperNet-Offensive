@@ -164,35 +164,31 @@ class AgentView:
                     url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
                 ).get("data", [])
 
-                self.command_grid = (
-                    ui.aggrid(
-                        {
-                            "columnDefs": [
-                                {
-                                    "headerName": "Timestamp",
-                                    "field": "timestamp",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                                {
-                                    "headerName": "Command",
-                                    "field": "command",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                                {
-                                    "headerName": "Response",
-                                    "field": "response",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                            ],
-                            "rowData": data_list,
-                        }
-                    )
-                    .style("height: 750px")
-                    .classes(f"{aggrid_theme}")
-                )
+                self.command_grid = ui.aggrid(
+                    {
+                        "columnDefs": [
+                            {
+                                "headerName": "Timestamp",
+                                "field": "timestamp",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Command",
+                                "field": "command",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Response",
+                                "field": "response",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                        ],
+                        "rowData": data_list,
+                    }
+                ).classes(f"{aggrid_theme} h-full")
 
                 ui.button(
                     "Export",
