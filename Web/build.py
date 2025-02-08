@@ -126,15 +126,14 @@ class BuildView:
             raw_name = f.get("filename", "")
             filehash = f.get("filehash", "")
             web_path = f.get("filepath", "")  # e.g. "/static/file.exe"
-            clickable_link = (
-                f"<a href='{Config.API_HOST}/{web_path}' target='_blank'>{raw_name}</a>"
-            )
+            # clickable_link = (
+            #     f"<a href='{Config.API_HOST}/{web_path}' target='_blank'>{raw_name}</a>"
+            # )
             row_data.append(
                 {
-                    "FilenameLink": clickable_link,
-                    "FilenameRaw": raw_name,
+                    "Filename": raw_name,
                     "Hash": filehash,
-                    # has a / inbetween the 2
+                    # has a / in between the 2
                     "WebPath": f"{Config.API_HOST}{web_path}",
                 }
             )
@@ -181,7 +180,7 @@ class BuildView:
                         },
                         {
                             "headerName": "Filename (name_type_arch_callbackhost_callbackport)",
-                            "field": "FilenameLink",
+                            "field": "Filename",
                             "filter": "agTextColumnFilter",
                             "floatingFilter": True,
                             "width": 250,
@@ -224,7 +223,41 @@ class BuildView:
         # Refresh / Delete row, keep it below the aggrid
         with ui.row().classes("w-full justify-end gap-4 mt-4"):
             ui.button("Refresh", on_click=self.on_refresh).props("outline")
-            ui.button("Delete Selected - BROKEN", on_click=...).props("outline")
+            ui.button("Delete Selected", on_click=self.delete_selected_rows).props(
+                "outline"
+            )
+
+            ui.button(  # later have an aggrid on click that runs the download_selected_rows
+                "Download Selected", on_click=self.download_selected_rows
+            ).props(
+                "outline"
+            )
+
+    async def delete_selected_rows(self):
+        rows = await self.aggrid_element.get_selected_rows()
+        if rows:
+            for row in rows:
+                filename = row.get("Filename", "")
+                ui.notify(f"Deleted: {filename}")
+                url = f"/build/delete/{filename}"
+                api_delete_call(url=url)
+                # trigger refresh
+                self.on_refresh()
+        else:
+            ui.notify("No rows selected.")
+
+    async def download_selected_rows(self):
+        rows = await self.aggrid_element.get_selected_rows()
+        if rows:
+            for row in rows:
+                filename = row.get("Filename", "")
+                ui.notify(f"Downloading: {filename}")
+                url = f"{Config.API_HOST}/build/{filename}"
+                ui.download(url)
+                # trigger refresh
+                self.on_refresh()
+        else:
+            ui.notify("No rows selected.")
 
     def render_agents_tab(self):
         # just importing instead of copying full code
