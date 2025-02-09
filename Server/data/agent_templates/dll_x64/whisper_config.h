@@ -32,6 +32,11 @@ A set of macro settings for modifying behavior
 // CALLBACK
 //================
 
+#ifndef CALLBACK_SLEEP_TIME
+// Sleep time (seconds)
+#define CALLBACK_SLEEP_TIME 60
+#endif
+
 #ifndef CALLBACK_HTTP_HOST
 // IP/Hostname of Callback.
 #define CALLBACK_HTTP_HOST "MACRO_CALLBACK_ADDRESS"
