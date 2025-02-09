@@ -1,8 +1,21 @@
 ﻿cmake_minimum_required(VERSION 3.10)
 project(AgentC2_DLL LANGUAGES C CXX)
 
-# Output directory
+# Ensure output directory exists
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Apply output directories globally for all build types
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
+endforeach()
+
+# Default output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Common compiler definitions
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
@@ -57,6 +70,9 @@ set_target_properties(agent_dll PROPERTIES
     OUTPUT_NAME "MACRO_OUTPUT_NAME"
     PREFIX ""                      # No 'lib' prefix for Windows DLL
     SUFFIX ".dll"                  # Ensure .dll extension
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 message(STATUS "CMake configured successfully for AgentC2 DLL.")
