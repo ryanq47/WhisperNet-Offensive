@@ -8,9 +8,7 @@ class ListenerView:
     def __init__(self, listener_id=None):
         self.listener_id = str(listener_id)
 
-        self.request_data = api_call(
-            url=f"{Config.API_HOST}/stats/listener/{self.listener_id}"
-        )
+        self.request_data = api_call(url=f"/stats/listener/{self.listener_id}")
 
         data = self.request_data.get("data", {})
         first_key = next(iter(data))  # Get the first key dynamically
@@ -196,7 +194,7 @@ class ListenersView:
 
     def __init__(self):
 
-        self.request_data = api_call(url=f"{Config.API_HOST}/stats/listeners")
+        self.request_data = api_call(url=f"/stats/listeners")
 
         # get top level data key from response
         self.request_data = self.request_data.get("data", {})

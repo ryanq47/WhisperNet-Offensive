@@ -2,6 +2,8 @@ import requests
 from config import Config
 from nicegui import app, ui
 
+## Add in 401 handling here for re-token?
+
 
 def api_call(url, timeout=3, return_dict_from_json=True):
     """
@@ -26,8 +28,10 @@ def api_call(url, timeout=3, return_dict_from_json=True):
     if not url:
         raise ValueError("A valid URL must be provided.")
 
+    endpoint = f"{Config.API_HOST}/{url.lstrip('/')}"
+
     try:
-        response = requests.get(url, timeout=timeout, headers=headers)
+        response = requests.get(endpoint, timeout=timeout, headers=headers)
         response.raise_for_status()  # Raise an error for HTTP errors (4xx/5xx)
         # if the response is in json, decode back to dict. 99% of the times this is true
         if return_dict_from_json:

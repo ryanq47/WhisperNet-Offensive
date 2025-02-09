@@ -143,7 +143,7 @@ class CredentialStore:
                     if cred_id:
                         try:
                             response = await client.delete(
-                                f"{Config.API_HOST}/credstore/credential/{cred_id}"
+                                f"/credstore/credential/{cred_id}"
                             )
                             if response.status_code != 200:
                                 print(
@@ -184,7 +184,7 @@ class CredentialStore:
 
     def get_cred_data(self) -> list:
         try:
-            data = api_call(url=f"{Config.API_HOST}/credstore/credentials")
+            data = api_call(url=f"/credstore/credentials")
 
             # data comes as a list inside the data.credential key.
             return data.get("data").get("credentials")
@@ -198,7 +198,7 @@ class CredentialStore:
         }
 
         r = requests.post(
-            url=f"{Config.API_HOST}/credstore/credential",
+            url=f"/credstore/credential",
             json=data,  # data needs to be json string
             headers=headers,
         )

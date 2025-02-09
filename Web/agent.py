@@ -37,9 +37,7 @@ class AgentView:
 
     def __init__(self, agent_id: str = None):
         self.agent_id = str(agent_id)
-        self.request_data = api_call(
-            url=f"{Config.API_HOST}/stats/agent/{self.agent_id}"
-        )
+        self.request_data = api_call(url=f"/stats/agent/{self.agent_id}")
         data = self.request_data.get("data", {})
         first_key = next(iter(data))
         self.agent_data = data.get(first_key, {})
@@ -120,9 +118,9 @@ class AgentView:
                 ui.separator()
 
                 # Get the data
-                data_list = api_call(
-                    url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
-                ).get("data", [])
+                data_list = api_call(url=f"/agent/{self.agent_id}/command/all").get(
+                    "data", []
+                )
 
                 self.command_grid = ui.aggrid(
                     {
@@ -205,9 +203,7 @@ class AgentView:
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
         def update_shell_data():
-            data = api_call(
-                url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
-            ).get("data", [])
+            data = api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
 
             # shitty bug fix for if there's no command data from the client
             # otherwise it 500's
@@ -284,7 +280,7 @@ class AgentsView:
     """
 
     def __init__(self):
-        self.request_data = api_call(url=f"{Config.API_HOST}/stats/agents")
+        self.request_data = api_call(url=f"/stats/agents")
         self.request_data = self.request_data.get("data", {})
 
     def render(self):
