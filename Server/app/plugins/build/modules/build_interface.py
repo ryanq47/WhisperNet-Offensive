@@ -62,8 +62,7 @@ class HttpBuildInterface:
             logger.error(f"Build {self.build_id} failed: {e}")
             raise
         finally:
-            print("cleanup placeholder")
-            # self.cleanup()
+            self.cleanup()
 
     def copy_to_output_folder(self):
         try:
