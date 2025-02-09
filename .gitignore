@@ -187,7 +187,7 @@ Server/app/ftp/test.txt
 
 *server_venv*
 *webint_venv*
-*exe*
+*.exe*
 
 *build_tmp*
 *logs_export*
