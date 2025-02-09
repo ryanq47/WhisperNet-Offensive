@@ -209,7 +209,7 @@ typedef int (WINAPI *MessageBoxA_t)(HWND, LPCSTR, LPCSTR, UINT);
 
 /*
 =============================================================
- Windows Data Types and Their C Standard Equivalents
+ Windows command_result_data Types and Their C Standard Equivalents
 =============================================================
 
 Basic Integer Types:

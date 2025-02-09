@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef DYNAMIC_CONFIG_H
+#define DYNAMIC_CONFIG_H
 
 #include <windows.h>
 

