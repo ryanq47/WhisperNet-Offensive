@@ -54,7 +54,7 @@ target_link_libraries(agent_dll ${WINDOWS_LIBS})
 
 # DLL-specific properties
 set_target_properties(agent_dll PROPERTIES
-    OUTPUT_NAME "agent_dll"
+    OUTPUT_NAME "MACRO_OUTPUT_NAME"
     PREFIX ""                      # No 'lib' prefix for Windows DLL
     SUFFIX ".dll"                  # Ensure .dll extension
 )

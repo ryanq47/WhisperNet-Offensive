@@ -53,6 +53,6 @@ target_include_directories(agent PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(agent ${WINDOWS_LIBS})
 
 # Output Name
-set_target_properties(agent PROPERTIES OUTPUT_NAME "exe_x64.exe")
+set_target_properties(agent PROPERTIES OUTPUT_NAME "MACRO_OUTPUT_NAME")
 
 message(STATUS "CMake configured successfully for AgentC2.")
