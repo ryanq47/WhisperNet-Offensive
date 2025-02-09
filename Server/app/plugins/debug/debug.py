@@ -70,6 +70,7 @@ class DebugSpawnAgentsResource(Resource):
             500: "Server Side error",
         },
     )
+    @jwt_required()
     def get(self):
         """
         Spawn X listeners, used for testing purposes

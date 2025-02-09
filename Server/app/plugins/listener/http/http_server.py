@@ -3,7 +3,7 @@ from flask import Flask, request
 from flask_restx import Api, Namespace, Resource, fields
 from waitress import serve
 from modules.config import Config
-from plugins.beacon_http.modules.agent import Agent
+from plugins.listener.http.agent import Agent
 
 app = Flask("MYSECONDAPP")
 api = Api(

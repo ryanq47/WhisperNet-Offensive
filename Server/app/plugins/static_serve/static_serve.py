@@ -87,6 +87,7 @@ class StaticServeUploadResource(Resource):
     )
     # @jwt_required
     @static_serve_ns.marshal_with(static_serve_response, code=200)
+    @jwt_required()
     def post(self):
         logger.warning("UNAUTH, /upload")
         logger.info("LATER GOAL: Allow structured file upload (aka, in folders)")
@@ -141,6 +142,7 @@ class StaticServeDeleteFileResource(Resource):
 
     # @jwt_required  # uncomment if you want JWT protection
     @static_serve_ns.marshal_with(static_serve_response, code=200)
+    @jwt_required()
     def delete(self, filename):
         logger.warning("UNAUTH, /DELETE/FILENAME")
         # Build full path to the file
@@ -183,6 +185,7 @@ class StaticServeFileResource(Resource):
 
     """
 
+    @jwt_required()
     def get(self, filename):
         static_dir = os.path.join(Config().root_project_path, "data/static/")
         return send_from_directory(static_dir, filename)
@@ -219,7 +222,7 @@ class StaticServeListFilesResource(Resource):
     """
 
     @static_serve_ns.marshal_with(static_serve_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         logger.warning("UNAUTH, /files")
 

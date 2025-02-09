@@ -1,7 +1,7 @@
 from nicegui import events, ui, app
 from searchbar import Search
-from agent import AgentView, AgentsView
-from listener import ListenerView, ListenersView
+from agent import AgentView, AgentsPage
+from listener import ListenerView, ListenersPage
 from about import AboutView
 from home import HomeView
 from config import Config, ThemeConfig
@@ -11,8 +11,7 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore
-from files import FileView
-from build import BuildView
+from files import FilePage
 import argparse
 
 
@@ -120,7 +119,7 @@ def agent_view_page():
     main_container = navbar()
     with main_container:
         # needs to be renamed, prolly re-factored too
-        a = BuildView()
+        a = AgentsPage()
         a.render()
 
 
@@ -138,17 +137,17 @@ def agent_view_page():
     check_login()
     main_container = navbar()
     with main_container:
-        a = ListenersView()
+        a = ListenersPage()
         a.render()
 
 
-@ui.page("/logs")
-def agent_view_page():
-    check_login()
-    main_container = navbar()
-    with main_container:
-        a = LogsView()
-        a.render()
+# @ui.page("/logs")
+# def agent_view_page():
+#     check_login()
+#     main_container = navbar()
+#     with main_container:
+#         a = LogsView()
+#         a.render()
 
 
 @ui.page("/files")
@@ -156,17 +155,8 @@ def agent_view_page():
     check_login()
     main_container = navbar()
     with main_container:
-        a = FileView()
+        a = FilePage()
         a.render()
-
-
-# @ui.page("/build")
-# def agent_view_page():
-#     check_login()
-#     main_container = navbar()
-#     with main_container:
-#         a = BuildView()
-#         a.render()
 
 
 @ui.page("/auth")

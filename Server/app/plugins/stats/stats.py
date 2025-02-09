@@ -87,7 +87,7 @@ class StatsAgentsResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         Get all agents currently registered in the redis DB
@@ -167,7 +167,7 @@ class StatsAgentResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self, agent_uuid):
         """
         Get data of ONE agent currently registered in the Redis DB.
@@ -240,7 +240,7 @@ class StatsListenersResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         Get all listeners currently registered in the redis DB.
@@ -303,7 +303,7 @@ class StatsListenerResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self, listener_uuid):
         """
         Get data of ONE agent currently registered in the Redis DB.
@@ -378,7 +378,7 @@ class AgentCommandsResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         Get data of ONE agent currently registered in the Redis DB.
@@ -431,7 +431,7 @@ class StatsAllResource(Resource):
         },
     )
     @stats_ns.marshal_with(stats_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         Returns a combined JSON object containing both agents and listeners
@@ -545,7 +545,7 @@ class StatsLogsResource(Resource):
     # def get(self):
     #     with open("./whispernet.log", "r") as log_file:
     #         return log_file.read(), 200
-    # @jwt_required
+    @jwt_required()
     def get(self):
         ANSI_COLOR_REGEX = re.compile(r"\x1B\[[0-9;]*m")
 
@@ -584,7 +584,7 @@ class StatsHTMLLogsResource(Resource):
     # def get(self):
     #     with open("./whispernet.log", "r") as log_file:
     #         return log_file.read(), 200
-    # @jwt_required
+    @jwt_required()
     def get(self):
         # Mapping ANSI color codes to CSS styles
         color_map = {
@@ -721,7 +721,7 @@ class PingResource(Resource):
         },
     )
     @ping_ns.marshal_with(ping_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         """
         A super simple, basic upcheck endpoint.

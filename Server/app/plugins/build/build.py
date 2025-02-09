@@ -87,7 +87,7 @@ class StaticServeListFilesResource(Resource):
     """
 
     @build_ns.marshal_with(build_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def get(self):
         logger.warning("UNAUTH, /build/files")
 
@@ -130,7 +130,7 @@ class BeaconHttpListenerSpawnResource(Resource):
     """
 
     @build_ns.marshal_with(build_response, code=200)
-    # @jwt_required
+    @jwt_required()
     def post(self, agent_type):
         """Post a new build job"""
         logger.debug("UNAUTH ENPDOINT /<string:agent_type>/build")
@@ -170,6 +170,7 @@ class BuildServeResource(Resource):
 
     logger.debug("UNAUTH ENPDOINT /build/file*")
 
+    @jwt_required()
     def get(self, filename):
         compiled_dir = pathlib.Path(Config().root_project_path) / "data" / "compiled"
         return send_from_directory(compiled_dir, filename)
@@ -187,6 +188,8 @@ class BuildGetAgentTemplatesResource(Resource):
 
     """
 
+    # @build_ns.marshal_with(build_response, code=200)
+    @jwt_required()
     def get(self):
         # compiled_dir = pathlib.Path(Config().root_project_path) / "data" / "compiled"
         # return send_from_directory(compiled_dir, filename)
@@ -217,6 +220,7 @@ class StaticServeDeleteFileResource(Resource):
 
     # @jwt_required  # uncomment if you want JWT protection
     @build_ns.marshal_with(build_response, code=200)
+    @jwt_required()
     def delete(self, filename):
         logger.warning("UNAUTH, /DELETE/FILENAME")
 

@@ -9,7 +9,7 @@ from modules.agent import BaseAgent
 from modules.instances import Instance
 from modules.listener import BaseListener
 from modules.log import log
-from plugins.beacon_http.modules.http_server import run_app
+from plugins.listener.http.http_server import run_app
 
 import multiprocessing
 

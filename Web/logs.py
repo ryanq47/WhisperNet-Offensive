@@ -5,8 +5,8 @@ from config import Config
 
 class LogsView:
     def __init__(self):
-        self.html_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
-        self.text_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
+        self.html_log_data = api_call(f"/stats/logs/html")
+        self.text_log_data = api_call(f"/stats/logs/html")
 
     def render(self):
         with ui.column().classes(
@@ -30,7 +30,7 @@ class LogsView:
 
     def _export_html_logs(self):
         # get data at export, instead of at init
-        html_log_data = api_call(f"{Config.API_HOST}/stats/logs/html")
+        html_log_data = api_call(f"/stats/logs/html")
         # Provide logs as a downloadable file
         with open("logs_export.html", "w") as f:
             f.write(html_log_data)
@@ -38,9 +38,7 @@ class LogsView:
 
     def _export_text_logs(self):
         # get data at export, instead of at init
-        text_log_data = api_call(
-            f"{Config.API_HOST}/stats/logs/text", return_dict_from_json=False
-        )
+        text_log_data = api_call(f"/stats/logs/text", return_dict_from_json=False)
         # Provide logs as a downloadable file
         with open("logs_export.txt", "w") as f:
             f.write(text_log_data)

@@ -1,6 +1,7 @@
 from nicegui import ui, app
 import requests
 from config import Config
+from networking import api_call, api_post_call, api_delete_call
 
 
 class Settings:
@@ -48,11 +49,11 @@ class Users:
 
             with ui.tab_panels(tabs, value="REGISTER").classes("w-full h-full"):
                 # Tab for registering users
-                with ui.tab_panel("REGISTER"):
+                with ui.tab_panel("REGISTER").classes("w-full h-full"):
                     self.register_user_view()
 
                 # Tab for listing users
-                with ui.tab_panel("USER LIST"):
+                with ui.tab_panel("USER LIST").classes("w-full h-full"):
                     self.list_users_view()
 
     def register_user_view(self):
@@ -207,7 +208,7 @@ class LocalSettings:
                     "settings", self.default_settings
                 )
 
-                with ui.column().classes("w-full h-full items-center p-4 gap-4"):
+                with ui.column().classes("w-full h-full items-center  p-4 gap-4"):
                     # Page Header
                     ui.markdown("# Settings").classes("text-center text-2xl")
 

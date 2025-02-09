@@ -70,6 +70,10 @@ app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = (
     Config().config.server.authentication.jwt.expiration
 )
+app.config["PROPAGATE_EXCEPTIONS"] = (
+    True  # allows try/except + proper errors to fall throguh, and allow accurate response codes, not just 500 everything
+)
+
 
 # Instance Setup
 logger.debug("Setting up instances")

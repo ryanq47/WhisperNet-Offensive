@@ -3,49 +3,9 @@ import asyncio
 import requests
 from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
-
+from build import BuildView
 from navbar import *
-
-
-# ---------------------------
-#   API Helper Functions
-# ---------------------------
-def api_post_call(data, url):
-    """
-    POSTs data to the specified URL.
-    """
-    headers = {
-        "Authorization": f"Bearer {app.storage.user.get('jwt_token', '')}",
-        "Content-Type": "application/json",
-    }
-    print(f"SENDING: {data}")
-    r = requests.post(
-        url=f"{Config.API_HOST}/{url}",
-        json=data,
-        headers=headers,
-    )
-    if r.status_code in (200, 201):
-        ui.notify("Successfully queued command")
-    else:
-        error_message = r.json().get("message", "")
-        ui.notify(f"{r.status_code}: {error_message}")
-
-
-def api_call(url, timeout=3):
-    """
-    Makes a synchronous GET request to the specified URL.
-    """
-    if not url:
-        raise ValueError("A valid URL must be provided.")
-    try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.json()
-    except requests.JSONDecodeError:
-        raise ValueError("The response is not valid JSON.")
-    except requests.RequestException as e:
-        print(f"Request failed: {e}")
-        raise
+from networking import api_call, api_post_call, api_delete_call
 
 
 # ---------------------------
@@ -77,9 +37,7 @@ class AgentView:
 
     def __init__(self, agent_id: str = None):
         self.agent_id = str(agent_id)
-        self.request_data = api_call(
-            url=f"{Config.API_HOST}/stats/agent/{self.agent_id}"
-        )
+        self.request_data = api_call(url=f"/stats/agent/{self.agent_id}")
         data = self.request_data.get("data", {})
         first_key = next(iter(data))
         self.agent_data = data.get(first_key, {})
@@ -95,9 +53,10 @@ class AgentView:
             # Tabs Section
             with ui.tabs() as tabs:
                 ui.tab("MAIN")
+                ui.tab("SHELL")
+
                 if current_settings.get("Dev Mode", False):
                     ui.tab("STATS")
-                    ui.tab("SHELL")
                     ui.tab("NOTES")
 
             # Tab Panels Container – note the explicit h-full for proper expansion.
@@ -159,39 +118,35 @@ class AgentView:
                 ui.separator()
 
                 # Get the data
-                data_list = api_call(
-                    url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
-                ).get("data", [])
-
-                self.command_grid = (
-                    ui.aggrid(
-                        {
-                            "columnDefs": [
-                                {
-                                    "headerName": "Timestamp",
-                                    "field": "timestamp",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                                {
-                                    "headerName": "Command",
-                                    "field": "command",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                                {
-                                    "headerName": "Response",
-                                    "field": "response",
-                                    "filter": "agTextColumnFilter",
-                                    "floatingFilter": True,
-                                },
-                            ],
-                            "rowData": data_list,
-                        }
-                    )
-                    .style("height: 750px")
-                    .classes(f"{aggrid_theme}")
+                data_list = api_call(url=f"/agent/{self.agent_id}/command/all").get(
+                    "data", []
                 )
+
+                self.command_grid = ui.aggrid(
+                    {
+                        "columnDefs": [
+                            {
+                                "headerName": "Timestamp",
+                                "field": "timestamp",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Command",
+                                "field": "command",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Response",
+                                "field": "response",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                        ],
+                        "rowData": data_list,
+                    }
+                ).classes(f"{aggrid_theme} h-full")
 
                 ui.button(
                     "Export",
@@ -248,9 +203,7 @@ class AgentView:
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
         def update_shell_data():
-            data = api_call(
-                url=f"{Config.API_HOST}/agent/{self.agent_id}/command/all"
-            ).get("data", [])
+            data = api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
 
             # shitty bug fix for if there's no command data from the client
             # otherwise it 500's
@@ -272,7 +225,8 @@ class AgentView:
                                     "white-space: pre; font-family: monospace;"
                                 )
                             else:
-                                ui.skeleton().style(
+                                # not using animation at the moment due to the way the shell refreshes/updates
+                                ui.skeleton(animation="none").style(
                                     "width: 50%; height: 1.2em; margin: 4px 0;"
                                 )
                     if self.auto_scroll_enabled:
@@ -287,11 +241,13 @@ class AgentView:
             update_shell_data()
 
         # Shell tab layout: Fill parent container (using h-full).
-        with ui.column().classes("h-full w-full bg-gray-900 text-white flex flex-col"):
+        with ui.column().classes(
+            "h-full w-full flex flex-col"
+        ):  # bg-gray-900 text-white f
             # Command History Area:
             with ui.row().classes("grow w-full p-4"):
                 with ui.scroll_area(on_scroll=on_scroll).classes(
-                    "w-full h-full border border-gray-700 rounded-lg p-2"
+                    "w-full h-full border  rounded-lg p-2"  # border-gray-700
                 ) as self.shell_container:
                     # The shell command history will be dynamically added here.
                     pass
@@ -324,7 +280,7 @@ class AgentsView:
     """
 
     def __init__(self):
-        self.request_data = api_call(url=f"{Config.API_HOST}/stats/agents")
+        self.request_data = api_call(url=f"/stats/agents")
         self.request_data = self.request_data.get("data", {})
 
     def render(self):
@@ -366,30 +322,35 @@ class AgentsView:
                                 "field": "Agent ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "width": 225,
                             },
                             {
                                 "headerName": "Hostname",
                                 "field": "Hostname",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "width": 225,
                             },
                             {
                                 "headerName": "OS",
                                 "field": "OS",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "width": 225,
                             },
                             {
                                 "headerName": "Internal IP",
                                 "field": "Internal IP",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "width": 150,
                             },
                             {
                                 "headerName": "Last Seen",
                                 "field": "Last Seen",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "width": 225,
                             },
                         ],
                         "rowData": row_data,
@@ -398,3 +359,35 @@ class AgentsView:
                 ).classes(f"{aggrid_theme} w-full h-full")
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+
+class AgentsPage:
+    def __init__(self): ...
+
+    def render(self):
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("computer")
+                ui.label("Agents").classes("h-10")
+
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("construction")
+                ui.label("Monitor, Access, and Build Agent binaries").classes("h-6")
+                ui.space()
+            ui.separator()
+
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Agents")
+                ui.tab("Binaries + Builder")
+
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
+                with ui.tab_panel("Agents").classes("h-full"):
+                    a = AgentsView()
+                    a.render()
+                with ui.tab_panel("Binaries + Builder"):
+                    a = BuildView()
+                    a.render()
