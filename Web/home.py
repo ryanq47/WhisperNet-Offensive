@@ -1,6 +1,6 @@
 from nicegui import ui
 from searchbar import Search
-from networking import api_call
+from networking import api_call, api_post_call, api_delete_call
 from config import Config, ThemeConfig
 
 

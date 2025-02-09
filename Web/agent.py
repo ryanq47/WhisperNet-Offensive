@@ -5,47 +5,7 @@ from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
 from build import BuildView
 from navbar import *
-
-
-# ---------------------------
-#   API Helper Functions
-# ---------------------------
-def api_post_call(data, url):
-    """
-    POSTs data to the specified URL.
-    """
-    headers = {
-        "Authorization": f"Bearer {app.storage.user.get('jwt_token', '')}",
-        "Content-Type": "application/json",
-    }
-    print(f"SENDING: {data}")
-    r = requests.post(
-        url=f"{Config.API_HOST}/{url}",
-        json=data,
-        headers=headers,
-    )
-    if r.status_code in (200, 201):
-        ui.notify("Successfully queued command")
-    else:
-        error_message = r.json().get("message", "")
-        ui.notify(f"{r.status_code}: {error_message}")
-
-
-def api_call(url, timeout=3):
-    """
-    Makes a synchronous GET request to the specified URL.
-    """
-    if not url:
-        raise ValueError("A valid URL must be provided.")
-    try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.json()
-    except requests.JSONDecodeError:
-        raise ValueError("The response is not valid JSON.")
-    except requests.RequestException as e:
-        print(f"Request failed: {e}")
-        raise
+from networking import api_call, api_post_call, api_delete_call
 
 
 # ---------------------------

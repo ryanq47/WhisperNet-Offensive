@@ -5,7 +5,7 @@ from flask import Response, request
 from flask_jwt_extended import jwt_required
 from flask_restx import Api, Namespace, Resource, fields
 from modules.agent import BaseAgent
-from plugins.beacon_http.modules.agent import Agent
+from plugins.listener.http.agent import Agent
 from modules.config import Config
 from modules.instances import Instance
 from modules.log import log

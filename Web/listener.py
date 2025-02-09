@@ -1,6 +1,7 @@
 from nicegui import ui, app
 import requests
 from config import Config, ThemeConfig
+from networking import api_call, api_post_call, api_delete_call
 
 
 class ListenerView:
@@ -368,7 +369,7 @@ class ListenersView:
         # will need to move to a universal listener spawner, or have a per protocol call here.
         # first sounds better, but is harder/takes longer, 2nd is the easy fix.
 
-        api_post_call(data=listener_dict, url="/plugin/beacon-http/listener/spawn")
+        api_post_call(data=listener_dict, url="/listener/http/spawn")
 
 
 # page itself
@@ -422,58 +423,3 @@ def create_ui_from_json(json_data, parent=None):
             else:
                 # Add value with bullet point and bolded key
                 ui.label(f"• {key}: {value}").style("font-size: 1em;")
-
-
-# ------------------------------------------------------------------------
-#                      Network Stuff
-# ------------------------------------------------------------------------
-
-
-def api_post_call(data, url):
-    """
-    POSTs data to the specified URL.
-    """
-    headers = {
-        "Authorization": f"Bearer {app.storage.user.get('jwt_token', '')}",
-        "Content-Type": "application/json",
-    }
-    print(f"SENDING: {data}")
-    r = requests.post(
-        url=f"{Config.API_HOST}/{url}",
-        json=data,
-        headers=headers,
-    )
-    if r.status_code in (200, 201):
-        ui.notify("Successful request")
-    else:
-        error_message = r.json().get("message", "")
-        ui.notify(f"{r.status_code}: {error_message}")
-
-
-def api_call(url, timeout=3):
-    """
-    Makes a synchronous GET request to the specified URL and returns the JSON response.
-
-    Args:
-        url (str): The URL to request.
-        timeout (int): The timeout for the request in seconds (default: 3).
-
-    Returns:
-        dict: Parsed JSON response from the server.
-
-    Raises:
-        ValueError: If the response cannot be parsed as JSON.
-        requests.RequestException: For network-related errors or timeouts.
-    """
-    if not url:
-        raise ValueError("A valid URL must be provided.")
-
-    try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()  # Raise an error for HTTP errors (4xx/5xx)
-        return response.json()  # Parse and return the JSON response
-    except requests.JSONDecodeError:
-        raise ValueError("The response is not valid JSON.")
-    except requests.RequestException as e:
-        print(f"Request failed: {e}")
-        raise  # Re-raise the exception for the caller to handle

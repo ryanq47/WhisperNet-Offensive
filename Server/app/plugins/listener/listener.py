@@ -1,10 +1,12 @@
+## Plugin for general listener things
+
 import json
 import signal
 import socket
 import struct
 from multiprocessing import Process
 
-from flask import request
+from flask import request, send_from_directory
 from flask_jwt_extended import jwt_required  # if you need JWT
 from flask_restx import Namespace, Resource, fields
 
@@ -12,8 +14,15 @@ from modules.agent import BaseAgent
 from modules.instances import Instance
 from modules.listener import BaseListener
 from modules.log import log
+import hashlib
+from modules.config import Config
+import pathlib
 
-from plugins.beacon_http.modules.listener import Listener
+# HTTP Imports"
+# change these as needed
+# from plugins.listener.http.agent import *
+# from plugins.listener.http.http_server import *
+from plugins.listener.http.listener import Listener
 
 # from modules.redis_models import ActiveService
 from modules.utils import api_response, generate_timestamp, generate_unique_id
@@ -24,42 +33,36 @@ from modules.utils import api_response, generate_timestamp, generate_unique_id
 """
 # Pre Docs:
 
-## Responses: 
-  All responses from this listener are very primitive, either basic JSON, or just text.
-  This is intentional, the agent cannot understand more complex responses (such as the API's FormJ).
-
-
 
 """
-
 
 logger = log(__name__)
-
 app = Instance().app
-
-"""
-Meant for managing listeners + their clients
-
-"""
 
 
 class Info:
-    name = "beacon_http"
+    name = "listener-manager"
     author = "ryanq.47"
 
 
 # ------------------------------------------------------------------------------------
 #   1) Create a dedicated Namespace for the Beacon HTTP plugin
 # ------------------------------------------------------------------------------------
-beacon_http_ns = Namespace(
-    "Plugin: beacon-http",
-    description="Beacon HTTP plugin endpoints",
+http_ns = Namespace(
+    "Plugin: http",
+    description="HTTP listener plugin endpoints",
 )
+
+listener_manager_ns = Namespace(
+    "Plugin: listener-manager",
+    description="Manager for listeners",
+)
+
 
 # ------------------------------------------------------------------------------------
 #   2) Define a standard response model (similar to stats_response in your example)
 # ------------------------------------------------------------------------------------
-beacon_http_response = beacon_http_ns.model(
+general_response = http_ns.model(
     "BeaconHttpResponse",
     {
         "rid": fields.String(description="Request ID"),
@@ -75,13 +78,54 @@ beacon_http_response = beacon_http_ns.model(
 # ------------------------------------------------------------------------------------
 
 
-@beacon_http_ns.route("/listener/spawn")
-class BeaconHttpListenerSpawnResource(Resource):
+# ------------------------------------------------------------------------------------
+#   General
+# ------------------------------------------------------------------------------------
+
+
+@listener_manager_ns.route("/templates")
+class ListenerManagerGetTemplatesResource(Resource):
+    """
+    GET /templates
+
+    get list of agent templates
+
+    """
+
+    # @build_ns.marshal_with(build_response, code=200)
+    @jwt_required()
+    def get(self):
+        # compiled_dir = pathlib.Path(Config().root_project_path) / "data" / "compiled"
+        # return send_from_directory(compiled_dir, filename)
+
+        agent_template_dir = (
+            pathlib.Path(Config().root_project_path) / "app" / "plugins" / "listener"
+        )
+
+        exclude_list = ["__pycache__"]
+
+        # get only directories, which show which agent templates are available
+        directories = [
+            item.name
+            for item in agent_template_dir.iterdir()
+            if item.is_dir() and item.name not in exclude_list
+        ]
+
+        return api_response(data=directories)
+
+
+# ------------------------------------------------------------------------------------
+#   HTTP
+# ------------------------------------------------------------------------------------
+
+
+@http_ns.route("/spawn")
+class HttpListenerSpawnResource(Resource):
     """
     POST /plugin/beacon-http/listener/spawn
     """
 
-    @beacon_http_ns.doc(
+    @http_ns.doc(
         responses={
             200: "Success",
             400: "Bad Request",
@@ -90,8 +134,8 @@ class BeaconHttpListenerSpawnResource(Resource):
         },
         description="Spawn a new listener with the specified host and port.",
     )
-    @beacon_http_ns.expect(
-        beacon_http_ns.model(
+    @http_ns.expect(
+        http_ns.model(
             "SpawnListenerInput",
             {
                 "port": fields.Integer(
@@ -103,7 +147,7 @@ class BeaconHttpListenerSpawnResource(Resource):
             },
         )
     )
-    @beacon_http_ns.marshal_with(beacon_http_response, code=200)
+    @http_ns.marshal_with(general_response, code=200)
     @jwt_required()
     def post(self):
         """
@@ -122,13 +166,13 @@ class BeaconHttpListenerSpawnResource(Resource):
         return api_response(data=f"Spawned listener on {listener_host}:{listener_port}")
 
 
-@beacon_http_ns.route("/listener/<string:listener_uuid>/kill")
-class BeaconHttpListenerKillResource(Resource):
+@http_ns.route("/<string:listener_uuid>/kill")
+class HttpListenerKillResource(Resource):
     """
     POST /plugin/beacon-http/listener/<string:listener_uuid>/kill
     """
 
-    @beacon_http_ns.doc(
+    @http_ns.doc(
         responses={
             200: "Success",
             400: "Bad Request",
@@ -137,7 +181,7 @@ class BeaconHttpListenerKillResource(Resource):
         },
         description="Kill a running listener by UUID.",
     )
-    @beacon_http_ns.marshal_with(beacon_http_response, code=200)
+    @http_ns.marshal_with(general_response, code=200)
     @jwt_required()
     def post(self, listener_uuid):
         """
@@ -161,14 +205,14 @@ class BeaconHttpListenerKillResource(Resource):
         return api_response(data=f"Listener {listener_uuid} killed (placeholder).")
 
 
-@beacon_http_ns.route("")
-@beacon_http_ns.doc(description="Ping endpoint for basic health checks")
-class BeaconHttpListenerPingResource(Resource):
+@http_ns.route("")
+@http_ns.doc(description="Ping endpoint for basic health checks")
+class HttpListenerPingResource(Resource):
     """
     GET /ping
     """
 
-    @beacon_http_ns.doc(
+    @http_ns.doc(
         responses={
             200: "Success",
             400: "Bad Request",
@@ -188,7 +232,13 @@ class BeaconHttpListenerPingResource(Resource):
 
 
 # ------------------------------------------------------------------------------------
+#   Other protocols...
+# ------------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------------
 #   4) Register the namespace with your Flask-RESTX Api
 #      This is typically done once in your initialization code.
 # ------------------------------------------------------------------------------------
-Instance().api.add_namespace(beacon_http_ns, path="/plugin/beacon-http")
+Instance().api.add_namespace(listener_manager_ns, path="/listener/manager")
+Instance().api.add_namespace(http_ns, path="/listener/http")

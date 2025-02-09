@@ -1,6 +1,6 @@
 from nicegui import ui, app
 from datetime import datetime
-from networking import api_call
+from networking import api_call, api_post_call, api_delete_call
 from config import Config
 import asyncio  # If not already imported
 import requests
