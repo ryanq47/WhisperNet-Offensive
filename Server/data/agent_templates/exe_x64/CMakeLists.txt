@@ -5,6 +5,7 @@ project(AgentC2 LANGUAGES C CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Common compile definitions
+# basically, these allow strcpy_s instead of like strncpy... cuz im dumb and didn't use POSIX funcs
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 add_compile_options(-DWIN32_LEAN_AND_MEAN -D_CALLCONV=__stdcall -Wall -Wextra -O2)
 

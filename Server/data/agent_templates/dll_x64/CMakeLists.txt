@@ -1,6 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.10)
 project(AgentC2_DLL LANGUAGES C CXX)
 
+# Note, all the set bin stuff is so the output goes to proj/build/bin/some.dll 
+# and is consistent with the .exe build
+
 # Ensure output directory exists
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
