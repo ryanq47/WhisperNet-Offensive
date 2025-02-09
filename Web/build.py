@@ -125,6 +125,9 @@ class BuildView:
                 },
                 html_columns=[1],
             ).classes(f"{aggrid_theme} w-full h-full")
+            ui.label(
+                "WARNING: This endpoint is currently unauth, due to a ui.download problem with nicegui, which does not allow adding headers to a request. TLDR: Anyone who can reach the server, can access any payload you generate/see above, if they know the filename"
+            )
 
         # Refresh / Delete row, keep it below the aggrid
         with ui.row().classes("w-full justify-end gap-4 mt-4"):
@@ -165,10 +168,10 @@ class BuildView:
         else:
             ui.notify("No rows selected.")
 
-    def render_agents_tab(self):
-        # just importing instead of copying full code
-        a = AgentsView()
-        a.render()
+    # def render_agents_tab(self):
+    #     # just importing instead of copying full code
+    #     a = AgentsView()
+    #     a.render()
 
     async def render_build_agent_dialogue(self):
         """
