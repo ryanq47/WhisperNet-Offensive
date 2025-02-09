@@ -107,30 +107,38 @@ class AgentDequeueCommandResource(Resource):
 
 @beacon_http_ns.route("/post/<string:agent_uuid>")
 class PostResource(Resource):
-    @beacon_http_ns.expect(post_input_model)
-    @beacon_http_ns.marshal_with(post_output_model)
+    # relaxing these, causing issues
+    # @beacon_http_ns.expect(post_input_model)
+    # @beacon_http_ns.marshal_with(post_output_model)
     def post(self, agent_uuid):
         """Receives JSON data and returns it in a response."""
         try:
+            # Get data using beacon_http_ns.payload
             response = beacon_http_ns.payload
-            print("Received POST data:", response)
+            # response = request.get_json(force=True)
 
-            # uuid = response.get("id", "")
-            data = response.get("command_result_data", "")
-            command_id = response.get("command_id", "")
+            # Debugging logs
+            # print("Headers:", dict(request.headers))
+            # print("Payload:", response)
+            # print("Query Parameters:", request.args)
 
-            a = Agent(agent_uuid)
+            # Extract required fields
+            command_id = response.get("command_id")
+            data = response.get("command_result_data")
 
-            # change
+            if command_id is None or data is None:
+                print("Missing 'command_id' or 'command_result_data' in payload.")
+                return {"error": "Missing required fields."}, 400
 
-            # need to get COMMAND ID here... maybe have agent send back.
-            # note, not actually storing yet.
-            a.store_response(command_id, data)
+            # Store the response
+            agent = Agent(agent_uuid)
+            agent.store_response(command_id, data)
 
             return {"status": "received", "data": data}, 200
+
         except Exception as e:
-            print(e)
-            return "", 500
+            print("Internal Server Error:", str(e))
+            return {"error": "Internal server error."}, 500
 
 
 # 5) Register the Namespace

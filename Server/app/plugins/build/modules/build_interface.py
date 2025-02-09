@@ -14,6 +14,8 @@ class HttpBuildInterface:
     def __init__(self, agent_type, callback_address, callback_port, agent_name=None):
         self.build_id = generate_unique_id()
         self.agent_type = agent_type
+        self.callback_address = callback_address
+        self.callback_port = callback_port
         self.project_root = pathlib.Path(Config().root_project_path)
 
         # Paths
@@ -107,21 +109,39 @@ class HttpBuildInterface:
             raise
 
     def macro_replace(self):
-        # Placeholder for macro replacement logic
         logger.debug("Performing macro replacements.")
 
-        # CMAKE file macro replace
+        # Dictionary of macros to replace in corresponding files
+        # add here for each file name and it'll loop over to replace
+        macro_replacements = {
+            "CMakeLists.txt": {"MACRO_OUTPUT_NAME": self.binary_name},
+            "whisper_config.h": {
+                "MACRO_CALLBACK_ADDRESS": self.callback_address,
+                "MACRO_CALLBACK_PORT": self.callback_port,
+            },
+        }
 
-        with open(self.base_build_path / "CMakeLists.txt", "r+") as cmake_file:
-            contents = cmake_file.read()
-            updated_contents = contents.replace("MACRO_OUTPUT_NAME", self.binary_name)
+        for file_name, replacements in macro_replacements.items():
+            file_path = self.base_build_path / file_name
 
-            # write it back
-            cmake_file.seek(0)
-            cmake_file.write(updated_contents)
-            cmake_file.truncate()  # Ensures the file is truncated if the new content is shorter
+            try:
+                with open(file_path, "r+") as file:
+                    contents = file.read()
 
-        # config file macro replace
+                    # Apply all replacements
+                    for macro, value in replacements.items():
+                        logger.debug(f"Replacing {macro} with {value} in {file_name}")
+                        contents = contents.replace(macro, value)
+
+                    # Write updated content back to the file
+                    file.seek(0)
+                    file.write(contents)
+                    file.truncate()
+
+            except FileNotFoundError:
+                logger.warning(f"File {file_name} not found. Skipping.")
+            except Exception as e:
+                logger.error(f"Error processing {file_name}: {e}")
 
     def cleanup(self):
         try:
