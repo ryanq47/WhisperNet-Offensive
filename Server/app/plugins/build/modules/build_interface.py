@@ -112,6 +112,7 @@ class HttpBuildInterface:
         logger.debug("Performing macro replacements.")
 
         # Dictionary of macros to replace in corresponding files
+        # add here for each file name and it'll loop over to replace
         macro_replacements = {
             "CMakeLists.txt": {"MACRO_OUTPUT_NAME": self.binary_name},
             "whisper_config.h": {

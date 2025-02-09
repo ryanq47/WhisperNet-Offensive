@@ -38,19 +38,19 @@ A set of macro settings for modifying behavior
 
 #ifndef CALLBACK_HTTP_HOST
 // IP/Hostname of Callback.
-#define CALLBACK_HTTP_HOST "192.168.212.128"
+#define CALLBACK_HTTP_HOST "MACRO_CALLBACK_ADDRESS"
 #endif
 
 #ifndef CALLBACK_HTTP_URL
 // URL of callback host. seperate from HOST for formatting purposes.
 // Applies to:
-#define CALLBACK_HTTP_URL "http://192.168.212.128/"
+#define CALLBACK_HTTP_URL "http://MACRO_CALLBACK_ADDRESS/"
 #endif
 
 #ifndef CALLBACK_HTTP_PORT
 // What port to post back to
 // Applies to:
-#define CALLBACK_HTTP_PORT 9999
+#define CALLBACK_HTTP_PORT MACRO_CALLBACK_PORT
 #endif
 
 #ifndef CALLBACK_HTTP_GET_ENDPOINT
@@ -61,7 +61,7 @@ A set of macro settings for modifying behavior
 
 #ifndef CALLBACK_HTTP_FULL_GET_URL
 // Full GET request URL with format specifier for dynamic agent_id injection
-#define CALLBACK_HTTP_FULL_GET_URL "http://192.168.212.128:9999/get/%s"
+#define CALLBACK_HTTP_FULL_GET_URL "http://MACRO_CALLBACK_ADDRESS:MACRO_CALLBACK_PORT/get/%s"
 #endif
 
 #ifndef CALLBACK_HTTP_POST_ENDPOINT
@@ -80,7 +80,7 @@ A set of macro settings for modifying behavior
 
 #ifndef CALLBACK_HTTP_FULL_POST_URL
 // Full GET request URL with format specifier for dynamic agent_id injection
-#define CALLBACK_HTTP_FULL_POST_URL "http://192.168.212.128:9999/post/%s"
+#define CALLBACK_HTTP_FULL_POST_URL "http://MACRO_CALLBACK_ADDRESS:MACRO_CALLBACK_PORT/post/%s"
 #endif
 
 //================
