@@ -312,6 +312,10 @@ class ListenersView:
         Opens a dialog for spawning a new listener.
         When the user submits, the dialog closes and spawn_listener() is called with values from the dialog.
         """
+        current_valid_listeners_list = api_call(url="/listener/manager/templates").get(
+            "data", []
+        )
+
         # Create the dialog and its contents
         with ui.dialog() as dialog, ui.card():
             ui.label("Spawn a New Listener")
@@ -320,7 +324,10 @@ class ListenersView:
                 "w-full"
             ):  # make sure fields are full width of parent dialogue container
                 name_input = ui.input(label="Listener Name")
-                protocol_input = ui.input(label="Listener Type [dropdown me later]")
+                protocol_input = ui.select(
+                    current_valid_listeners_list,
+                    label="Listener Type [dropdown me later]",
+                )
                 address_input = ui.input(label="Listener Address")
                 port_input = ui.input(label="Listener Port")
 
