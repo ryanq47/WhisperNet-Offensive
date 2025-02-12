@@ -170,8 +170,12 @@ class BuildServeResource(Resource):
 
     logger.debug("UNAUTH ENPDOINT /build/file*")
 
-    @jwt_required()
+    # @jwt_required()
     def get(self, filename):
+        # can't use headers iwth ui.downlaod, so this has to be unauth for now -_-
+        logger.warning(
+            "UNAUTH: /build/*, aka generated payloads. Issue w nicegui, ui.download, and no headers"
+        )
         compiled_dir = pathlib.Path(Config().root_project_path) / "data" / "compiled"
         return send_from_directory(compiled_dir, filename)
 
