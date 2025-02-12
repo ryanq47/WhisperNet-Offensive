@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 project(AgentC2 LANGUAGES C CXX)
 
 # Set output directory
@@ -22,22 +22,7 @@ add_compile_options(
 
 # Source & Header Files
 set(AGENT_SOURCES
-    ${CMAKE_SOURCE_DIR}/core.c
-    ${CMAKE_SOURCE_DIR}/cJSON.c
-    ${CMAKE_SOURCE_DIR}/type_conversions.c
-    ${CMAKE_SOURCE_DIR}/whisper_winapi.c
-    ${CMAKE_SOURCE_DIR}/whisper_dynamic_config.c
-)
-
-set(AGENT_HEADERS
-    ${CMAKE_SOURCE_DIR}/whisper_config.h
-    ${CMAKE_SOURCE_DIR}/whisper_commands.h
-    ${CMAKE_SOURCE_DIR}/whisper_json.h
-    ${CMAKE_SOURCE_DIR}/whisper_winapi.h
-    ${CMAKE_SOURCE_DIR}/type_conversions.h
-    ${CMAKE_SOURCE_DIR}/cJSON.h
-    ${CMAKE_SOURCE_DIR}/comms_http.h
-    ${CMAKE_SOURCE_DIR}/whisper_dynamic_config.h
+    ${CMAKE_SOURCE_DIR}/bad_loader.c
 )
 
 # Platform-specific settings
