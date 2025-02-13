@@ -36,7 +36,8 @@ Current method(s):
 
 // Function to dynamically resolve APIs
 FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name);
-
+FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpApiName);
+void XorText(char *text, char key);
 // Process Creation
 // int WhisperSimpleCreateProcessA(LPCSTR lpApplicationName, LPSTR
 // lpCommandLine, LPCSTR lpCurrentDirectory);
@@ -94,5 +95,7 @@ HINTERNET WhisperInternetConnectA(HINTERNET, LPCSTR, INTERNET_PORT, LPCSTR, LPCS
 BOOL WhisperHttpSendRequestA(HINTERNET hRequest, LPCSTR lpszHeaders, DWORD dwHeadersLength, LPVOID lpOptional,
     DWORD dwOptionalLength);
 HINTERNET WhisperHttpOpenRequestA(HINTERNET, LPCSTR, LPCSTR, LPCSTR, LPCSTR, LPCSTR*, DWORD, DWORD_PTR);
+
+void SecureFree(void* ptr, size_t size);
 
 #endif // WHISPER_WINAPI_H

