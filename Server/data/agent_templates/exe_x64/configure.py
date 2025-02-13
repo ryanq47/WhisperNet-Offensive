@@ -14,19 +14,22 @@ call the ___ class, init it, and call the .build() method.
 This is to maintain compatability with all binaries in the make system, so it just calls the CMAKE build, and 
 no need for extra custom implementation stuff. 
 
+
+
+HEY CHANGE ME TO THE BUILD PATH, NOT THE ROOT PATH
 """
 
 
 class Configure:
 
-    def __init__(self, agent_template_path):
+    def __init__(self, base_build_path):
         """
         Project Root: Root of agent project, ex data/agent_templates/myagent/
 
         """
-        self.agent_template_path = agent_template_path
+        self.base_build_path = base_build_path
         self.config_file = (
-            agent_template_path / "whisper_config.h"
+            base_build_path / "whisper_config.h"
         )  # Put your config.h here
 
     def configure(self):
@@ -34,7 +37,7 @@ class Configure:
         Func to do everything
 
         """
-        print(f"Configuring for {self.agent_template_path}")
+        print(f"Configuring for {self.base_build_path}")
         self.macro_replace_xor_function_names()
 
     def macro_replace_xor_function_names(self):

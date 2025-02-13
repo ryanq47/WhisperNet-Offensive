@@ -156,7 +156,7 @@ class HttpBuildInterface:
     def custom_configure_script(self):
         # works, issue with exe configure path atm
         module_path = (
-            pathlib.Path(self.agent_template_path) / "configure.py"
+            pathlib.Path(self.base_build_path) / "configure.py"
         )  # Ensure it points to a .py file
 
         # Check if the file exists
@@ -165,12 +165,12 @@ class HttpBuildInterface:
             return
 
         # otherwise do dynamic import & call script
-        module_path = self.agent_template_path / "configure.py"  # path of agent
+        module_path = self.base_build_path / "configure.py"  # path of agent
         mod = load_module_from_path("configure.py", module_path)
         # Dynamically retrieve the "build" class
         ConfigureClass = getattr(mod, "Configure")  # Assuming the class name is "build"
         # Initialize the class with the required arguments
-        ConfigureClass = ConfigureClass(self.agent_template_path)
+        ConfigureClass = ConfigureClass(self.base_build_path)
         # Call the method
         ConfigureClass.configure()
 
