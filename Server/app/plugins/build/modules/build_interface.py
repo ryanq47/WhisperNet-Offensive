@@ -123,6 +123,7 @@ class HttpBuildInterface:
         macro_replacements = {
             "CMakeLists.txt": {"MACRO_OUTPUT_NAME": self.binary_name},
             "whisper_config.h": {
+                # required
                 "MACRO_CALLBACK_ADDRESS": self.callback_address,
                 "MACRO_CALLBACK_PORT": self.callback_port,
             },
@@ -150,18 +151,16 @@ class HttpBuildInterface:
             except Exception as e:
                 logger.error(f"Error processing {file_name}: {e}")
 
-        # Any other bigger macro replace funcs here
-        # self.macro_replace_xor_function_names()
-
     def custom_configure_script(self):
-        # works, issue with exe configure path atm
         module_path = (
             pathlib.Path(self.base_build_path) / "configure.py"
         )  # Ensure it points to a .py file
 
+        logger.debug(f"Using configure script at: {module_path}")
+
         # Check if the file exists
         if not module_path.exists():
-            print(f"Error: {module_path} does not exist.")
+            logger.debug(f"Error: {module_path} does not exist.")
             return
 
         # otherwise do dynamic import & call script
@@ -171,7 +170,6 @@ class HttpBuildInterface:
         ConfigureClass = getattr(mod, "Configure")  # Assuming the class name is "build"
         # Initialize the class with the required arguments
         ConfigureClass = ConfigureClass(self.base_build_path)
-        # Call the method
         ConfigureClass.configure()
 
     def cleanup(self):
