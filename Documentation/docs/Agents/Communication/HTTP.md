@@ -1,108 +1,106 @@
-# HTTP
+# **HTTP Communication Overview**  
+
+One of (and currently the only) communication methods betwen the Agent and C2 server, is `HTTP`. The interaction follows a structured request-response cycle, ensuring efficient and reliable command execution. 
+
+Overall, it's a pretty common communication method, nothing too fancy.
+
+Quick note, any Agent that can speak the JSON spec here, can communicate with the server.
+
+---
+
+## **Communication Flow**  
+
+1. **Agent Requests a Command (GET Request)**  
+   
+    - The Agent sends an **HTTP GET request** to the C2 server, requesting a new command.  
+    - The server responds with a structured **JSON object** containing the command and its parameters.  
+
+2. **Agent Executes the Command**  
+   
+    - The Agent processes the received instruction.  
+    - It executes the requested task and captures any generated output.  
+
+3. **Agent Sends Execution Results (POST Request)**  
+   
+    - The Agent formats the execution result as **JSON**.  
+    - It sends the **HTTP POST request** back to the C2 server with the results.  
+
+4. **Server Stores the Response**  
+   
+    - The C2 server processes and stores the received execution results.  
+    - These results can be retrieved later for review or further actions.  
+
+5. **Agent Sleeps & Repeats**  
+   
+    - After completing the cycle, the Agent sleeps for a set duration.  
+    - It then repeats the process by requesting a new command.  
 
 
-Agent communication over HTTP BreakDown
+---
 
+## **HTTP Request and Response Structure**  
 
-## Important Data Structures:
-
-Receiving Commands:
-
-
-C Version:
+### **Fetching Commands (GET Request)**  
+**Endpoint:**  
 ```
-typedef struct {
-    char *command_id;   // Command ID: Vital for tracking the commands accurately
-    char* command;      // the command (ex: shell)
-    char* args;         // Arguments to accompany the command
-
-} JsonDataCommand;
-
+GET /get/<agent_uuid>
 ```
+The Agent requests a new command from the C2 server by calling the `/get/<agent_uuid>` endpoint.
 
-Returning Output:
-
-```
-typedef struct {
-    char id[37];        // AgentID (max 36 chars + null terminator), for identifying where the data is coming from
-    char *data;         // Data, contains the output of the command/data that the command generates
-    char *command_id;   // Command ID: Vital for tracking the commands accurately
-} JsonData;
-
-```
-
-## Flow of Agent:
-
-### HTTP (High Level):
-1. **Loop Start:**  
-   The agent runs continuously in a loop.
-
-2. **GET Command:**  
-   It makes a GET request to the server to retrieve a JSON command.
-
-3. **Command Parsing:**  
-   The received JSON is parsed into a `JsonDataCommand` structure. If valid, the agent creates a new `JsonData` response structure, initializes it (e.g., with a UUID), and passes it along.
-
-4. **Command Execution:**  
-   The agent executes the command by calling a parsing function that fills the response structure with any output data.
-
-5. **POST Response:**  
-   The filled response is encoded back into JSON and sent to the server via a POST request.
-    
-    > Upon successful post request, this data is stored in redis, and can now be retrieved by the user/etc.
-
-6. **Sleep and Repeat:**  
-   After cleaning up allocated memory, the agent sleeps for a set period before starting the next loop iteration.
-
-This concise flow captures the core steps the agent follows during its execution cycle.
-
-### HTTP (Technical)
-1. **(On execution) A loop is started.**
-
-    The agent continuously runs a loop to check for new commands from the server.
-
-2. **Agent makes a GET request to the server.**
-
-    The agent calls the function get_command_data(), which sends a GET request to the server and retrieves a command.
-
-3. **Server responds with a JsonDataCommand JSON data structure.**
-
-    The server’s response is parsed into a JsonDataCommand structure. This structure contains fields such as command, command_id, and args.
-
-4. **Agent parses the command and prepares a response structure.**
-
-    The agent verifies that command_struct.command is valid. It then prints the decoded command and creates a new JsonData structure (named response_struct).
-
-    A fixed UUID is assigned to response_struct->id.
-    The response_struct->data field is initialized to NULL.
-    This structure will later hold the output of the executed command.
-
-5. **Command execution and population of the response.**
-
-    The agent processes the command by calling:
-
-
-```
-parse_command(command_struct.command, command_struct.args, response_struct);
-```
-    
-This function executes the desired command and fills in response_struct with any output data.
-
-6. **Agent sends a POST request with the JSON-encoded response.**
-
-    The agent converts the response structure into a JSON string using:
-
-```
-char* encoded_json_response = encode_json(response_struct->id, response_struct->data, command_struct.command_id);
-```
-Then, it sends this JSON data back to the server via a POST request by calling:
-
-
-```
-post_data(encoded_json_response);
+**Example Response (JSON Command Object):**  
+```json
+{
+    "command_id": "550e8400-e29b-41d4-a716-446655440000",
+    "command": "shell",
+    "args": "whoami"
+}
 ```
 
-7. **Memory cleanup and sleep before the next iteration.**
+**JSON Field Descriptions:**  
 
-    After sending the response, the agent frees the allocated memory for the command and response structures. Finally, it sleeps (using WhisperSleep(1000 * 60)) for 60 seconds before looping back to step 1.
+| Field         | Type   | Description                                        |
+|--------------|--------|-----------------------------------------------------|
+| `command_id` | String | Unique identifier for tracking the command.         |
+| `command`    | String | The action the Agent should perform (e.g., `shell`) |
+| `args`       | String | Optional arguments associated with the command.     |
+
+---
+
+### **Sending Execution Results (POST Request)**  
+**Endpoint:**  
+```
+POST /post/<agent_uuid>
+```
+The agent sends execution results to the C2 by calling the `/post/<agent_uuid>` endpoint.
+
+**Example POST Request (JSON Response Object):**  
+
+```json
+{
+    "id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+    "data": "desktop-123456\Bob",
+    "command_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**JSON Field Descriptions:**  
+
+| Field        | Type   | Description                                      |
+|-------------|--------|--------------------------------------------------|
+| `id`        | String | The unique **Agent ID**.                         |
+| `data`      | String | The **command output** generated by execution.   |
+| `command_id`| String | Unique identifier that **matches the request**.  |
+
+---
+
+
+## **Recap**  
+
+So, in a nutshell
+
+- The Agent retrieves commands via HTTP GET (`/get/<agent_uuid>`).  
+- Executes received commands and captures output.  
+- Sends execution results via HTTP POST (`/post/<agent_uuid>`).  
+
+And does this all with structured JSON data for requests and responses.  
 
