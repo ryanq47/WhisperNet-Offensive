@@ -140,12 +140,14 @@ class BeaconHttpListenerSpawnResource(Resource):
         callback_address = data.get("callback_address")
         agent_name = data.get("agent_name")
         agent_type = data.get("agent_type")
+        build_script = data.get("build_script")
 
         build_job = HttpBuildInterface(
             agent_type=agent_type,
             agent_name=agent_name,
             callback_address=callback_address,
             callback_port=callback_port,
+            build_script=build_script,
         )
 
         build_id = build_job.build()
@@ -155,6 +157,50 @@ class BeaconHttpListenerSpawnResource(Resource):
         }
 
         return api_response(data=build_response_dict)
+
+
+# ------------------------------------------------------------------------------------
+# List available agents scripts
+# ------------------------------------------------------------------------------------
+@build_ns.route("/<string:agent_type>/scripts")
+class BuildGetAgentTemplatesResource(Resource):
+    """
+    GET /agent-templates/<string:agent_type>/scripts
+
+    get list of build scripts for an agent.
+
+    """
+
+    # @build_ns.marshal_with(build_response, code=200)
+    @jwt_required()
+    def get(self, agent_type):
+        # compiled_dir = pathlib.Path(Config().root_project_path) / "data" / "compiled"
+        # return send_from_directory(compiled_dir, filename)
+
+        agent_script_dir = (
+            pathlib.Path(Config().root_project_path)
+            / "data"
+            / "agent_templates"
+            / agent_type
+            / "scripts"
+        )
+
+        logger.debug(agent_script_dir)
+
+        # injection check. - only use for .resolve()
+        # if not agent_script_dir.is_relative_to(
+        #     pathlib.Path(Config().root_project_path)
+        # ):  # Python 3.9+
+        #     # raise ValueError("Invalid path")
+        #     logger.warning(f"Invalid path detected: '{agent_script_dir}'")
+        #     return api_response(), 500
+
+        # get only directories, which show which agent templates are available
+        scripts = [
+            item.name for item in agent_script_dir.iterdir() if item.suffix == ".py"
+        ]
+
+        return api_response(data=scripts)
 
 
 # ------------------------------------------------------------------------------------
@@ -181,9 +227,9 @@ class BuildServeResource(Resource):
 
 
 # ------------------------------------------------------------------------------------
-# List available agents
+# List of build scripts for that agent
 # ------------------------------------------------------------------------------------
-@build_ns.route("/agent-templates")
+@build_ns.route("/agent-templates/")
 class BuildGetAgentTemplatesResource(Resource):
     """
     GET /agent-templates

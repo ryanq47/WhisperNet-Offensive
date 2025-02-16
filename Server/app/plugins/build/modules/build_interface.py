@@ -14,13 +14,16 @@ logger = log(__name__)
 
 
 class HttpBuildInterface:
-    def __init__(self, agent_type, callback_address, callback_port, agent_name=None):
+    def __init__(
+        self, agent_type, callback_address, callback_port, build_script, agent_name=None
+    ):
         self.build_id = generate_unique_id()
         self.agent_type = agent_type
         self.callback_address = callback_address
         self.callback_port = callback_port
-        self.project_root = pathlib.Path(Config().root_project_path)
+        self.build_script = build_script  # filename itself
 
+        self.project_root = pathlib.Path(Config().root_project_path)
         # Paths
         # root build path
         self.base_build_path = self.project_root / "data" / "build" / self.build_id
@@ -34,6 +37,9 @@ class HttpBuildInterface:
         self.agent_template_path = (
             self.project_root / "data" / "agent_templates" / self.agent_type
         )
+        # build script path
+        self.build_script_path = self.base_build_path / "scripts" / self.build_script
+
         # annnd where to output the binary after compilation
         self.compiled_binary_dir = (
             self.project_root
