@@ -1,7 +1,7 @@
 site_name: My Docs
 
 theme:
-  name: material
+  name: readthedocs
   language: en
   favicon: assets/favicon.png
   

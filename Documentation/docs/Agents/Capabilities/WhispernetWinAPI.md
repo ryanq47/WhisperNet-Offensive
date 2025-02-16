@@ -1,4 +1,4 @@
-# WhisperNet API (`whisper_api.h`)
+# WhisperNetWinAPI (`whisper_winapi.h`)
 
 WhisperNet’s API serves as a wrapper around WinAPI (`windows.h`) functions. By dynamically resolving function addresses at runtime and prefixing all function names with “Whisper,” the API obscures direct references to commonly flagged Windows APIs. This technique enhances OPSEC and may help evade AV/EDR detection (by removing static IAT entries).
 

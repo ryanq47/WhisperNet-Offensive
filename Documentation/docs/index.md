@@ -1,11 +1,22 @@
-# Whispernet Offensive
+# Welcome to the WhisperNet Docs 
 
-Welcome to the Whispernet Docs
+## Table of Contents
 
+### Getting Started
+| Section        | Description |
+|---------------|------------|
+| [Installation](user-guide/installation.md) | Set up WhisperNet on your system. |
+| [Configuration](user-guide/configuration.md) | Customize settings for optimal performance. |
 
-## Resources:
+### User Documentation
+| Component     | Documentation |
+|--------------|---------------|
+| [Agents](Agents/agents.md) | Learn about WhisperNet agents and their roles. |
+| [Server](Server/server.md) | Setup and manage the WhisperNet server. |
+| [Web Interface](Web_Interface/web_interface.md) | Access and control through the UI. |
 
-<a href="https://www.youtube.com/@WhisperNetOffensive" target="_blank">YouTube: Whispernet-Offensive Channel</a><br>
-<a href="https://github.com/ryanq.47/whispernet-offensive" target="_blank">GitHub: Whispernet-Offensive</a>
-
-
+### Resources
+| Platform | Link |
+|----------|------|
+| 🎥 YouTube | [WhisperNet-Offensive Channel](https://www.youtube.com/@WhisperNetOffensive) |
+| 🖥 GitHub | [WhisperNet-Offensive](https://github.com/ryanq.47/whispernet-offensive) |

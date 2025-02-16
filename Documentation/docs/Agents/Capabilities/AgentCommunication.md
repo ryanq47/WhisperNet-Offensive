@@ -1,7 +1,7 @@
-# Agent Communication
+# Agent Communication: HTTP
 
 
-Agent communication.
+Agent communication over HTTP BreakDown
 
 
 ## Important Data Structures:
