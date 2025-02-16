@@ -1,4 +1,4 @@
-# Agent Communication: HTTP
+# HTTP
 
 
 Agent communication over HTTP BreakDown
