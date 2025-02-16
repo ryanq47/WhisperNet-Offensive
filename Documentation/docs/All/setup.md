@@ -2,6 +2,8 @@
 
 This guide provides step-by-step instructions for setting up WhisperNet, including environment configuration and required dependencies.  
 
+I promise setup is shorter than it looks :)
+
 | Operating System | Compatibility |
 |------------------|--------------|
 | Linux           | Yes          |
