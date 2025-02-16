@@ -63,3 +63,5 @@ pandas
 mkdocs
 mkdocs-material>=9.0.0
 mkdocs-video
+flask_restx
+waitress
