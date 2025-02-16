@@ -152,6 +152,9 @@ class HttpBuildInterface:
                 logger.error(f"Error processing {file_name}: {e}")
 
     def custom_configure_script(self):
+
+        # HEY! Take passed in confugre script, from .scripts/somename.py, and then name it configure.py before doing this
+
         module_path = (
             pathlib.Path(self.base_build_path) / "configure.py"
         )  # Ensure it points to a .py file
