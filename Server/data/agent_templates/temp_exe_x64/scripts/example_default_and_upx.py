@@ -7,14 +7,6 @@ import pathlib
 ## give a logger here
 # replace names to be the local path
 
-# Logger setup
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("configure.log", mode="w"), logging.StreamHandler()],
-)
-
-
 """
 Individual Patch Script for binary
 
@@ -157,55 +149,3 @@ class Configure:
         logging.info("Whisper WinAPI Standalone Configuration Script")
         # logging.info(f"Configuration Output Directory: {self.output_folder}")
         logging.info("=" * 50)
-
-
-if __name__ == "__main__":
-    # This may change later.
-
-    # currently, the agent gets teh callback info, and name, from the web request/build plugin, NOT the configure.py
-    # So, if this needs to be built/configured manually, it has to be done here
-    # kind of a manual process, but it works for now
-
-    print(
-        "WARNING: By nature... these values are injectable. Don't be stupid, stick to the examples."
-    )
-
-    agent_name = input("[REQ] Enter the agent name: ")
-    callback_address = input(
-        "[REQ] Enter the callback address (Ex: '1.1.1.1', 'somedomain.com') (do NOT include the '): "
-    )
-    callback_port = input("[REQ] Enter the callback port (Ex: 9999): ")
-
-    # replace the macros in the file with these
-    with open("whisper_config.h", "r+", encoding="utf-8") as file:
-        contents = file.read()
-        modified_contents = contents
-
-        modified_contents = modified_contents.replace(
-            "MACRO_CALLBACK_ADDRESS", callback_address
-        )
-        modified_contents = modified_contents.replace(
-            "MACRO_CALLBACK_PORT", callback_port
-        )
-
-        # if modified_contents != contents:
-        file.seek(0)
-        file.write(modified_contents)
-        file.truncate()
-        print(f"Successfully updated whisper_config.h.txt")
-
-    # and replace the cname file macro of binary name
-    with open("CMakeLists.txt", "r+", encoding="utf-8") as file:
-        contents = file.read()
-        modified_contents = contents
-
-        modified_contents = modified_contents.replace("MACRO_OUTPUT_NAME", agent_name)
-
-        # if modified_contents != contents:
-        file.seek(0)
-        file.write(modified_contents)
-        file.truncate()
-        print(f"Successfully updated CMakeLists.txt")
-
-    c = Configure(pathlib.Path.cwd())
-    c.configure()

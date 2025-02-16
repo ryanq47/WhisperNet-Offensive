@@ -29,55 +29,141 @@ The web interface allows for an automated/easier build options that doing it all
 
 ![Binary Build Dialog](../img/webinterface/build_agent_dialog.png)
 
+#### Build Options:
 
-### Custom Configuration Scripts
-Agents can be tailored at build-time using Python scripts:
+##### Agent Name
+(Optional) The name of the binary after it is built.
+
+If left blank, the generated format will be:
+
+`RANDOM_NAME_architecture_CallbackAddress_CallbackPort.FileExtension`
+
+I figured this makes it easier to track which agent does what/talks to where.
+
+
+---
+
+##### Agent Type
+
+The type of agent
+
+| Agent Type/Name             | Executable/Output Formats                                   |  Notes | Running|
+|--------------------------------|------------------------------------------------------|-----------|-----------|
+|Standard Agent (exe_x64) | **.EXE**      | Bog standard EXE agent      | Command: `.\agent.exe` |
+|Standard Agent (dll_x64) | **.DLL**        |. Same as EXE agent, but in DLL form | Entry Point Function: `Start`<br> Command: `rundll32.exe agent.dll, Start`|
+---
+
+##### Agent Callback Address
+
+The address the agent will callback too.
+
+Ex: `1.1.1.1`
+
+---
+
+##### Agent Callback Port
+
+The port the agent will callback too.
+
+Ex: `9999`
+
+---
+
+
+##### Custom Configuration Scripts
+The config script used to modify the agent. These are located at `<name_of_agent>/scripts`
+
+
+| Agent Type/Name             | Script                                |  Short Description | 
+|--------------------------------|------------------------------------------------------|-----------|
+|Standard Agent (exe_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
+|Standard Agent (dll_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
 
 ![Binary Build Dialog](../img/webinterface/build_agent_scripts_dialog.png)
 
-### Manual Agent Building
+---
 
-If you are feeling brave/the web interface isn't working, you can build the agents manually. This is where the CMake magic happens. 
+### Building the agent
 
-Step 1: Make a copy of the Agent you'd like to build
+After you've filled in all the relevant details, click `Build Agent`. This will start the build process on the server
 
-- `cp -r exe_x64 exe_x64_manual`
+After a few seconds, hit the `refresh` button in the bottom right, and you should see the newly built agent!
 
-Step 2: CD into the newly created directory, and run a configure script on the agent
+![Build Agent](../img/webinterface/built_agent.png)
 
-- `python3 configure.py`
-
-Step 3: Make a "build" directory within the agent directory, and CD into that directory
-
-- `mkdir ./build && cd ./build`
-
-Step 4: Run CMake Configure
-
-- `cmake ..`
-
-Step 5: Build
-
-- `cmake --build .`
-
-Step 6: If all has gone well, you'll find the compiled binary at: `exe_x64_manual/build/bin/someagentname.exe`
+---
 
 
-Alternatively, this is doable manually as well. It is highly recommended to make a copy of the agent folder instead of working directly on the agent template itself.
+# **Manual Agent Building Guide**  
+For when you're feeling brave or the web interface isn't cooperating.
 
-Scripts are located in each agent's directory, under the "scripts" folder. 
+---
+
+## **Step 1: Copy the Agent Directory**  
+Create a manual copy of the agent you want to build:  
+
+```bash
+cp -r exe_x64 exe_x64_manual
+```
+---
+
+## **Step 2: Run the Configure Script**  
+Navigate into the new directory and run the configuration script:  
+
+```bash
+cd exe_x64_manual
+python3 configure.py
+```
+
+This may ask for options, if so, fill them in:
+```
+└─$ python3 configure.py
+WARNING: By nature... these values are injectable. Don't be stupid, stick to the examples.
+[REQ] Enter the agent name: MyAgent
+[REQ] Enter the callback address (Ex: '1.1.1.1', 'somedomain.com') (do NOT include the '): 1.1.1.1
+[REQ] Enter the callback port (Ex: 9999): 9999
+
+```
+
+
+To use a different script, copy a script from the `scripts` folder, into the agent folder:  
+ - *Scripts are located in each agent's `scripts` folder.*  
 
 ```bash
 cp ./scripts/my_configure_script.py ./configure.py
 python3 configure.py
 ```
 
-## Deployment Considerations
-- **Stealth Features**: Implements techniques such as dynamic API resolution and in-memory execution.
-- **Execution Methods**: Supports various loading techniques for different operational scenarios.
-- **Persistence Options**: Agents can be configured for temporary or persistent deployments.
+NOTE: These are one-shot scripts. Once an agent has been configured with a script, it cannot be re-configued. You will need to re-copy the agent and re-run the script to reconfigure.
 
-## Security & OPSEC
-- **Signature Avoidance**: Modular builds and obfuscation reduce detection risks.
-- **Minimal Network Footprint**: Reduces potential indicators of compromise (IoCs).
-- **Encrypted Communications**: Ensures secure transmission between agents and C2 server.
+---
 
+## **Step 3: Create & Enter the Build Directory**  
+
+```bash
+mkdir ./build && cd ./build
+```
+---
+
+## **Step 4: Run CMake Configure**  
+
+```bash
+cmake ..
+```
+---
+
+## **Step 5: Build the Agent**  
+
+```bash
+cmake --build .
+```
+---
+
+## **Step 6: Locate the Compiled Binary**  
+If everything went well, you’ll find the compiled agent here:  
+
+```bash
+exe_x64_manual/build/bin/someagentname.exe
+```
+
+*Done! Your manually built agent is ready to go.*  
