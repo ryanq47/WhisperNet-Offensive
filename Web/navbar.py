@@ -69,7 +69,9 @@ def fun_navbar():
                 ).props("flat color=white").classes("py-2 text-xs")
 
                 ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                    "Agents",
+                    icon="computer",
+                    on_click=lambda: ui.navigate.to("/agents"),
                 ).props("flat color=white").classes("py-2 text-xs")
 
         # An extra button on the far right as an example
@@ -187,7 +189,9 @@ def normal_navbar():
                 ).props("flat color=white").classes("py-2 text-xs")
 
                 ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                    "Agents",
+                    icon="computer",
+                    on_click=lambda: ui.navigate.to("/agents"),
                 ).props("flat color=white").classes("py-2 text-xs")
 
         # An extra button on the far right as an example
