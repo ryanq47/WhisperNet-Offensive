@@ -6,6 +6,7 @@ from config import Config, ThemeConfig
 from build import BuildView
 from navbar import *
 from networking import api_call, api_post_call, api_delete_call
+from scripts import ScriptsView
 
 
 # ---------------------------
@@ -410,6 +411,7 @@ class AgentsPage:
             with ui.tabs() as tabs:
                 ui.tab("Agents")
                 ui.tab("Binaries + Builder")
+                ui.tab("Scripts")
 
             # -- TAB PANELS --
             with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
@@ -418,4 +420,7 @@ class AgentsPage:
                     a.render()
                 with ui.tab_panel("Binaries + Builder"):
                     a = BuildView()
+                    a.render()
+                with ui.tab_panel("Scripts"):
+                    a = ScriptsView()
                     a.render()
