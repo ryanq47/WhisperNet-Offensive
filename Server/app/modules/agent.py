@@ -26,15 +26,6 @@ class BaseAgent:
             decode_responses=True,  # Ensures that strings are not returned as bytes
         )
 
-        # for key, value in kwargs.items():
-        #     setattr(self, key, value)
-
-        # may or may not be needed - exclusing for now for simplicity
-        # self.config_file_path = config_file_path
-        # self.alias = None
-        # self.template = None
-        # self.load_config()
-
         # info stuff - munch object
         self._data = munch.munchify(
             {
@@ -80,7 +71,7 @@ class BaseAgent:
                     "longitude": None,
                 },
                 "config": {
-                    "file": None,  # config file
+                    "command_script": None,
                 },
             }
         )
@@ -132,181 +123,22 @@ class BaseAgent:
     ##########
     # Script Options
     ##########
-    def load_config(self):  # , config_file_path: str | pathlib.Path):
+
+    def set_command_script(self, script_name):
         """
-        Load template file into current session.
-
-        uses self.config_file_path (str | pathlib.path ): Path to config
-
-        """
-        try:  # make bulletproof
-            # Load configuration from a script if provided
-            # Also coerce to string incase of pathlib object
-            logger.debug(f"Loading profile file: {str(self.config_file_path)}")
-            with open(self.config_file_path, "r") as file:
-                data = yaml.safe_load(file)
-
-            # maybe use
-            template_dict = data.get("template", None)
-            alias_dict = data.get("alias", None)
-
-            if template_dict is None:
-                logger.error("Missing 'template' section in configuration.")
-                raise ValueError("Configuration must include a 'template' section.")
-
-            if alias_dict is None:
-                logger.error("Missing 'alias' section in configuration.")
-                raise ValueError("Configuration must include an 'alias' section.")
-
-            # load in specific items from config file
-            self._load_alias(alias_dict)
-            self._load_template(template_dict)
-            # self.loaded = True # a check to make sure this happens?
-
-            # Next...
-            # loop over each key and
-            # >  parse and add alias to valid commands (user sees these)
-            # >  parse add template to template settings/however those are handled
-        except FileNotFoundError as fnfe:
-            logger.error(f"Configuration file not found: {config_file_path}")
-            logger.error(fnfe)
-            raise fnfe
-
-        except Exception as e:
-            logger.error(e)
-            raise e
-
-    def _load_alias(self, alias_dict: dict):
-        """
-        Internal
-        Loads alias into agent.
-
-        Separate method for future handling/standard way of handling
-        """
-        try:
-            # munchify the dicts for better/easier access
-            self.alias = munch.munchify(alias_dict)
-
-            logger.debug("alias:")
-            # .keys: keys
-            # .values: values
-            # .items: key, value pair
-            for key, val in self.alias.items():
-                logger.debug(f"\t{key}: {val}")
-
-        except Exception as e:
-            logger.error(e)
-            raise e
-
-    def _load_template(self, template_dict: dict):
-        """
-        Internal
-        Loads alias into agent.
-
-        Separate method for future handling/standard way of handling
+        Sets the command script
 
         """
-        try:
-            # munchify the dicts for better/easier access
-            self.template = munch.munchify(template_dict)
+        self.data.config.command_script = script_name
+        # save newly updated data into redis
+        self.unload_data()
 
-            logger.debug("template:")
-            # .keys: keys
-            # .values: values
-            # .items: key, value pair
-            for key, val in self.template.items():
-                logger.debug(f"\t{key}: {val}")
-
-        except Exception as e:
-            logger.error(e)
-            raise e
-
-    def format_command(self, command: str, arguments: str):
+    def get_command_script(self, script_name):
         """
-        Auto format a command based on its template string
+        Sets the command script
 
-        command (str): The command. Used for lookups in config.yaml.
-            Ex: exec:powershell
-
-        arguments (str): The arguments
-            Ex: whoami
-
-
-        Returns: Formatted command
-
-        Ex:
-
-        powershell iex bypass; powershell %%COMMAND%% (from config file)
-        into
-        powershell iex bypass; powershell whoami
-
-        NOTE:
-            If arguments/vars are ever implemented, this would need some adjustment.
-
-            (maybe as kwargs/args, then iter, and positional?)
         """
-        try:
-
-            # Get the template based on which command
-            command_template = self.template.get(command, None)
-            # maybe edit to return the command no matter what?
-            if not command_template:
-                logger.error(f"Command template for '{command}' not found")
-                return
-
-            # Replace %%COMMAND%% with the provided arguments
-            formatted_command = command_template.replace("%%COMMAND%%", arguments)
-            logger.debug(formatted_command)
-
-            return formatted_command
-
-        except Exception as e:
-            logger.error(e)
-            raise e
-
-    @staticmethod
-    def validate_config(config_file_path: str | pathlib.Path):
-        """
-        Validates a config file
-
-        returns True on success, false on fail
-        """
-        try:
-            with open(config_file_path, "r") as file:
-                data = yaml.safe_load(file)
-
-            # maybe use
-            template_dict = data.get("template", None)
-            alias_dict = data.get("alias", None)
-            info_dict = data.get("info", None)
-
-            if template_dict is None:
-                # err
-                logger.error("Missing 'template' section in configuration.")
-                return False
-                # raise ValueError("Configuration must include a 'template' section.")
-
-            if alias_dict is None:
-                # err
-                logger.error("Missing 'alias' section in configuration.")
-                return False
-                # raise ValueError("Configuration must include an 'alias' section.")
-
-            if info_dict is None:
-                # warning
-                logger.warning("Missing 'info' section in configuration")
-
-            return True
-
-        except FileNotFoundError as fnfe:
-            logger.error(f"Configuration file not found: {config_file_path}")
-            logger.error(fnfe)
-            raise fnfe
-
-        except Exception as e:
-            logger.error("An error not related to the config file contents occured:")
-            logger.error(e)
-            raise e
+        return self.data.config.command_script
 
     ##########
     # Redis Stuff
@@ -516,59 +348,3 @@ class BaseAgent:
         except Exception as e:
             logger.error(f"Error storing response for Command ID {command_id}: {e}")
             raise e
-
-
-# ## Basic example of usage
-# agent = Agent()
-# ## load config - NEEDS to be called first
-# agent.load_config(config_file_path="example.yaml")
-
-# ## make sure to run this every time before command gets sent off
-# ## LOG the before & after as well, in action log or something
-# agent.format_command(command="powershell", arguments="whoami")
-
-# print(agent.validate_config(config_file_path="example.yaml"))
-
-# access data in the data model
-# Categories:
-#  - system
-#  - network
-#  - hardware
-#  - agent
-#  - security
-#  - geo
-
-# agent.data.system.os = "SOMEOS"
-# client_os = agent.data.system.os
-# print(agent.data.system.os) or print(client_os)
-
-# if you want to do custom options you can too:
-# agent.data.system.second_os = "SOMEOS2"
-# print(agent.data.system.second_os)
-
-# # ## Basic example of usage
-# agent = Agent()
-# # ## load config - NEEDS to be called first
-# agent.load_config(config_file_path="example.yaml")
-
-# # ## make sure to run this every time before command gets sent off
-# # ## LOG the before & after as well, in action log or something
-# agent.format_command(command="powershell", arguments="whoami")
-
-# print(agent.validate_config(config_file_path="example.yaml"))
-# agent.data.system.os = "SOMEOS"
-# print(agent.data.system.os)
-
-# agent.data.system.urmom = "SOMEOS2"
-# print(agent.data.system.urmom)
-
-"""
-Then like
-
-comamnd comes in,         gets intercepted by model, parsed, and adjusted dynamically as needed based on config?
-exec:powershell whoami ->  ...                               exec:powershell -c -noUAC "whoami"
-
-makes it easier for the user, however a tad bit less transparent on what's happening under the hood
-
-Shortcomings: still need to find out how to call this, other than popen or something.
-"""
