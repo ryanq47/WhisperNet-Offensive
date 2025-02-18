@@ -123,6 +123,7 @@ void display_credentials() {
 }
 
 // Free all stored credentials
+//NEED to do when done with credstore
 void free_store() {
     EnterCriticalSection(&cred_lock);  // Lock before modifying
 
@@ -160,28 +161,28 @@ DWORD WINAPI thread_task(LPVOID arg) {
 }
 
 
-int main() {
+// int main() {
 
-    //Note, don't *need* to do threading with InitializeCriticalSection, works fine without it, but is important to have
-    // just incase the threads get weird. 
+//     //Note, don't *need* to do threading with InitializeCriticalSection, works fine without it, but is important to have
+//     // just incase the threads get weird. 
 
-    InitializeCriticalSection(&cred_lock);  // Initialize mutex
+//     InitializeCriticalSection(&cred_lock);  // Initialize mutex
 
 
-    add_credential("admin", "CORP", 
-                   "31d6cfe0d16ae931b73c59d7e0c089c0", NULL, "P@ssw0rd!",
-                   "base64-KerbTGT", "aes128-key", "aes256-key",
-                   "dpapi-master-key");
+//     add_credential("admin", "CORP", 
+//                    "31d6cfe0d16ae931b73c59d7e0c089c0", NULL, "P@ssw0rd!",
+//                    "base64-KerbTGT", "aes128-key", "aes256-key",
+//                    "dpapi-master-key");
 
-    add_credential("user1", "WORKGROUP", 
-                   "aad3b435b51404eeaad3b435b51404ee", NULL, NULL,
-                   NULL, NULL, NULL, NULL);
+//     add_credential("user1", "WORKGROUP", 
+//                    "aad3b435b51404eeaad3b435b51404ee", NULL, NULL,
+//                    NULL, NULL, NULL, NULL);
 
-    display_credentials();
-    free_store();
+//     display_credentials();
+//     free_store();
 
-    return 0;
-}
+//     return 0;
+// }
 
 //example thread stuff
 // int main() {

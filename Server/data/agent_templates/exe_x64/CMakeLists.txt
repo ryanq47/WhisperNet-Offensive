@@ -27,6 +27,8 @@ set(AGENT_SOURCES
     ${CMAKE_SOURCE_DIR}/type_conversions.c
     ${CMAKE_SOURCE_DIR}/whisper_winapi.c
     ${CMAKE_SOURCE_DIR}/whisper_dynamic_config.c
+    ${CMAKE_SOURCE_DIR}/whisper_credmanager.c
+
 )
 
 set(AGENT_HEADERS
@@ -38,6 +40,7 @@ set(AGENT_HEADERS
     ${CMAKE_SOURCE_DIR}/cJSON.h
     ${CMAKE_SOURCE_DIR}/comms_http.h
     ${CMAKE_SOURCE_DIR}/whisper_dynamic_config.h
+    ${CMAKE_SOURCE_DIR}/whisper_credmanager.h
 )
 
 # Platform-specific settings
