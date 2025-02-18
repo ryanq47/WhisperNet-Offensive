@@ -198,6 +198,31 @@ class AgentView:
         self.shell_container = None
         self.auto_scroll_enabled = True
 
+        def update_scripts_options():
+            # move into dedicated func
+            # kinda tall - but script selection
+            # get valid scripts
+            # api_call("script list api")
+            # need to get current script as well, and put in this value so user doenst get confused
+            # on refresh
+            # Fetch the API response
+            response = api_call(url=f"/scripts/files")
+
+            # Extract script data properly
+            scripts_data = (
+                [
+                    script.get("filename", "Unknown Script")
+                    for script in response.get("data", [])
+                ]
+                if response.get("data")
+                else ["No Scripts Available"]
+            )
+
+            # Populate the UI dropdown
+            # on change... trigger API call to select a script.
+            # /agents/uuid/script (POST req, takes script name)
+            ui.select(options=scripts_data, label="Extension Scripts").classes("w-full")
+
         def on_scroll(e):
             # Disable auto-scroll if the user scrolls away from the bottom.
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
@@ -239,6 +264,9 @@ class AgentView:
             )
             command_input.value = ""
             update_shell_data()
+
+        # update the script options
+        update_scripts_options()
 
         # Shell tab layout: Fill parent container (using h-full).
         with ui.column().classes(
