@@ -11,6 +11,18 @@ commands:
       - action: shell
         args: ["netstat -ano"]
 
+  - name: test
+    description: "test command"
+    steps:
+      - action: help
+        args: [""]
+
+      - action: help
+        args: [""]
+
+      - action: help
+        args: [""]
+
   - name: inject_dll
     description: "Download and inject a DLL into a running process"
     steps:

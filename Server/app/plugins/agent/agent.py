@@ -12,6 +12,7 @@ from modules.log import log
 from modules.utils import api_response
 from redis_om import get_redis_connection
 import re
+from modules.agent_script_interpreter import AgentScriptInterpreter
 
 logger = log(__name__)
 
@@ -152,7 +153,26 @@ class AgentEnqueueCommandResource(Resource):
                 return api_response(message="'command' cannot be empty"), 400
 
             a = Agent(agent_id=agent_uuid)
-            command_id = a.enqueue_command(command=command)
+
+            # here - parse command
+            # going to need to pass the script to use as well,
+            # maybe store in the client redis stuff?
+            # can use a default script for now
+            asi = AgentScriptInterpreter(
+                "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+            )
+
+            command_results = asi.process_command(command)
+
+            # queue multiple commands
+            if command_results:
+                for command in command_results:
+                    command_id = a.enqueue_command(command=command)
+
+            # queue a single command
+            else:
+                a = Agent(agent_id=agent_uuid)
+                command_id = a.enqueue_command(command=command)
 
             print(api_response)
             return api_response(data=command_id)
