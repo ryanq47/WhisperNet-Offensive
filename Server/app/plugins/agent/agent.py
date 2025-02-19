@@ -154,12 +154,15 @@ class AgentEnqueueCommandResource(Resource):
 
             a = Agent(agent_id=agent_uuid)
 
-            # here - parse command
-            # going to need to pass the script to use as well,
-            # maybe store in the client redis stuff?
-            # can use a default script for now
+            ##########
+            # Script Stuff
+            ##########
+
+            command_script_name = a.get_command_script()
+            print(f"COMMAND SCRIPT: {command_script_name}")
             asi = AgentScriptInterpreter(
-                "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+                command_script_name
+                # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
             )
 
             command_results = asi.process_command(command)
@@ -174,9 +177,10 @@ class AgentEnqueueCommandResource(Resource):
                 a = Agent(agent_id=agent_uuid)
                 command_id = a.enqueue_command(command=command)
 
-            print(api_response)
+            # print(api_response)
             return api_response(data=command_id)
         except Exception as e:
+            logger.error(e)
             return api_response(message="An error occured"), 500
 
 
@@ -217,6 +221,64 @@ class AgentEnqueueCommandResource(Resource):
 
             return api_response(data=all_commands)
         except Exception as e:
+            logger.error(e)
+            return api_response(message="An error occured"), 500
+
+
+@agent_ns.route("/<string:agent_uuid>/command-script/register")
+@agent_ns.doc(description="Register a command script to this agent")
+class AgentUploadCommandScriptResource(Resource):
+    """
+
+    JSON:
+
+    {
+        "command_script": "scriptname.yaml"
+    }
+
+    """
+
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @ping_ns.marshal_with(ping_response, code=200)
+    # @jwt_required
+    # @agent_ns.expect(command_request_model)
+    @jwt_required()
+    def post(self, agent_uuid):
+        """
+        Tell which script for the agent to use.
+
+        JSON:
+
+        {
+            "command_script": "scriptname.yaml"
+        }
+
+        """
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            if not data or "command_script" not in data:
+                return (
+                    api_response(message="missing 'command_script' in message body"),
+                    400,
+                )
+
+            command_script = data.get("command_script", "")
+            # if command_script == "":
+            #     return api_response(message="'command_script' cannot be empty"), 400
+
+            a = Agent(agent_id=agent_uuid)
+            a.set_command_script(command_script)
+
+            return api_response(message="Script registered successfully")
+        except Exception as e:
+            logger.error(e)
             return api_response(message="An error occured"), 500
 
 

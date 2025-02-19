@@ -1,13 +1,29 @@
 ## Script interpreter for agent scripts
 import pathlib
 import yaml
+from modules.config import Config
 
 
 class AgentScriptInterpreter:
-    def __init__(self, script_path: str | pathlib.Path):
-        self.script_path = script_path
+    def __init__(self, script_name: str):
+        if script_name == None:
+            raise Exception(f"Cannot have blank script name: '{script_name}'")
+
+        self.script_name = script_name
 
         # load YAML
+        self.root_project_path = pathlib.Path(Config().root_project_path)
+
+        print(self.root_project_path)
+
+        self.script_path = (
+            self.root_project_path
+            / "data"
+            / "scripts"
+            / "script1.yaml"  # self.script_name - coming in as blank
+        )
+
+        print(self.script_path)
 
         with open(self.script_path, "r") as file:
             self.script_contents = yaml.safe_load(file)
@@ -77,10 +93,20 @@ class AgentScriptInterpreter:
         return command_queue_list  # Returning the list of command dictionaries
 
     def _check_if_command_is_in_script(self, inbound_command):
-        # make sure the command actually exists in the script, else pass on
-        for entry in self.script_contents.get("commands", []):
-            if inbound_command == entry.get("name", ""):
-                return True
+        """
+        Checks if a commadn is in the script, if not, returns false.
+
+        Safeguards a bit too for if the script is empty, etc.
+
+        """
+        try:
+            # make sure the command actually exists in the script, else pass on
+            for entry in self.script_contents.get("commands", []):
+                if inbound_command == entry.get("name", ""):
+                    return True
+
+        except Exception as e:
+            return False
 
         return False
 

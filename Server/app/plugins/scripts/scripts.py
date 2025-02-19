@@ -200,7 +200,7 @@ class StaticServeListFilesResource(Resource):
         logger.warning("UNAUTH, /files")
 
         # Example path: 'data/static' (adjust as needed)
-        static_dir = pathlib.Path(Config().root_project_path) / "data/scripts"
+        static_dir = pathlib.Path(Config().root_project_path) / "data" / "scripts"
 
         if not static_dir.exists():
             return api_response(

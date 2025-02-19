@@ -129,16 +129,27 @@ class BaseAgent:
         Sets the command script
 
         """
+        ## Problem here - TLDR: not getting saved to redis...
+
+        logger.debug(f"Setting command script for {self.data.agent.id}: {script_name}")
+
         self.data.config.command_script = script_name
         # save newly updated data into redis
         self.unload_data()
+        # self.load_data()
 
-    def get_command_script(self, script_name):
+    def get_command_script(self):
         """
         Sets the command script
 
         """
-        return self.data.config.command_script
+        command_script = self.data.config.command_script
+
+        logger.debug(
+            f"Getting command script for {self.data.agent.id}: {command_script}"
+        )
+
+        return command_script
 
     ##########
     # Redis Stuff
@@ -146,16 +157,28 @@ class BaseAgent:
 
     def register(self):
         """
-        Registers an agent in the system and stores it in Redis.
-        Uses the Agent model from `modules.redis_models` and `self.data.agent.id` to ensure unique keys.
+        Registers an agent in the system and ensures that the latest data is stored in Redis.
         """
         try:
             logger.info(f"Registering agent: {self.data.agent.id}")
-            self.unload_data()  # temp, auto unload data on register
+
+            # Retrieve latest data from Redis before saving
+            stored_data = AgentData.get(self.data.agent.id)
+            if stored_data:
+                logger.debug(
+                    f"Loaded existing agent data from Redis: {stored_data.json_blob}"
+                )
+                self.data = json.loads(stored_data.json_blob)  # Ensure latest state
+
+            # Save the updated agent model in Redis
             agent_model = Agent(agent_id=self.data.agent.id)
             agent_model.save()
+
+            # Unload the latest version of self.data, ensuring no loss of command_script
+            self.unload_data()
+
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error registering agent {self.data.agent.id}: {e}")
             raise e
 
     def unregister(self):
@@ -173,6 +196,7 @@ class BaseAgent:
         """
         try:
             logger.debug(f"Unloading data for agent {self.data.agent.id} to redis")
+            logger.debug(f"Saving data: {self.data}")
             agent_data = AgentData(
                 agent_id=self.data.agent.id, json_blob=json.dumps(self.data)
             )

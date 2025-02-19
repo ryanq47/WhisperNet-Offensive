@@ -222,7 +222,19 @@ class AgentView:
             # Populate the UI dropdown
             # on change... trigger API call to select a script.
             # /agents/uuid/script (POST req, takes script name)
-            ui.select(options=scripts_data, label="Extension Scripts").classes("w-full")
+            script_selector = ui.select(
+                options=scripts_data,
+                label="Extension Scripts",
+                on_change=lambda e: update_script(script_selector.value),
+            ).classes("w-full")
+
+        def update_script(script_name):
+            data = {"command_script": script_name}
+
+            api_post_call(
+                url=f"/agent/{self.agent_id}/command-script/register", data=data
+            )
+            ui.notify("Updated script on agent")
 
         def on_scroll(e):
             # Disable auto-scroll if the user scrolls away from the bottom.
