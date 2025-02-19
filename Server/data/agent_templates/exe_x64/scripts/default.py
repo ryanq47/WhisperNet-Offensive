@@ -46,6 +46,7 @@ class Configure:
         function_names = [
             "MessageBoxA",
             "CreateThread",
+            "CreateProcessA",
             "ResumeThread",
             "VirtualAllocEx",
             "WriteProcessMemory",
