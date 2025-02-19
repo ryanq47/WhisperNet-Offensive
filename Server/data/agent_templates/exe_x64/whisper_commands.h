@@ -229,6 +229,19 @@ void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
 }
 
 // Keep
+/*
+
+Bug:
+
+[DEBUG] [FUNC_CALL] WhisperCreateProcessA
+[DEBUG] [+] Attempting to resolve function: CreateProcessA
+[DEBUG] [+] Successful handle to kernel32.dll
+[DEBUG] [-] GetProcAddressReplacement failed for CreateProcessA. Error=0.
+[DEBUG] [!] CreateProcess failed (0)
+[DEBUG] [FUNC_CALL] WhisperCloseHandle
+
+*/
+
 void shell(OutboundJsonDataStruct* response_struct, char* args)
 {
     /*

@@ -510,7 +510,7 @@ BOOL WhisperCreateProcessA(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateProcessA\n");
 
     if (!pCreateProcessA) {
-        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", "CreateProcessA");
+        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateProcessA_ENCRYPTED_NAME);
         if (!pCreateProcessA)
             return FALSE;
     }
