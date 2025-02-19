@@ -63,7 +63,7 @@ commands:
 
 ---
 
-## **What’s New?**
+<!-- ## **What’s New?**
 ✅ **Standardized Command Format:**  
 - Each command now includes a **name**, **description**, and a list of **steps**.  
 
@@ -76,7 +76,7 @@ commands:
 ✅ **Commands Are Fully Dynamic:**  
 - Each step is processed **individually**, meaning commands can be **logged, modified, or even re-ordered** before execution.  
 
----
+--- -->
 
 ## **How It Works**
 1. **Each command** in the script has a name and description.  

