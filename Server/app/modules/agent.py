@@ -77,25 +77,13 @@ class BaseAgent:
         )
         self.data.agent.id = agent_id
 
-        # change this to check if agent id key exists.
-        # Load data from Redis if agent_id is provided
-        # if self.data.agent.id:
-        #    self._load_data_from_redis(self.data.agent.id)
-
-    # def _load_data_from_redis(self, agent_id):
-    #     """Internal: Load agent data from Redis."""
-    #     try:
-    #         # get data from redis
-    #         data = self.redis_client.get(f"agent:{self.data.agent.id}")
-    #         if data:
-    #             self._data = munch.munchify(json.loads(data))
-    #             logger.debug(f"Loaded agent data for {self.data.agent.id} from Redis.")
-    #         else:
-    #             logger.debug(f"No data found in Redis for agent: {self.data.agent.id}")
-    #             # call register
-    #     except Exception as e:
-    #         logger.error(f"Error loading data from Redis: {e}")
-    #         raise e
+        # check if data exists already, if so, load that/overwrite the above
+        stored_data = AgentData.get(self.data.agent.id)
+        if stored_data:
+            # logger.debug(
+            #     f"Loaded existing agent data from Redis on init: {stored_data.json_blob}"
+            # )
+            self.data = json.loads(stored_data.json_blob)  # Ensure latest state
 
     @property
     def data(self):
@@ -163,11 +151,13 @@ class BaseAgent:
             logger.info(f"Registering agent: {self.data.agent.id}")
 
             # Retrieve latest data from Redis before saving
+            # doing this AGAIN (as well as in INIT), just incase data got changed somewhere
+            # Want to be working with the latest data possible
             stored_data = AgentData.get(self.data.agent.id)
             if stored_data:
-                logger.debug(
-                    f"Loaded existing agent data from Redis: {stored_data.json_blob}"
-                )
+                # logger.debug(
+                #     f"Loaded existing agent data from Redis: {stored_data.json_blob}"
+                # )
                 self.data = json.loads(stored_data.json_blob)  # Ensure latest state
 
             # Save the updated agent model in Redis
@@ -196,7 +186,6 @@ class BaseAgent:
         """
         try:
             logger.debug(f"Unloading data for agent {self.data.agent.id} to redis")
-            logger.debug(f"Saving data: {self.data}")
             agent_data = AgentData(
                 agent_id=self.data.agent.id, json_blob=json.dumps(self.data)
             )

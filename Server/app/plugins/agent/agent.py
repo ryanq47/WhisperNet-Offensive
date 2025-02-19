@@ -109,7 +109,6 @@ class AgentDequeueCommandResource(Resource):
         a = Agent(agent_id=agent_uuid)
         command = a.dequeue_command()
 
-        print(api_response)
         return api_response(data=command)
         # "pong", 200
 
@@ -159,7 +158,6 @@ class AgentEnqueueCommandResource(Resource):
             ##########
 
             command_script_name = a.get_command_script()
-            print(f"COMMAND SCRIPT: {command_script_name}")
             asi = AgentScriptInterpreter(
                 command_script_name
                 # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
