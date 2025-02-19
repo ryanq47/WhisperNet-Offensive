@@ -166,7 +166,8 @@ def auth_view_page():
     a.render()
 
 
+# Note - this dir has no auth
 app.add_static_files(
     "/static", "static"
 )  # Serve files from the 'static' directory, to /static
-ui.run(storage_secret="URMOM", host="0.0.0.0")
+ui.run(storage_secret="URMOM", host="0.0.0.0", favicon="/static/icon_full.ico")

@@ -101,11 +101,14 @@ class Users:
                 ui.notify(
                     f"User '{self.username_input.value}' created successfully",
                     type="positive",
+                    position="top-right",
                 )
                 self.load_users()  # Refresh the user list after registration
             else:
                 ui.notify(
-                    f"Error registering user: {response.status_code}", type="warning"
+                    f"Error registering user: {response.status_code}",
+                    type="warning",
+                    position="top-right",
                 )
         except Exception as e:
             ui.notify(f"Error: {e}", type="negative")
@@ -171,13 +174,21 @@ class Users:
                 self.user_data = response.json().get("data", {}).get("users", [])
                 self.user_table.options["rowData"] = self.user_data
                 self.user_table.update()  # Refresh the table with new data
-                ui.notify("User list updated successfully", type="positive")
+                ui.notify(
+                    "User list updated successfully",
+                    type="positive",
+                    position="top-right",
+                )
             else:
                 ui.notify(
-                    f"Failed to load users: {response.status_code}", type="warning"
+                    f"Failed to load users: {response.status_code}",
+                    type="warning",
+                    position="top-right",
                 )
         except Exception as e:
-            ui.notify(f"Error loading users: {e}", type="negative")
+            ui.notify(
+                f"Error loading users: {e}", type="negative", position="top-right"
+            )
 
 
 class LocalSettings:
@@ -247,12 +258,12 @@ class LocalSettings:
     def save_settings(self, current_settings):
         # Save settings to session storage
         app.storage.user["settings"] = current_settings
-        ui.notify("Settings saved! Refresh to take effect")
+        ui.notify("Settings saved! Refresh to take effect", position="top-right")
 
     def clear_settings(self):
         # Completely clear user settings from session storage
         app.storage.user.clear()
-        ui.notify("Settings cleared! Next load will use defaults")
+        ui.notify("Settings cleared! Next load will use defaults", position="top-right")
 
     @staticmethod
     def apply_settings():

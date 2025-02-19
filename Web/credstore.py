@@ -119,7 +119,7 @@ class CredentialStore:
             }
 
         else:
-            ui.notify("Username and Password field are required")
+            ui.notify("Username and Password field are required", position="top-right")
 
         self.add_cred_to_server(data=credential_data)
         self.refresh_grid()
@@ -189,7 +189,7 @@ class CredentialStore:
             # data comes as a list inside the data.credential key.
             return data.get("data").get("credentials")
         except Exception as e:
-            ui.notify(f"Error fetching credential data: {e}")
+            ui.notify(f"Error fetching credential data: {e}", position="top-right")
 
     def add_cred_to_server(self, data):
         headers = {
@@ -203,10 +203,10 @@ class CredentialStore:
             headers=headers,
         )
         if r.status_code == 200 or r.status_code == 201:
-            ui.notify("Successfully added credential")
+            ui.notify("Successfully added credential", position="top-right")
 
         else:
-            ui.notify(f"{r.status_code} Error adding credential")
+            ui.notify(f"{r.status_code} Error adding credential", position="top-right")
 
     def process_uploaded_file(self, event):
         """
@@ -226,6 +226,7 @@ class CredentialStore:
                 ui.notify(
                     "CSV must contain 'username' and 'password' columns",
                     color="red",
+                    position="top-right",
                 )
                 return
 
@@ -248,9 +249,10 @@ class CredentialStore:
             ui.notify(
                 f"Successfully imported {len(credentials)} credentials",
                 color="green",
+                position="top-right",
             )
         except Exception as e:
-            ui.notify(f"Error processing CSV: {e}", color="red")
+            ui.notify(f"Error processing CSV: {e}", color="red", position="top-right")
 
     def export_csv(self):
         ui.notify("Prepping data to export...")

@@ -234,7 +234,7 @@ class AgentView:
             api_post_call(
                 url=f"/agent/{self.agent_id}/command-script/register", data=data
             )
-            ui.notify("Updated script on agent")
+            ui.notify("Updated script on agent", position="top-right")
 
         def on_scroll(e):
             # Disable auto-scroll if the user scrolls away from the bottom.

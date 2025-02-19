@@ -90,10 +90,14 @@ class ErrorPage:
         with navbar():
 
             if current_settings.get("More Fun Mode", False):
-                ui.notify("Token has expired, please log in again.")
+                ui.notify(
+                    "Token has expired, please log in again.", position="top-right"
+                )
 
             else:
-                ui.notify("Token has expired, please log in again.")
+                ui.notify(
+                    "Token has expired, please log in again.", position="top-right"
+                )
 
             ui.navigate.to("/auth")
 

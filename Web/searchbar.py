@@ -125,5 +125,8 @@ class Search:
 
             end_time = time.time()  # End the timer
             print(f"Execution Time: {end_time - start_time:.4f} seconds")
-            ui.notify(f"Execution Time: {end_time - start_time:.4f} seconds")
+            ui.notify(
+                f"Execution Time: {end_time - start_time:.4f} seconds",
+                position="top-right",
+            )
         running_query = None

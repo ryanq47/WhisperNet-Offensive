@@ -147,26 +147,26 @@ class BuildView:
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Deleted: {filename}")
+                ui.notify(f"Deleted: {filename}", position="top-right")
                 url = f"/build/delete/{filename}"
                 api_delete_call(url=url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
     async def download_selected_rows(self):
         rows = await self.aggrid_element.get_selected_rows()
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Downloading: {filename}")
+                ui.notify(f"Downloading: {filename}", position="top-right")
                 url = f"{Config.API_HOST}/build/{filename}"
                 ui.download(url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
     # def render_agents_tab(self):
     #     # just importing instead of copying full code
@@ -247,7 +247,7 @@ class BuildView:
                 build_script=result.get("build_script", ""),
             )
         else:
-            ui.notify("Agent Builder was canceled.")
+            ui.notify("Agent Builder was canceled.", position="top-right")
 
     # Example function to be called with the dialog values
     def build_agent(
@@ -258,7 +258,7 @@ class BuildView:
         callback_port: str,
         build_script: str,
     ):
-        ui.notify("Build started, wait a few seconds and refresh")
+        ui.notify("Build started, wait a few seconds and refresh", position="top-right")
         # network call + stuff
 
         build_dict = {
