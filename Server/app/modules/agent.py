@@ -9,6 +9,7 @@ from modules.log import log
 from modules.redis_models import Agent, AgentData, AgentCommand
 from modules.utils import generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
+import traceback
 
 logger = log(__name__)
 
@@ -77,13 +78,13 @@ class BaseAgent:
         )
         self.data.agent.id = agent_id
 
-        # check if data exists already, if so, load that/overwrite the above
-        stored_data = AgentData.get(self.data.agent.id)
-        if stored_data:
-            # logger.debug(
-            #     f"Loaded existing agent data from Redis on init: {stored_data.json_blob}"
-            # )
-            self.data = json.loads(stored_data.json_blob)  # Ensure latest state
+        # # check if data exists already, if so, load that/overwrite the above
+        # stored_data = AgentData.get(self.data.agent.id)
+        # if stored_data:
+        #     # logger.debug(
+        #     #     f"Loaded existing agent data from Redis on init: {stored_data.json_blob}"
+        #     # )
+        #     self.data = json.loads(stored_data.json_blob)  # Ensure latest state
 
     @property
     def data(self):
@@ -153,12 +154,21 @@ class BaseAgent:
             # Retrieve latest data from Redis before saving
             # doing this AGAIN (as well as in INIT), just incase data got changed somewhere
             # Want to be working with the latest data possible
-            stored_data = AgentData.get(self.data.agent.id)
-            if stored_data:
-                # logger.debug(
-                #     f"Loaded existing agent data from Redis: {stored_data.json_blob}"
-                # )
+
+            # bug exists here:
+
+            try:
+                stored_data = AgentData.get(self.data.agent.id)
+                logger.debug(
+                    f"Loaded existing agent data from Redis: {stored_data.json_blob}"
+                )
                 self.data = json.loads(stored_data.json_blob)  # Ensure latest state
+
+            # blanket exception, should handle this better
+            except Exception as e:
+                logger.warning(
+                    f"Agent {self.data.agent.id} not found in Redis. This is expected on first check-in."
+                )
 
             # Save the updated agent model in Redis
             agent_model = Agent(agent_id=self.data.agent.id)
@@ -169,6 +179,9 @@ class BaseAgent:
 
         except Exception as e:
             logger.error(f"Error registering agent {self.data.agent.id}: {e}")
+            logger.error(
+                traceback.format_exc()
+            )  # Print the full traceback for debugging
             raise e
 
     def unregister(self):

