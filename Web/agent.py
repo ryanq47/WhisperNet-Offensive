@@ -7,6 +7,7 @@ from build import BuildView
 from navbar import *
 from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
+from nicegui.events import KeyEventArguments
 
 
 # ---------------------------
@@ -199,6 +200,14 @@ class AgentView:
         self.shell_container = None
         self.auto_scroll_enabled = True
 
+        def handle_keydown(e):
+            # Access the key from e.args dictionary
+            key = e.args.get("key")
+            # Check if the Enter key was pressed
+            if key == "Enter":
+                # e.prevent_default()  # Prevents newline in textarea
+                send_command()
+
         def update_scripts_options():
             # move into dedicated func
             # kinda tall - but script selection
@@ -298,6 +307,9 @@ class AgentView:
                     ui.textarea(placeholder="Type a command...")
                     .props('autofocus outlined input-class="ml-3" input-class=h-12')
                     .classes("text-black grow mr-4")
+                    .on(
+                        "keydown", handle_keydown
+                    )  # handle keydown here cuz nested functions
                 )
                 ui.button("Send Command", on_click=send_command).classes("w-32")
         update_shell_data()

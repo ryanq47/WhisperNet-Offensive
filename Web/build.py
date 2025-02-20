@@ -25,6 +25,25 @@ class BuildView:
         self.fetch_file_list()
         self.update_aggrid()
 
+    # handle key inputs
+    # def handle_key(self, e: KeyEventArguments):
+    #     # can't do due to async problems
+    #     # if e.key == "Delete" and not e.action.repeat and e.action.keydown:
+    #     #     ui.notify("Del key presses")
+    #     #     asyncio.create_task(self.delete_selected_rows())  # Key change
+
+    #     # if e.key == "Backspace" and not e.action.repeat and e.action.keydown:
+    #     #     ui.notify("Backspace key presses")
+    #     #     asyncio.create_task(self.delete_selected_rows())  # Key change
+
+    #     if e.key == "r" and not e.action.repeat and e.action.keydown:
+    #         ui.notify("Refreshing...", position="top-right")
+    #         self.on_refresh()
+
+    # if e.key == "d" and not e.action.repeat and e.action.keydown:
+    #     ui.notify("d key presses")
+    #     self.download_selected_rows()
+
     def update_aggrid(self):
         """Convert self.file_list -> row data for AG Grid."""
         row_data = []
