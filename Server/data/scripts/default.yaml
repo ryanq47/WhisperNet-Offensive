@@ -1,0 +1,16 @@
+commands:
+  - name: script-help
+    description: "Script Help Command"
+    steps:
+      - action: sleep
+        args: [1]
+
+      - action: shell
+        args: ["whoami"]
+
+      - action: shell
+        args: ["ipconfig"]
+
+      - action: sleep
+        args: [10]
+

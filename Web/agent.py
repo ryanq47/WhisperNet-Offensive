@@ -9,6 +9,14 @@ from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
 from nicegui.events import KeyEventArguments
 
+# ---------------------------
+#   Easy Settings
+# ---------------------------
+
+SHELL_SCROLL_DURATION = (
+    0.25  # really just speed, how long it takes for the "scroll animation" to complete
+)
+
 
 # ---------------------------
 #   UI Helper Function
@@ -235,6 +243,7 @@ class AgentView:
                 options=scripts_data,
                 label="Extension Scripts",
                 on_change=lambda e: update_script(script_selector.value),
+                value=scripts_data[0] if scripts_data else "",
             ).classes("w-full")
 
         def update_script(script_name):
@@ -277,7 +286,9 @@ class AgentView:
                                     "width: 50%; height: 1.2em; margin: 4px 0;"
                                 )
                     if self.auto_scroll_enabled:
-                        self.shell_container.scroll_to(percent=1.0)
+                        self.shell_container.scroll_to(
+                            percent=1.0, duration=SHELL_SCROLL_DURATION
+                        )
 
         def send_command():
             api_post_call(
