@@ -421,6 +421,11 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
 // Keep
 void help(OutboundJsonDataStruct* response_struct) {
     const char* help_string = "Help:\n\n\
+**Command Execution:**\n\
+    `shell`: (shell <str: command>) - Runs a command via cmd.exe.\n\
+        *OPSEC: Runs a new cmd.exe process*\n\n\
+**Transfer Commands:**\n\
+    `http_get`: (http_get <str: url> <str: filepath>) - Downloads an HTTP file.\n\n\
 **File Commands:**\n\
     `write_file`: (write_file <str: path> <str: contents>) - Writes contents to a file.\n\
     `read_file`: (read_file <str: path>) - Reads contents of a file.\n\
@@ -439,14 +444,10 @@ void help(OutboundJsonDataStruct* response_struct) {
     `kill_process`: (kill_process <int: PID>) - Kills a process by PID.\n\
     `suspend_process`: (suspend_process <int: PID>) - Suspends a process.\n\
     `resume_process`: (resume_process <int: PID>) - Resumes a suspended process.\n\
-    `list_processes`: - Lists all running processes.\n\n\
-**Misc Commands:**\n\
-    `http_get`: (http_get <str: url> <str: filepath>) - Downloads an HTTP file.\n\
-        *[OPSEC: Will write file to disk]*\n\
-    `shell`: (shell <str: command>) - Runs a command via cmd.exe.\n\
-        *[OPSEC: Runs a new cmd.exe process]*\n\
-    `messagebox`: (messagebox <str: title> <str: message>) - Displays a message box.\n\
-        *[OPSEC: Shows on users screen]*\n\n\
+    `list_processes`: - Lists all running processes.\n\
+        Warning: Buffer size of 8192, not all processes may show up if many are running.\n\n\
+**User Interaction:**\n\
+    `messagebox`: (messagebox <str: title> <str: message>) - Displays a message box on screen.\n\n\
 **Config Commands:**\n\
     `sleep`: (sleep <int: sleeptime (seconds)>) - Sets the sleep time.\n\n\
 ";
