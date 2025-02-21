@@ -481,15 +481,6 @@ void help(OutboundJsonDataStruct* response_struct) {
     set_response_data(response_struct, help_string);
 }
 
-/*
-Directory Commands
-
-Need to switch to WhisperFunctions
-
-Still need some work
-
-*/
-
 
 
 /* 

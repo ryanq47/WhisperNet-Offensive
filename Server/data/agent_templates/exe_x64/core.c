@@ -46,29 +46,6 @@ This is reflected in the command API call, and in the web gui.
 
 */
 
-// int main()
-// {
-//     DEBUG_LOG("STARTING");
-
-//     char agent_id[37];
-//     generate_uuid4(agent_id);
-
-
-//     while (1) {
-
-//         // Create thread
-//         HANDLE thread = WhisperCreateThread(NULL, 0, execute_async, agent_id, 0, NULL);
-//         if (thread) {
-//             CloseHandle(thread); // Let the thread clean itself up
-//         } else {
-//             DEBUG_LOG("Failed to create thread.\n");
-
-//         }
-//         // Sleep for X seconds before running the next loop, gets time from get_sleep_time()
-//         WhisperSleep(get_sleep_time());
-//     }
-// }
-
 int main() {
 
 
