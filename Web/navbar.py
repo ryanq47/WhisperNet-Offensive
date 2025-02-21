@@ -120,6 +120,13 @@ def fun_navbar():
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
 
+        ui.button(
+            "Cred Store",
+            on_click=lambda: ui.navigate.to("/credstore"),
+            icon="key",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
         # Info Section
         ui.separator().classes("my-2 border-slate-400")
         ui.label("Misc").classes("text-slate-200 text-lg font-bold px-4 py-2")
@@ -237,6 +244,13 @@ def normal_navbar():
             "Hosted Files",
             on_click=lambda: ui.navigate.to("/files"),
             icon="dns",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
+        ui.button(
+            "Cred Store",
+            on_click=lambda: ui.navigate.to("/credstore"),
+            icon="key",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
 

@@ -16,10 +16,10 @@ class CredentialStore:
         self.grid = None
 
     def render(self):
-        with ui.column().classes("w-full h-full p-4 border"):
-            # Page title
-            ui.label("Credential Store").classes("text-2xl text-center mb-4")
+        with ui.column().classes("w-full h-full p-4"):
+            current_settings = app.storage.user.get("settings", {})
 
+            # Page title
             # Add Credential Form
             with ui.row().classes("gap-4 mb-4 items-center w-full"):
                 with ui.row().classes("flex-1 gap-4"):
@@ -30,6 +30,12 @@ class CredentialStore:
                 ui.button("Add", on_click=self.add_credential).classes(
                     "bg-green-500 text-white px-4 py-2 rounded"
                 )
+
+            aggrid_theme = (
+                "ag-theme-balham-dark"
+                if current_settings.get("Dark Mode", False)
+                else "ag-theme-balham"
+            )
 
             # Credential Grid
             self.credential_data = self.get_cred_data()
@@ -83,25 +89,19 @@ class CredentialStore:
                     "rowSelection": "multiple",
                     "suppressRowClickSelection": False,
                 }
-            ).style("height: 400px; width: 100%;")
+            ).classes(f"{aggrid_theme} h-full")
 
             # Toolbar
-            with ui.row().classes(
-                "w-full gap-4 py-2 bg-gray-100 border-b items-center justify-center"
-            ):
-                ui.button("Export CSV", on_click=self.export_csv).classes(
-                    "bg-blue-500 text-white px-4 py-2 rounded flex-1"
-                )
-                ui.button("Delete Selected", on_click=self.delete_selected).classes(
-                    "bg-red-500 text-white px-4 py-2 rounded flex-1"
-                )
+            with ui.row().classes("w-full justify-end gap-4 mt-4"):
+                ui.upload(
+                    label="Import CSV",
+                    on_upload=self.process_uploaded_file,
+                ).props("accept='.csv'")
 
-            ui.upload(
-                label="Import CSV",
-                on_upload=self.process_uploaded_file,
-            ).props(
-                "accept='.csv'"
-            ).classes("bg-blue-400 text-white px-4 py-2 rounded w-full")
+                ui.button("Export CSV", on_click=self.export_csv).props("outline")
+                ui.button("Delete Selected", on_click=self.delete_selected).props(
+                    "outline"
+                )
 
     def add_credential(self):
         username = self.username_input.value
@@ -132,37 +132,45 @@ class CredentialStore:
         """
         Deletes the selected rows from the grid and updates the data.
         """
-        try:
-            # Await the coroutine to get selected rows
-            selected_rows = await self.grid.get_selected_rows()
+        selected_rows = await self.grid.get_selected_rows()
 
-            # Iterate over selected rows and send a DELETE request for each
-            async with httpx.AsyncClient() as client:
-                for row in selected_rows:
-                    cred_id = row.get("id")  # Ensure "id" exists in row data
-                    if cred_id:
-                        try:
-                            response = await client.delete(
-                                f"/credstore/credential/{cred_id}"
-                            )
-                            if response.status_code != 200:
-                                print(
-                                    f"Failed to delete credential ID {cred_id}: {response.text}"
-                                )
-                        except Exception as request_error:
-                            print(
-                                f"Error deleting credential ID {cred_id}: {request_error}"
-                            )
+        for row in selected_rows:
+            cred_id = row.get("id")  # Ensure "id" exists in row data
+            if cred_id:
+                api_delete_call(f"/credstore/credential/{cred_id}")
 
-            # # Filter out the selected rows from the credential data
-            # self.credential_data = [
-            #     row for row in self.credential_data if row not in selected_rows
-            # ]
+        self.refresh_grid()
+        # try:
+        #     # Await the coroutine to get selected rows
+        #     selected_rows = await self.grid.get_selected_rows()
 
-            # Refresh the grid to reflect the updated data
-            self.refresh_grid()
-        except Exception as e:
-            print(f"Error deleting selected rows: {e}")
+        #     # Iterate over selected rows and send a DELETE request for each
+        #     async with httpx.AsyncClient() as client:
+        #         for row in selected_rows:
+        #             cred_id = row.get("id")  # Ensure "id" exists in row data
+        #             if cred_id:
+        #                 try:
+        #                     response = await client.delete(
+        #                         f"/credstore/credential/{cred_id}"
+        #                     )
+        #                     if response.status_code != 200:
+        #                         print(
+        #                             f"Failed to delete credential ID {cred_id}: {response.text}"
+        #                         )
+        #                 except Exception as request_error:
+        #                     print(
+        #                         f"Error deleting credential ID {cred_id}: {request_error}"
+        #                     )
+
+        #     # # Filter out the selected rows from the credential data
+        #     # self.credential_data = [
+        #     #     row for row in self.credential_data if row not in selected_rows
+        #     # ]
+
+        #     # Refresh the grid to reflect the updated data
+        #     self.refresh_grid()
+        # except Exception as e:
+        #     print(f"Error deleting selected rows: {e}")
 
     def refresh_grid(self):
         """
@@ -192,21 +200,23 @@ class CredentialStore:
             ui.notify(f"Error fetching credential data: {e}", position="top-right")
 
     def add_cred_to_server(self, data):
-        headers = {
-            "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
-            "Content-Type": "application/json",
-        }
+        # headers = {
+        #     "Authorization": f"Bearer {app.storage.user.get("jwt_token", "")}",
+        #     "Content-Type": "application/json",
+        # }
 
-        r = requests.post(
-            url=f"/credstore/credential",
-            json=data,  # data needs to be json string
-            headers=headers,
-        )
-        if r.status_code == 200 or r.status_code == 201:
-            ui.notify("Successfully added credential", position="top-right")
+        # r = requests.post(
+        #     url=f"/credstore/credential",
+        #     json=data,  # data needs to be json string
+        #     headers=headers,
+        # )
+        # if r.status_code == 200 or r.status_code == 201:
+        #     ui.notify("Successfully added credential", position="top-right")
 
-        else:
-            ui.notify(f"{r.status_code} Error adding credential", position="top-right")
+        api_post_call("/credstore/credential", data=data)
+
+        # else:
+        #     ui.notify(f"{r.status_code} Error adding credential", position="top-right")
 
     def process_uploaded_file(self, event):
         """
@@ -257,3 +267,40 @@ class CredentialStore:
     def export_csv(self):
         ui.notify("Prepping data to export...")
         self.grid.run_grid_method("exportDataAsCsv")
+
+
+class CredentialStorePage:
+    def __init__(self): ...
+
+    def render(self):
+        with ui.column().classes("w-full h-full p-[10px]"):
+            # HEADER 1
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("key")
+                ui.label("Credentials").classes("h-10")
+
+            # HEADER 2
+            with ui.row().classes("w-full text-2xl"):
+                ui.icon("info")
+                ui.label("Store and Access credentials").classes("h-6")
+                ui.space()
+            ui.separator()
+
+            # -- TABS --
+            with ui.tabs() as tabs:
+                ui.tab("Credentials")
+                # ui.tab("Import Creds")
+
+            # -- TAB PANELS --
+            with ui.tab_panels(tabs, value="Credentials").classes(
+                "w-full h-full border"
+            ):
+                with ui.tab_panel("Credentials").classes("h-full"):
+                    a = CredentialStore()
+                    a.render()
+                # with ui.tab_panel("Import Creds"):
+                #     a = CredentialStore()
+                #     a.render()
+                # with ui.tab_panel("Scripts"):
+                #     a = ScriptsView()
+                #     a.render()

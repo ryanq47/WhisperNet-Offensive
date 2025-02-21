@@ -49,4 +49,4 @@ Once all components are running, the server, web interface, and documentation wi
 |----------------|------------------------------|------------------------------|
 | API Docs       | http://SERVER_IP:8081/       | Endpoint documentation/Swagger UI      |
 | Web Interface  | http://WEBSERVER_IP:8080     | Main UI for interacting with the server |
-| Documentation  | http://DOCS_IP:8080          | Project reference and setup guides |
+| Documentation  | http://DOCS_IP:8000          | Project reference and setup guides |

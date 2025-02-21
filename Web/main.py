@@ -10,7 +10,7 @@ from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
-from credstore import CredentialStore
+from credstore import CredentialStore, CredentialStorePage
 from files import FilePage
 import argparse
 
@@ -82,7 +82,7 @@ def settings():
     check_login()
     main_container = navbar()
     with main_container:
-        c = CredentialStore()
+        c = CredentialStorePage()
         c.render()
 
 
