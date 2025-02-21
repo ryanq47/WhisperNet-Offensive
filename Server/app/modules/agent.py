@@ -10,6 +10,7 @@ from modules.redis_models import Agent, AgentData, AgentCommand
 from modules.utils import generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 import traceback
+from modules.agent_script_interpreter import AgentScriptInterpreter
 
 logger = log(__name__)
 
@@ -97,6 +98,7 @@ class BaseAgent:
             "shell hostname", GenericHandler, "system.hostname"
         )
         self.handler_registry.register("shell ver", GenericHandler, "system.os")
+        self.handler_registry.register("help", HelpHandler)
 
     @property
     def data(self):
@@ -426,19 +428,68 @@ class CommandHandlerRegistry:
         return None
 
 
-# Generic handlers
 class GenericHandler(BaseCommandHandler):
+    """
+    Generic handler for dynamically storing command responses at specified locations
+    within the agent's data structure.
+
+    This handler is designed to be highly flexible and reusable for a wide range of commands.
+    It allows for dynamic storage by specifying the `save_location` during registration,
+    which determines where the response will be saved within the agent's "data" structure
+
+    **How It Works:**
+        - The `save_location` is passed as a dot-notated string (e.g., "system.hostname", "network.internal_ip").
+        - This string is split by dots and traversed to locate or create the target field.
+        - If any nested attribute doesn't exist, it is dynamically initialized as a `Munch()` object.
+        - The command response is then stored at the specified location.
+        - The updated data is saved back to Redis using `agent.unload_data()`.
+
+    **Example Registration:**
+        self.handler_registry.register("shell hostname", GenericHandler, save_location="system.hostname")
+        self.handler_registry.register("shell whoami", GenericHandler, save_location="system.username")
+        self.handler_registry.register("shell ver", GenericHandler, save_location="system.os_version")
+
+    **Example Save Locations:**
+        - "system.hostname" → Saves the response under `agent.data.system.hostname`
+        - "network.internal_ip" → Saves the response under `agent.data.network.internal_ip`
+        - "geo.country" → Saves the response under `agent.data.geo.country`
+        (On the web gui, this is rendered in the MAIN tab for each agent)
+
+    **Note:**
+        - This handler directly updates the data field in the agent entry in Redis.
+        - It is designed to be idempotent, preventing duplicate entries by overwriting existing values.
+        - If the `save_location` is invalid or not reachable, the handler gracefully logs the issue and returns False.
+    """
+
     def __init__(self, save_location):
         """
         Initialize with a save location for dynamic storage.
+
+        Args:
+            save_location (str): Dot-notated string specifying where to store the response.
+                                Example: "system.hostname" or "network.internal_ip"
         """
         self.save_location = save_location  # Store as an instance variable
 
     def store(self, command_entry, agent_id):
         """
         Generic processing and storing for any command response.
+
+        This method:
+            - Loads the latest agent data from Redis.
+            - Traverses the save_location, creating nested keys if needed.
+            - Stores the command response at the specified location.
+            - Saves the updated data back to Redis.
+
+        Args:
+            command_entry (AgentCommand): The command entry containing the response to be stored.
+            agent_id (str): The unique ID of the agent that executed the command.
+
+        Returns:
+            bool: True if the response is successfully stored, False otherwise.
         """
         try:
+            # Load the latest agent data
             agent = BaseAgent(agent_id)
             agent.load_data()
 
@@ -467,120 +518,61 @@ class GenericHandler(BaseCommandHandler):
             )
             return False
 
+        except (AttributeError, Exception) as e:
+            logger.error(
+                f"Error storing at '{self.save_location}' for Agent ID {agent_id}: {e}"
+            )
+            return False
+
 
 # any handlers that need *specific* stuff, otherwise generic handler stores in the
 # data of each agent
 
-# class WhoamiHandler(BaseCommandHandler):
-#     # shorter version
-#     def store(self, command_entry, agent_id):
-#         try:
-#             agent = BaseAgent(agent_id)
-#             agent.load_data()
 
-#             # Directly update the field and save
-#             agent.data.system.username = command_entry.response
-#             agent.unload_data()
+class HelpHandler(BaseCommandHandler):
+    """
+    Custom handler for help command, which appends the contents of the current script with it
 
-#             logger.info(
-#                 f"username '{command_entry.response}' stored for Agent ID {agent_id}"
-#             )
-#             return True
+    Ex:
+        > File Command
+            ...
 
-#         except (AttributeError, Exception) as e:
-#             logger.error(f"Error storing username for Agent ID {agent_id}: {e}")
-#             return False
+        > Extension Script `somescript.yaml` options:
+            ...
+
+        This help string is pulled directly from the currently seelcted .yaml script,
+        and is generated by the AgentScriptInterpreter's extract_help_info() method
 
 
-# # class HostnameHandler(BaseCommandHandler):
-# #     def store(self, command_entry, agent_id):
-# #         """
-# #         Custom processing and storing for 'hostname' command response.
-# #         """
-# #         try:
-# #             # Debug log for tracking the process
-# #             logger.debug(
-# #                 f"Storing hostname for Agent ID {agent_id} with response: {command_entry.response}"
-# #             )
+        Note: This does directly update the response string in redis.
+    """
 
-# #             # Use base agent, as we don't know what type of agent we will be passing data to
-# #             agent = BaseAgent(agent_id=agent_id)
-# #             # Access and update agent data
-# #             agent.load_data()
-# #             data = agent.data
+    def store(self, command_entry, agent_id):
+        """
+        Custom processing and storing for 'help' command response.
+        """
+        try:
+            # Load the latest agent data
+            agent = BaseAgent(agent_id)
+            agent.load_data()
 
-# #             # Ensure data structure is correctly initialized
-# #             if not hasattr(data, "system") or not hasattr(data.system, "hostname"):
-# #                 logger.warning(
-# #                     f"Data structure for Agent ID {agent_id} is not properly initialized."
-# #                 )
-# #                 return False
+            # Get the help string
+            asi = AgentScriptInterpreter(agent.data.config.command_script)
+            extension_help_string = asi.extract_help_info()
 
-# #             # Update the hostname field
-# #             data.system.hostname = command_entry.response
-# #             # save back to redis
-# #             agent.unload_data()
+            # Get command id and current response
+            command_id = command_entry.command_id
+            current_response = command_entry.response
 
-# #             logger.info(
-# #                 f"Hostname '{command_entry.response}' stored for Agent ID {agent_id}"
-# #             )
-# #             return True
+            # Check if the extension string is already appended
+            if extension_help_string not in current_response:
+                # Append only if not already present
+                command_entry.response += extension_help_string
+                # Save/update the response in Redis
+                agent.store_response(command_id, command_entry.response)
 
-# #         except AttributeError as ae:
-# #             logger.error(
-# #                 f"AttributeError while storing hostname for Agent ID {agent_id}: {ae}"
-# #             )
-# #             return False
+            logger.debug(f"Help response updated for Command ID {command_id}")
 
-# #         except Exception as e:
-# #             logger.error(
-# #                 f"Unexpected error while storing hostname for Agent ID {agent_id}: {e}"
-# #             )
-# #             return False
-
-
-# class OsNameHandler(BaseCommandHandler):
-#     def store(self, command_entry, agent_id):
-#         """
-#         Custom processing and storing for 'OsName' command response.
-#         """
-#         try:
-#             # Debug log for tracking the process
-#             logger.debug(
-#                 f"Storing OsName for Agent ID {agent_id} with response: {command_entry.response}"
-#             )
-
-#             # Use base agent, as we don't know what type of agent we will be passing data to
-#             agent = BaseAgent(agent_id=agent_id)
-#             # Access and update agent data
-#             agent.load_data()
-#             data = agent.data
-
-#             # Ensure data structure is correctly initialized
-#             if not hasattr(data, "system") or not hasattr(data.system, "os"):
-#                 logger.warning(
-#                     f"Data structure for Agent ID {agent_id} is not properly initialized."
-#                 )
-#                 return False
-
-#             # Update the hostname field
-#             data.system.os = command_entry.response
-#             # save back to redis
-#             agent.unload_data()
-
-#             logger.info(
-#                 f"Hostname '{command_entry.response}' stored for Agent ID {agent_id}"
-#             )
-#             return True
-
-#         except AttributeError as ae:
-#             logger.error(
-#                 f"AttributeError while storing OsName for Agent ID {agent_id}: {ae}"
-#             )
-#             return False
-
-#         except Exception as e:
-#             logger.error(
-#                 f"Unexpected error while storing OsName for Agent ID {agent_id}: {e}"
-#             )
-#             return False
+        except (AttributeError, Exception) as e:
+            logger.error(f"Error for Agent ID {agent_id}: {e}")
+            return False

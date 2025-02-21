@@ -128,6 +128,27 @@ class AgentScriptInterpreter:
             logger.error(f"Error checking command in script: {e}")
             return False
 
+    def extract_help_info(self):
+        """
+        Extracts help info from the script contents and returns it as a single string.
+
+        Used for easy parsing of the yaml for a help dialogue. Mainly used by a custom "help"
+        handler for when running the "help" command
+        """
+        try:
+            help_info = []
+            help_info.append(f"> Extension Script `{self.script_name}` options:\n")
+            for command in self.script_contents["commands"]:
+                name = command.get("name", "Unknown Command")
+                desc = command.get("description", "No description provided")
+                help_info.append(f"\t{name}: {desc}\n")
+
+            # Join all lines into a single string
+            return "".join(help_info)
+        except Exception as e:
+            logger.error(e)
+            return "Error creating help dialogue from script"
+
 
 # Run only if executed directly
 if __name__ == "__main__":
