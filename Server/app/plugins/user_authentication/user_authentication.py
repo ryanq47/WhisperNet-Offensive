@@ -14,6 +14,7 @@ from flask_jwt_extended import (
     decode_token,
     get_jwt_identity,
 )
+import datetime
 
 logger = log(__name__)
 app = Instance().app
@@ -111,7 +112,10 @@ class LoginResource(Resource):
                 # Compare the request password with hashed password in DB
                 if bcrypt.checkpw(password.encode(), user.password):
                     logger.info(f"{user.uuid}:{user.username} logging in")
-                    access_token = create_access_token(identity=user.uuid)
+                    logger.warning("Hardcoded 60 minute token expiration")
+                    access_token = create_access_token(
+                        identity=user.uuid, expires_delta=datetime.timedelta(minutes=60)
+                    )
 
                     return api_response(
                         message="Login Success",
