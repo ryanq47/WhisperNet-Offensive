@@ -396,7 +396,7 @@ class BaseAgent:
 
 
 ## command registry stuff
-# including in this file due to circular import stuff
+# TLDR: Allows for custom handling to each command that is registered, in order to record outputs
 
 
 class BaseCommandHandler:
