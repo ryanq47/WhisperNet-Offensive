@@ -769,7 +769,7 @@ void ls(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    char fileList[4096] = ""; // Buffer to store the list of files (adjust size as needed)
+    char fileList[8192] = ""; // Buffer to store the list of files (adjust size as needed)
     char tempFileName[MAX_PATH];
 
     do {
@@ -780,7 +780,7 @@ void ls(OutboundJsonDataStruct* response_struct, char* args) {
         strcat(fileList, "\n"); // toss in a newline after appending each item
     } while (WhisperFindNextFileW(hFind, &wfd) != 0);
 
-    FindClose(hFind);
+    WhisperFindClose(hFind);
 
     if (strlen(fileList) == 0) {
         set_response_data(response_struct, "No files found.");

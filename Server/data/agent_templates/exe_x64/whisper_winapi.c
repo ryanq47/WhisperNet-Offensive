@@ -991,7 +991,7 @@ BOOL WhisperFindClose(HANDLE hFindFile) {
 BOOL WhisperSetCurrentDirectoryA(LPCSTR lpPathName) {
     static SetCurrentDirectoryA_t pSetCurrentDirectoryA = NULL;
     if (!pSetCurrentDirectoryA) {
-        pSetCurrentDirectoryA = (SetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", (LPCSTR)FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME);
+        pSetCurrentDirectoryA = (SetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME);
         if (!pSetCurrentDirectoryA) return FALSE; // Or appropriate error code
     }
     return pSetCurrentDirectoryA(lpPathName);
@@ -1000,7 +1000,7 @@ BOOL WhisperSetCurrentDirectoryA(LPCSTR lpPathName) {
 BOOL WhisperCreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
     static CreateDirectoryA_t pCreateDirectoryA = NULL;
     if (!pCreateDirectoryA) {
-        pCreateDirectoryA = (CreateDirectoryA_t)ResolveFunction(L"kernel32.dll", (LPCSTR)FUNC_CreateDirectoryA_ENCRYPTED_NAME);
+        pCreateDirectoryA = (CreateDirectoryA_t)ResolveFunction(L"kernel32.dll",FUNC_CreateDirectoryA_ENCRYPTED_NAME);
         if (!pCreateDirectoryA) return FALSE;
     }
     return pCreateDirectoryA(lpPathName, lpSecurityAttributes);
@@ -1009,7 +1009,7 @@ BOOL WhisperCreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurity
 BOOL WhisperRemoveDirectoryA(LPCSTR lpPathName) {
     static RemoveDirectoryA_t pRemoveDirectoryA = NULL;
     if (!pRemoveDirectoryA) {
-        pRemoveDirectoryA = (RemoveDirectoryA_t)ResolveFunction(L"kernel32.dll", (LPCSTR)FUNC_RemoveDirectoryA_ENCRYPTED_NAME);
+        pRemoveDirectoryA = (RemoveDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_RemoveDirectoryA_ENCRYPTED_NAME);
         if (!pRemoveDirectoryA) return FALSE;
     }
     return pRemoveDirectoryA(lpPathName);
@@ -1018,7 +1018,7 @@ BOOL WhisperRemoveDirectoryA(LPCSTR lpPathName) {
 DWORD WhisperGetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { // From the previous example
     static GetCurrentDirectoryA_t pGetCurrentDirectoryA = NULL;
     if (!pGetCurrentDirectoryA) {
-        pGetCurrentDirectoryA = (GetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", (LPCSTR)FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME);
+        pGetCurrentDirectoryA = (GetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME);
         if (!pGetCurrentDirectoryA) return 0;
     }
     return pGetCurrentDirectoryA(nBufferLength, lpBuffer);
@@ -1027,7 +1027,7 @@ DWORD WhisperGetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { // From
 HANDLE WhisperCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
     static CreateFileA_t pCreateFileA = NULL;
     if (!pCreateFileA) {
-        pCreateFileA = (CreateFileA_t)ResolveFunction(L"kernel32.dll", (LPCSTR)FUNC_CreateFileA_ENCRYPTED_NAME);
+        pCreateFileA = (CreateFileA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateFileA_ENCRYPTED_NAME);
         if (!pCreateFileA) return INVALID_HANDLE_VALUE; // Or appropriate error code
     }
     return pCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
