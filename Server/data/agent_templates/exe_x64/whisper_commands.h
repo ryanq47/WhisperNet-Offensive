@@ -438,7 +438,7 @@ void help(OutboundJsonDataStruct* response_struct) {
     `rmdir`: (rmdir <str: directory>) - Removes a directory.\n\
     `cd`: (cd <str: directory>) - Changes the current directory.\n\
     `pwd`: (pwd) - Prints the current working directory.\n\
-    `ls`: (ls <str: path (optional)>) - Lists files and directories in the specified path (or current directory if none provided).\n\n\
+    `ls`: [BROKEN DO NOT RUN, will crash] (ls <str: path (optional)>) - Lists files and directories in the specified path (or current directory if none provided).\n\n\
 **Process Commands:**\n\
     `start_process`: (start_process <str: command>) - Starts a new process.\n\
     `kill_process`: (kill_process <int: PID>) - Kills a process by PID.\n\
