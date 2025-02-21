@@ -159,9 +159,9 @@ class BaseAgent:
 
             try:
                 stored_data = AgentData.get(self.data.agent.id)
-                logger.debug(
-                    f"Loaded existing agent data from Redis: {stored_data.json_blob}"
-                )
+                # logger.debug(
+                #     f"Loaded existing agent data from Redis: {stored_data.json_blob}"
+                # )
                 self.data = json.loads(stored_data.json_blob)  # Ensure latest state
 
             # blanket exception, should handle this better

