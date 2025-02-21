@@ -399,6 +399,7 @@ class BaseAgent:
 
 ## command registry stuff
 # TLDR: Allows for custom handling to each command that is registered, in order to record outputs
+# Downsides, only catches command AFTER it's run, not really a way to catch it before at the moment
 
 
 class BaseCommandHandler:

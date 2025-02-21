@@ -18,7 +18,7 @@ commands:
         args: [10]
 
   - name: geo
-    description: "Gets GEO data"
+    description: "Prints GEO data to screen, OPSEC: Spawns powershell, and makes a web request for this data"
     steps:
       - action: sleep
         args: [10]
