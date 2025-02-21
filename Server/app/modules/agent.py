@@ -14,6 +14,16 @@ import traceback
 logger = log(__name__)
 
 
+"""HUGE README:
+
+In order to not have stale data with BaseAgent, before you call agent.data, PLEASE
+call agent.load_data() to get the latest data from redis
+
+
+note, register() will do this automatically
+"""
+
+
 class BaseAgent:
     """
     A base class that provides common functionality for all models.
@@ -33,7 +43,6 @@ class BaseAgent:
                 "system": {
                     "hostname": None,
                     "os": None,
-                    "os_version": None,
                     "architecture": None,
                     "username": None,
                     "privileges": None,
@@ -78,18 +87,16 @@ class BaseAgent:
         )
         self.data.agent.id = agent_id
 
-        # # check if data exists already, if so, load that/overwrite the above
-        # stored_data = AgentData.get(self.data.agent.id)
-        # if stored_data:
-        #     # logger.debug(
-        #     #     f"Loaded existing agent data from Redis on init: {stored_data.json_blob}"
-        #     # )
-        #     self.data = json.loads(stored_data.json_blob)  # Ensure latest state
-
         # setup registry handling for certain commands
+        # could make this more modular
         self.handler_registry = CommandHandlerRegistry()
-        self.handler_registry.register("shell whoami", WhoamiHandler)
-        self.handler_registry.register("shell hostname", HostnameHandler)
+        self.handler_registry.register(
+            "shell whoami", GenericHandler, "system.username"
+        )
+        self.handler_registry.register(
+            "shell hostname", GenericHandler, "system.hostname"
+        )
+        self.handler_registry.register("shell ver", GenericHandler, "system.os")
 
     @property
     def data(self):
@@ -355,35 +362,6 @@ class BaseAgent:
             logger.error(e)
             raise e
 
-    # def store_response(self, command_id, response):
-    #     """
-    #     Stores response for a command.
-
-    #     Finds the command by command_id and updates the response field.
-    #     """
-    #     try:
-    #         # Retrieve the command entry by ID
-    #         command_entry = AgentCommand.get(command_id)
-
-    #         if not command_entry:
-    #             logger.error(f"Command ID {command_id} not found.")
-    #             return False  # Command not found
-
-    #         # Update the response field
-    #         command_entry.response = response
-    #         command_entry.save()  # Save back to Redis
-
-    #         # Do some processing here, if a certain command, save output somewhere
-    #         if "whoami" in command_entry.command:
-    #             print(f"AHHH WHOAMI FOUND: {command_entry.response}")
-
-    #         logger.debug(f"Response stored for Command ID {command_id}")
-    #         return True  # Successfully updated
-
-    #     except Exception as e:
-    #         logger.error(f"Error storing response for Command ID {command_id}: {e}")
-    #         raise e
-
     def store_response(self, command_id, response):
         """
         Stores response for a command.
@@ -430,66 +408,179 @@ class CommandHandlerRegistry:
     def __init__(self):
         self.handlers = {}
 
-    def register(self, command_pattern, handler_class):
-        self.handlers[command_pattern] = handler_class()
+    def register(self, command_pattern, handler_class, *args, **kwargs):
+        """
+        Register a handler with optional arguments.
+        """
+        # Store handler with additional args and kwargs
+        self.handlers[command_pattern] = (handler_class, args, kwargs)
 
     def get_handler(self, command):
-        for pattern, handler in self.handlers.items():
+        """
+        Retrieve the handler for a given command.
+        """
+        for pattern, (handler_class, args, kwargs) in self.handlers.items():
             if pattern in command:
-                return handler
+                # Instantiate the handler with stored args and kwargs
+                return handler_class(*args, **kwargs)
         return None
 
 
-class WhoamiHandler(BaseCommandHandler):
-    def store(self, command_entry, agent_id):
-        # Custom processing for 'whoami' command
-        print(f"Custom storing for WHOAMI: {command_entry.response}")
-        # You could also store this response somewhere special
-        with open("whoami_output.txt", "a") as f:
-            f.write(f"{command_entry.response}\n")
+# Generic handlers
+class GenericHandler(BaseCommandHandler):
+    def __init__(self, save_location):
+        """
+        Initialize with a save location for dynamic storage.
+        """
+        self.save_location = save_location  # Store as an instance variable
 
-
-class HostnameHandler(BaseCommandHandler):
     def store(self, command_entry, agent_id):
         """
-        Custom processing and storing for 'hostname' command response.
+        Generic processing and storing for any command response.
         """
         try:
-            # Debug log for tracking the process
-            logger.debug(
-                f"Storing hostname for Agent ID {agent_id} with response: {command_entry.response}"
-            )
+            agent = BaseAgent(agent_id)
+            agent.load_data()
 
-            # Use base agent, as we don't know what type of agent we will be passing data to
-            agent = BaseAgent(agent_id=agent_id)
-            # Access and update agent data
-            data = agent.data
+            # Split the save_location by dots to support nested attributes
+            location_parts = self.save_location.split(".")
+            target = agent.data
 
-            # Ensure data structure is correctly initialized
-            if not hasattr(data, "system") or not hasattr(data.system, "hostname"):
-                logger.warning(
-                    f"Data structure for Agent ID {agent_id} is not properly initialized."
-                )
-                return False
+            # Traverse the nested attributes, creating them if they don't exist
+            for part in location_parts[:-1]:
+                if not hasattr(target, part) or getattr(target, part) is None:
+                    setattr(target, part, munch.Munch())
+                target = getattr(target, part)
 
-            # Update the hostname field
-            data.system.hostname = command_entry.response
-            # save back to redis
+            # Set the value at the final attribute
+            setattr(target, location_parts[-1], command_entry.response)
             agent.unload_data()
 
             logger.info(
-                f"Hostname '{command_entry.response}' stored for Agent ID {agent_id}"
+                f"Stored '{command_entry.response}' at '{self.save_location}' for Agent ID {agent_id}"
             )
             return True
 
-        except AttributeError as ae:
+        except (AttributeError, Exception) as e:
             logger.error(
-                f"AttributeError while storing hostname for Agent ID {agent_id}: {ae}"
+                f"Error storing at '{self.save_location}' for Agent ID {agent_id}: {e}"
             )
             return False
 
-        except Exception as e:
-            logger.error(
-                f"Unexpected error while storing hostname for Agent ID {agent_id}: {e}"
-            )
-            return False
+
+# any handlers that need *specific* stuff, otherwise generic handler stores in the
+# data of each agent
+
+# class WhoamiHandler(BaseCommandHandler):
+#     # shorter version
+#     def store(self, command_entry, agent_id):
+#         try:
+#             agent = BaseAgent(agent_id)
+#             agent.load_data()
+
+#             # Directly update the field and save
+#             agent.data.system.username = command_entry.response
+#             agent.unload_data()
+
+#             logger.info(
+#                 f"username '{command_entry.response}' stored for Agent ID {agent_id}"
+#             )
+#             return True
+
+#         except (AttributeError, Exception) as e:
+#             logger.error(f"Error storing username for Agent ID {agent_id}: {e}")
+#             return False
+
+
+# # class HostnameHandler(BaseCommandHandler):
+# #     def store(self, command_entry, agent_id):
+# #         """
+# #         Custom processing and storing for 'hostname' command response.
+# #         """
+# #         try:
+# #             # Debug log for tracking the process
+# #             logger.debug(
+# #                 f"Storing hostname for Agent ID {agent_id} with response: {command_entry.response}"
+# #             )
+
+# #             # Use base agent, as we don't know what type of agent we will be passing data to
+# #             agent = BaseAgent(agent_id=agent_id)
+# #             # Access and update agent data
+# #             agent.load_data()
+# #             data = agent.data
+
+# #             # Ensure data structure is correctly initialized
+# #             if not hasattr(data, "system") or not hasattr(data.system, "hostname"):
+# #                 logger.warning(
+# #                     f"Data structure for Agent ID {agent_id} is not properly initialized."
+# #                 )
+# #                 return False
+
+# #             # Update the hostname field
+# #             data.system.hostname = command_entry.response
+# #             # save back to redis
+# #             agent.unload_data()
+
+# #             logger.info(
+# #                 f"Hostname '{command_entry.response}' stored for Agent ID {agent_id}"
+# #             )
+# #             return True
+
+# #         except AttributeError as ae:
+# #             logger.error(
+# #                 f"AttributeError while storing hostname for Agent ID {agent_id}: {ae}"
+# #             )
+# #             return False
+
+# #         except Exception as e:
+# #             logger.error(
+# #                 f"Unexpected error while storing hostname for Agent ID {agent_id}: {e}"
+# #             )
+# #             return False
+
+
+# class OsNameHandler(BaseCommandHandler):
+#     def store(self, command_entry, agent_id):
+#         """
+#         Custom processing and storing for 'OsName' command response.
+#         """
+#         try:
+#             # Debug log for tracking the process
+#             logger.debug(
+#                 f"Storing OsName for Agent ID {agent_id} with response: {command_entry.response}"
+#             )
+
+#             # Use base agent, as we don't know what type of agent we will be passing data to
+#             agent = BaseAgent(agent_id=agent_id)
+#             # Access and update agent data
+#             agent.load_data()
+#             data = agent.data
+
+#             # Ensure data structure is correctly initialized
+#             if not hasattr(data, "system") or not hasattr(data.system, "os"):
+#                 logger.warning(
+#                     f"Data structure for Agent ID {agent_id} is not properly initialized."
+#                 )
+#                 return False
+
+#             # Update the hostname field
+#             data.system.os = command_entry.response
+#             # save back to redis
+#             agent.unload_data()
+
+#             logger.info(
+#                 f"Hostname '{command_entry.response}' stored for Agent ID {agent_id}"
+#             )
+#             return True
+
+#         except AttributeError as ae:
+#             logger.error(
+#                 f"AttributeError while storing OsName for Agent ID {agent_id}: {ae}"
+#             )
+#             return False
+
+#         except Exception as e:
+#             logger.error(
+#                 f"Unexpected error while storing OsName for Agent ID {agent_id}: {e}"
+#             )
+#             return False
