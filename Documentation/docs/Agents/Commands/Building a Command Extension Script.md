@@ -167,7 +167,34 @@ shell dir D:\
 sleep 10
 ```
 
-### **4. Full Example**
+### **4. Sync & Async**
+
+This example demonstrates how to use synchronous and asynchronous execution modes to manage dependencies between commands. It shows a scenario where a file needs to be downloaded, extracted, and then processed. Synchronous mode ensures each step completes before the next one begins, preventing errors that could occur if steps overlap, such as attempting to extract a partially downloaded file.
+
+Switching to synchronous mode is highly recommended for tasks with variable execution times or dependencies. While long sleep/checkin times *could* be used to approximate this behavior, they do not *guarantee* that tasks will complete in the correct order. Synchronous mode provides that guarantee.
+
+```yaml
+commands:
+  - name: download_and_process
+    description: "Download a file and process it synchronously"
+    steps:
+      - action: execution_mode
+        args: ["sync"]  # Switch to synchronous mode
+
+      - action: http_get
+        args: ["[http://example.com/large_file.zip](http://example.com/large_file.zip)", "C:\\temp\\large_file.zip"] 
+
+      - action: shell
+        args: ["unzip C:\\temp\\large_file.zip -d C:\\temp\\extracted"] 
+
+      - action: shell
+        args: ["process_data.exe C:\\temp\\extracted\\data.txt"]  
+
+      - action: execution_mode
+        args: ["async"] # Switch back to asynchronous mode (optional)
+```
+
+### **5. Full Example**
 
 ```
 commands:
