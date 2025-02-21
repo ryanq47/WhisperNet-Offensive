@@ -4,6 +4,7 @@ project(AgentC2 LANGUAGES C CXX)
 # Set output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+
 # Common compile definitions
 # basically, these allow strcpy_s instead of like strncpy... cuz im dumb and didn't use POSIX funcs
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
@@ -61,11 +62,9 @@ else()
     set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
     set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-    set(WINDOWS_LIBS -lwininet -lws2_32 -lkernel32 -luser32 -ladvapi32)
+    set(WINDOWS_LIBS -lwininet -lws2_32 -lkernel32 -luser32 -ladvapi32) # Added -ltlhelp32
     # Linker optimizations
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -s -flto")
-
-
 endif()
 
 # Build Target

