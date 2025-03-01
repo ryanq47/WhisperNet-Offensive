@@ -51,7 +51,13 @@ class CommandFactory:
         command_cls = self.commands.get(command_name)
         # if passed in command not in script (or not registered/loaded correctly)
         if command_cls is None:
-            raise ValueError(f"Command '{command_name}' is not registered")
+            # raise ValueError(f"Command '{command_name}' is not registered")
+            # Allow the script to fail if a non-registered command exists, which
+            # allows the default commands to be called (ex, shell, etc)
+            logger.info(
+                f"Command {command_name} not registered, falling through to default command handling."
+            )
+            return False
         return command_cls(command_name, args_list, agent_id)
 
 
@@ -113,9 +119,15 @@ class AgentScriptInterpreter:
             command_name=command, args_list=args_list, agent_id=self.agent_id
         )
 
-        # run the command instance, which will queue up the needed commands based
-        # on inputs, etc. and so forth. Entirely up to the user to do
-        command_instance.run()
+        if command_instance:
+            # run the command instance, which will queue up the needed commands based
+            # on inputs, etc. and so forth. Entirely up to the user to do
+            command_instance.run()
+            return True
+
+        # if the command isn't registered here, return false
+        else:
+            return False
 
     def _check_if_command_is_in_script(self, inbound_command):
         """

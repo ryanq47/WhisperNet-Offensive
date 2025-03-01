@@ -4,33 +4,32 @@ from modules.agent import BaseAgent
 
 class PingHost(BaseCommand):
     command_name = "ping_host"
+    command_help = "Pings a host. Usage: `ping_host <host ip/hostname>`"
 
     def __init__(self, command, args_list, agent_id):
         """
-        command:command, ex ping 127.0.0.1
+        command:command, ex ping_host
+
+        args_list: The list of arguments which the user puts in when typing a command
+            ex: command = `ping_host 127.0.0.1`, the args would be ["127.0.0.1]
 
         agent_id: The agent ID which gets passed in to
             operate on the agent
 
         """
-        # You could also parse and validate args here
         super().__init__(command, args_list, agent_id)
-        self.command_name = "ping_host"
-        self.command_help = "Pings a host. Usage: `ping_host <host ip/hostname>`"
-        self.command = command
         if not command:
             raise ValueError("Missing command")
+        if not args_list:
+            raise ValueError("Missing args_list")
+        if not agent_id:
+            raise ValueError("Missing agent_id")
 
-        print(command)
-
-        parts = command.split()
-        # get args - have to be positional with this setup
-        # command = parts[0]  # get command iteslf
-        # args = parts[1:]  # args, ex ["127.0.0.1"]
-
+        # Get the args from the args list
         self.host = args_list[0]
         # self.arg_2 = args[1]
 
+        # Spin up a BaseAgent instance with the agent_id
         self.agent_class = BaseAgent(agent_id)
 
     def run(self):

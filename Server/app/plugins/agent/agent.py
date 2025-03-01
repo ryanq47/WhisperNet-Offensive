@@ -156,6 +156,7 @@ class AgentEnqueueCommandResource(Resource):
             ##########
             # Script Stuff
             ##########
+            logger.debug(f"Command inbound from server: {command}")
 
             command_script_name = a.get_command_script()
             asi = AgentScriptInterpreter(
@@ -168,8 +169,10 @@ class AgentEnqueueCommandResource(Resource):
 
             # queue multiple commands
             if command_results:
-                for command in command_results:
-                    command_id = a.enqueue_command(command=command)
+                logger.debug("Successful execution of commands")
+                # not doing here, letting the logic handle this.
+                # for command in command_results:
+                #    command_id = a.enqueue_command(command=command)
 
             # queue a single command
             else:
