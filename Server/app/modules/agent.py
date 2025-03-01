@@ -596,7 +596,9 @@ class HelpHandler(BaseCommandHandler):
             agent.load_data()
 
             # Get the help string
-            asi = AgentScriptInterpreter(agent.data.config.command_script)
+            asi = AgentScriptInterpreter(
+                script_name=agent.data.config.command_script, agent_id=agent_id
+            )
             extension_help_string = asi.extract_help_info()
 
             # Get command id and current response

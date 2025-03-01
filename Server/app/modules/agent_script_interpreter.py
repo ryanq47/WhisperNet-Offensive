@@ -129,41 +129,31 @@ class AgentScriptInterpreter:
         else:
             return False
 
-    def _check_if_command_is_in_script(self, inbound_command):
-        """
-        Checks if the given command exists in the script.
-        Safeguards against empty or malformed scripts.
-        """
-
-        """
-        if inbound_command not in self.generated_commands:
-            return False
-
-        
-        
-        
-        """
-
     def extract_help_info(self):
         """
-        Extracts help info from the script contents and returns it as a single string.
+        Extracts help info from the registered command classes and returns it as a single string.
 
-        Used for easy parsing of the yaml for a help dialogue. Mainly used by a custom "help"
-        handler for when running the "help" command
+        Returns:
+            A string containing each command name and its help information.
         """
         try:
             help_info = []
-            help_info.append(f"> Extension Script `{self.script_name}` options:\n")
-            for command in self.script_contents["commands"]:
-                name = command.get("name", "Unknown Command")
-                desc = command.get("description", "No description provided")
-                help_info.append(f"\t{name}: {desc}\n")
+            help_info.append(f"\n> Script {self.script_path} Commands:\n")
 
-            # Join all lines into a single string
+            # Iterate over each registered command in the factory (or command registry)
+            for command_name, command_cls in self.command_factory.commands.items():
+                # Retrieve the command help from the class attribute; default if missing.
+                command_help = getattr(
+                    command_cls, "command_help", "No description provided"
+                )
+                help_info.append(f"\t{command_name}: {command_help}\n")
+
+            # Join all help lines into one string
             return "".join(help_info)
+
         except Exception as e:
             logger.error(e)
-            return "Error creating help dialogue from script"
+            return "Error creating help dialogue from command classes"
 
 
 # Example usage:

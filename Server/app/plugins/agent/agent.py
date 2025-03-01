@@ -160,8 +160,8 @@ class AgentEnqueueCommandResource(Resource):
 
             command_script_name = a.get_command_script()
             asi = AgentScriptInterpreter(
-                command_script_name,
-                agent_uuid,
+                script_name=command_script_name,
+                agent_id=agent_uuid,
                 # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
             )
 
@@ -174,13 +174,16 @@ class AgentEnqueueCommandResource(Resource):
                 # for command in command_results:
                 #    command_id = a.enqueue_command(command=command)
 
+                return api_response(data="Extension Script Command queued")
             # queue a single command
             else:
                 a = Agent(agent_id=agent_uuid)
                 command_id = a.enqueue_command(command=command)
 
-            # print(api_response)
-            return api_response(data=command_id)
+                # print(api_response)
+                return api_response(data=command_id), 200
+
+        # 500ing for some reason?
         except Exception as e:
             logger.error(e)
             return api_response(message="An error occured"), 500

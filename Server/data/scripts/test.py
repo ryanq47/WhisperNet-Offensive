@@ -58,3 +58,36 @@ class PingHost(BaseCommand):
             # append to response: SomethignSomething host alive, performing next steps
             shell_cmd_response += "\n\nTesting Adding onto command, etc"
             self.agent_class.store_response(shell_cmd_id, shell_cmd_response)
+
+
+class Populate(BaseCommand):
+    command_name = "populate"
+    command_help = "Populates common data fields. Usage: `populate`"
+
+    def __init__(self, command, args_list, agent_id):
+        """
+        command: The command string, e.g. "populate"
+        args_list: List of arguments provided by the user (not used here)
+        agent_id: The agent identifier to operate on.
+        """
+        super().__init__(command, args_list, agent_id)
+        if not agent_id:
+            raise ValueError("Missing agent_id")
+        # Instantiate a BaseAgent to handle command execution.
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        # Enqueue a sleep command (10 seconds) before execution.
+        self.agent_class.enqueue_command("sleep 10")
+
+        # Execute shell command "ver"
+        self.agent_class.enqueue_command("shell ver")
+
+        # Execute shell command "whoami"
+        self.agent_class.enqueue_command("shell whoami")
+
+        # Execute shell command "hostname"
+        self.agent_class.enqueue_command("shell hostname")
+
+        # Enqueue a sleep command (10 seconds) after execution.
+        self.agent_class.enqueue_command("sleep 10")
