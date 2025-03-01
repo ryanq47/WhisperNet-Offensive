@@ -343,6 +343,43 @@ class BaseAgent:
             logger.error(f"An error occurred: {e}")
             raise e
 
+    def get_one_command_and_response(self, command_id):
+        """
+        Gets a single command and its response based on the provided key.
+
+        Args:
+            command_id (str): The Redis key for the command (e.g., "whispernet:agent:command:<command_id>")
+
+        Returns:
+            A dictionary with command_id, command, response, and timestamp if the agent ID matches,
+            otherwise None.
+        """
+        try:
+            logger.debug(
+                f"Fetching command for agent {self.data.agent.id} with key {command_id}"
+            )
+
+            # Extract the command ID from the key (assumes key is in the format: whispernet:agent:command:<command_id>)
+            # command_id = key.split(":")[-1]
+
+            command_obj = AgentCommand.get(command_id)
+
+            # Check if the command exists and if its agent_id matches the current agent's id
+            if command_obj and command_obj.agent_id == self.data.agent.id:
+                return {
+                    "command_id": command_obj.command_id,
+                    "command": command_obj.command,
+                    "response": command_obj.response if command_obj.response else None,
+                    "timestamp": command_obj.timestamp,
+                }
+
+            # Return None if there's no match or the command doesn't exist
+            return None
+
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            raise e
+
     def _store_command(self, command_id, command):
         """
         Store command key
@@ -383,6 +420,7 @@ class BaseAgent:
             command_entry.save()  # Save back to Redis
 
             # Use handler if one is registered
+            # ex, help command
             handler = self.handler_registry.get_handler(command_entry.command)
             if handler:
                 handler.store(command_entry=command_entry, agent_id=agent_id)

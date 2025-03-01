@@ -159,7 +159,8 @@ class AgentEnqueueCommandResource(Resource):
 
             command_script_name = a.get_command_script()
             asi = AgentScriptInterpreter(
-                command_script_name
+                command_script_name,
+                agent_uuid,
                 # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
             )
 
@@ -255,7 +256,7 @@ class AgentUploadCommandScriptResource(Resource):
         JSON:
 
         {
-            "command_script": "scriptname.yaml"
+            "command_script": "scriptname.py"
         }
 
         """
