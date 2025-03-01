@@ -274,21 +274,26 @@ class AgentView:
                     with self.shell_container:
                         for entry in data:
                             cmd = entry.get("command", "")
+                            #ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
                             ui.markdown(f"> {cmd}").style("font-family: monospace")
                             response_value = entry.get("response")
                             if response_value:
-                                ui.label(response_value).style(
+                                # was ui.label
+                                ui.markdown(response_value).style(
                                     "white-space: pre; font-family: monospace;"
                                 )
+                                ui.separator()
+
                             else:
                                 # not using animation at the moment due to the way the shell refreshes/updates
                                 ui.skeleton(animation="none").style(
                                     "width: 50%; height: 1.2em; margin: 4px 0;"
                                 )
                     if self.auto_scroll_enabled:
-                        self.shell_container.scroll_to(
-                            percent=1.0, duration=SHELL_SCROLL_DURATION
-                        )
+                        pass
+                        # self.shell_container.scroll_to(
+                        #     percent=1.0, duration=SHELL_SCROLL_DURATION
+                        # )
 
         def send_command():
             api_post_call(

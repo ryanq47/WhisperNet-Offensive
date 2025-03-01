@@ -138,7 +138,7 @@ class AgentScriptInterpreter:
         """
         try:
             help_info = []
-            help_info.append(f"\n> Script {self.script_path} Commands:\n")
+            help_info.append(f"\n **Script {self.script_path} Commands:**\n")
 
             # Iterate over each registered command in the factory (or command registry)
             for command_name, command_cls in self.command_factory.commands.items():
@@ -146,7 +146,7 @@ class AgentScriptInterpreter:
                 command_help = getattr(
                     command_cls, "command_help", "No description provided"
                 )
-                help_info.append(f"\t{command_name}: {command_help}\n")
+                help_info.append(f"**`{command_name}`**:\n {command_help}\n")
 
             # Join all help lines into one string
             return "".join(help_info)
