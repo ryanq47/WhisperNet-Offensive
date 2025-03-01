@@ -13,6 +13,9 @@ from auth import AuthView, check_login
 from credstore import CredentialStore, CredentialStorePage
 from files import FilePage
 import argparse
+import logging
+
+logging.getLogger('niceGUI').setLevel(logging.CRITICAL)
 
 
 parser = argparse.ArgumentParser(description="Set the API host for the application.")
