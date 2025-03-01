@@ -275,7 +275,7 @@ class AgentView:
                         for entry in data:
                             cmd = entry.get("command", "")
                             #ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
-                            ui.markdown(f"> {cmd}").style("font-family: monospace")
+                            ui.markdown(f"> `{cmd}`").style("font-family: monospace")
                             response_value = entry.get("response")
                             if response_value:
                                 # was ui.label

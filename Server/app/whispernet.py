@@ -173,7 +173,11 @@ def start():
 if __name__ == "__main__":
     try:
         ## CANNOT have debug mode on for multiple instances/http listeners. yay
-        app.run(debug=False, port=8081, host="0.0.0.0", threaded=True)
+        # app.run(debug=False, port=8081, host="0.0.0.0", threaded=True)
+
+        from waitress import serve
+
+        serve(app=app, port=8081, host="0.0.0.0")
 
     except Exception as e:
         print(e)
