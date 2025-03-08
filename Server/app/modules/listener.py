@@ -10,6 +10,10 @@ from modules.redis_models import Listener, ListenerData
 from modules.utils import generate_mashed_name, generate_unique_id
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
 
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 logger = log(__name__)
 
 
@@ -102,11 +106,18 @@ class BaseListener:
         listener_model = Listener(
             listener_id=self.data.listener.id, name=self.data.listener.name
         )
-        logger.debug("SAVING LISTENER MODEL")
+        # logger.debug("SAVING LISTENER MODEL")
         listener_model.save()
         self.unload_data()
 
-        # change to listener agent
+        # save to sqlitedb:
+        listener_store = ListenerStore()
+        listener_store.add_listener(
+            uuid=self.data.listener.id,
+            port=self.data.network.port,
+            address=self.data.network.address,
+            listener_name=self.data.listener.name,
+        )
 
     def unregister(self):
         """
@@ -118,6 +129,10 @@ class BaseListener:
         # not the most clear, but this takes in (I think) the prim key, and then deletes the entry based on it
         # It seems to be passed directly to the redis.delete function through redis_om
         Listener.delete(self.data.listener.id)
+
+        # delete from sqlitedb
+        listener_store = ListenerStore()
+        listener_store.delete_listener(self.data.listener.id)
 
     def unload_data(self):
         """
@@ -190,3 +205,89 @@ class BaseListener:
     #     Basically, this just makes it easier to do/a one stop shop
     #     """
     #     ...
+
+
+# Create the base for model declarations
+Base = declarative_base()
+
+
+# Define the Listener model using the provided definition
+class ListenerStoreModel(Base):
+    __tablename__ = "listeners"
+
+    listener_name = Column(String, nullable=False)  # listener's name
+    uuid = Column(String, primary_key=True)  # primary key, allowing duplicate names
+    port = Column(Integer, nullable=False)  # listening port
+    address = Column(String, nullable=False)  # listening address
+
+
+class ListenerStore:
+    """
+    A class to manage listener entries using SQLAlchemy and SQLite.
+
+    Attributes:
+        engine: SQLAlchemy engine for connecting to the SQLite database.
+        session: SQLAlchemy session for performing database operations.
+    """
+
+    def __init__(self):
+        """
+        Initializes the ListenerStore instance.
+
+        - Creates a SQLite database connection.
+        - Creates the listeners table if it doesn't already exist.
+        - Initializes a SQLAlchemy session for database operations.
+        """
+        self.engine = create_engine("sqlite:///app/instance/listeners.db", echo=True)
+        Base.metadata.create_all(self.engine)  # Create tables if they don't exist
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+
+    def add_listener(self, listener_name, uuid, port, address):
+        """
+        Adds a new listener to the database.
+
+        Args:
+            listener_name (str): The name of the listener.
+            uuid (str): Unique identifier for the listener.
+            port (int): The port number on which the listener is active.
+            address (str): The address on which the listener is active.
+        """
+        new_listener = ListenerStoreModel(
+            listener_name=listener_name, uuid=uuid, port=port, address=address
+        )
+        self.session.add(new_listener)
+        self.session.commit()
+
+    def get_all_listeners(self):
+        """
+        Retrieves all listeners from the database.
+
+        Returns:
+            list: A list of Listener objects.
+        """
+        return self.session.query(ListenerStoreModel).all()
+
+    def get_listener(self, uuid):
+        """
+        Retrieves a single listener by its UUID.
+
+        Args:
+            uuid (str): The UUID of the listener to retrieve.
+
+        Returns:
+            Listener: The Listener object if found, otherwise None.
+        """
+        return self.session.query(ListenerStoreModel).filter_by(uuid=uuid).first()
+
+    def delete_listener(self, uuid):
+        """
+        Deletes a listener from the database by its UUID.
+
+        Args:
+            uuid (str): The UUID of the listener to delete.
+        """
+        listener = self.session.query(ListenerStoreModel).filter_by(uuid=uuid).first()
+        if listener:
+            self.session.delete(listener)
+            self.session.commit()
