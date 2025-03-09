@@ -38,24 +38,20 @@ class Info:
     author = "ryanq.47"
 
 
-# does this need its own listener .py?
 class Listener(BaseListener):
 
-    def __init__(self, listener_id=None):
+    def __init__(self, host, name, port, listener_id=None):
         # init super
-        super().__init__(listener_id)
+        super().__init__(listener_id=listener_id, port=port, host=host, name=name)
 
-    def spawn(self, port: int, host: str, name: str):
+    # def spawn(self, port: int, host: str, name: str):
+    def spawn(self):
         """
         Start the server as a child process and let the parent continue.
         """
         # make sure port is an int
-        if not type(port) == int:
-            port = int(port)
-
-        self.data.network.port = port
-        self.data.network.address = host
-        self.data.listener.name = name
+        if not type(self.data.network.port) == int:
+            self.data.network.port = int(self.data.network.port)
 
         proc = self._spawn_beacon_http_listener()
         if not proc:
@@ -70,8 +66,6 @@ class Listener(BaseListener):
             f"Beacon HTTP listener spawned. Name={self.data.listener.name}, PID={proc.pid}, port={self.data.network.port}"
         )
 
-        self.register()  # to store in redis
-
         # Optionally store `proc` in self if you want to kill it later.
         self._process_handle = proc
 
@@ -79,6 +73,9 @@ class Listener(BaseListener):
         """
         Launch the mini Flask RESTX server in its own process.
         """
+        # print(self.data.network.address)
+        # print(self.data.network.port)
+
         proc = multiprocessing.Process(
             target=run_app,
             args=(self.data.network.address, self.data.network.port),

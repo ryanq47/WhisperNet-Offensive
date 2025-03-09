@@ -23,20 +23,13 @@ class BaseListener:
     A base class that provides common functionality for listeners.
     """
 
-    def __init__(self, listener_id=None, **kwargs):
+    def __init__(self, host, name, port, listener_id=None, **kwargs):
         # connect to redis
         self.redis_client = get_redis_connection(  # switch to config values
             host=Config().config.redis.bind.ip,
             port=Config().config.redis.bind.port,
             decode_responses=True,  # Ensures that strings are not returned as bytes
         )
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-        # may or may not be needed
-        # self.alias = None
-        # self.template = None
 
         # info stuff - munch object
         self._data = munch.munchify(
@@ -59,14 +52,27 @@ class BaseListener:
             }
         )
 
+        # get the data in at init, makes this much easier to do other things
+        self.data.network.port = port
+        self.data.network.address = host
+        self.data.listener.name = name
+
+        # if a listener ID is not specified, this means that we want a full new listener.
         if listener_id == None:
             uuid = generate_unique_id()
             logger.warning(f"No listener ID provided, settings as: {uuid}")
             self.data.listener.id = uuid  ## UUID generate
+            # auto register and stuff
+            self.register()
 
+        # if a listener ID is specified, it is assumed the listener already exists, or is being re-spawned
+        # We don't call load_data, as that tries to get it from redis, which may be empty,
+        # so we just register it as normal, and let that handle the redis and DB insertion (sqliteDB will not insert if listener id exists in it)
+        # see listenerstore.add_listener
+        # A better way in the future to handle this may be a "respawn" arg (bool)
         else:
             self.data.listener.id = listener_id
-            self.load_data()
+            self.register()
 
     @property
     def data(self):
@@ -113,10 +119,11 @@ class BaseListener:
         # save to sqlitedb:
         listener_store = ListenerStore()
         listener_store.add_listener(
-            uuid=self.data.listener.id,
+            id=self.data.listener.id,
             port=self.data.network.port,
             address=self.data.network.address,
-            listener_name=self.data.listener.name,
+            name=self.data.listener.name,
+            type="http",  # Figure out type later, hardcoding for now as we only have one type
         )
 
     def unregister(self):
@@ -172,40 +179,6 @@ class BaseListener:
             logger.error(f"Could not load data from redis, error occurred: {e}")
             raise e
 
-    ##########
-    # User STuff
-    ##########
-
-    # for HTTP if ever wanted
-    # def config_register_endpoint(self, name, endpoint, methods=None):
-    #     """
-    #     REgister and endpoint to the config.
-
-    #     Basically, this just makes it easier to do/a one stop shop
-    #     """
-
-    #     # get endpoint
-    #     # add new entry to data.endpoints list
-
-    #     methods = {
-    #         # list comp of methods?
-    #         ...
-    #     }
-
-    #     new_entry = {
-    #         "endpoint_name": name,
-    #         "path": endpoint,  # do some processingon this so it's correct
-    #         "methods": methods,  # onyl add methods if methods? may not apply to pure tcp
-    #     }
-
-    # def config_deregister_endpoint(self, endpoint):
-    #     """
-    #     deregister and endpoint to the config
-
-    #     Basically, this just makes it easier to do/a one stop shop
-    #     """
-    #     ...
-
 
 # Create the base for model declarations
 Base = declarative_base()
@@ -215,10 +188,11 @@ Base = declarative_base()
 class ListenerStoreModel(Base):
     __tablename__ = "listeners"
 
-    listener_name = Column(String, nullable=False)  # listener's name
-    uuid = Column(String, primary_key=True)  # primary key, allowing duplicate names
+    name = Column(String, nullable=False)  # listener's name
+    id = Column(String, primary_key=True)  # primary key, allowing duplicate names
     port = Column(Integer, nullable=False)  # listening port
     address = Column(String, nullable=False)  # listening address
+    type = Column(String, nullable=False)
 
 
 class ListenerStore:
@@ -238,23 +212,38 @@ class ListenerStore:
         - Creates the listeners table if it doesn't already exist.
         - Initializes a SQLAlchemy session for database operations.
         """
-        self.engine = create_engine("sqlite:///app/instance/listeners.db", echo=True)
+        self.engine = create_engine(
+            "sqlite:///app/instance/listeners.db", echo=False
+        )  # flip echo on for the queries
         Base.metadata.create_all(self.engine)  # Create tables if they don't exist
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def add_listener(self, listener_name, uuid, port, address):
+    def add_listener(self, name, id, port, address, type):
         """
-        Adds a new listener to the database.
+        Adds a new listener to the database if it does not already exist.
 
         Args:
-            listener_name (str): The name of the listener.
-            uuid (str): Unique identifier for the listener.
+            name (str): The name of the listener.
+            id (str): Unique identifier for the listener.
             port (int): The port number on which the listener is active.
             address (str): The address on which the listener is active.
+            type (str): The type of the listener.
         """
+        # Check if a listener with the same id already exists
+        existing_listener = (
+            self.session.query(ListenerStoreModel).filter_by(id=id).first()
+        )
+        if existing_listener:
+            logger.info(f"Listener with id {id} already exists. Skipping insertion.")
+            return
+
         new_listener = ListenerStoreModel(
-            listener_name=listener_name, uuid=uuid, port=port, address=address
+            name=name,
+            id=id,
+            port=port,
+            address=address,
+            type=type,
         )
         self.session.add(new_listener)
         self.session.commit()

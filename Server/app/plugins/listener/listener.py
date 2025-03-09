@@ -160,8 +160,10 @@ class HttpListenerSpawnResource(Resource):
         listener_name = data.get("name")
 
         # Instantiate your custom Listener class (from your plugin)
-        new_listener = Listener()
-        new_listener.spawn(port=listener_port, host=listener_host, name=listener_name)
+        new_listener = Listener(
+            port=listener_port, host=listener_host, name=listener_name
+        )
+        new_listener.spawn()
 
         return api_response(data=f"Spawned listener on {listener_host}:{listener_port}")
 
