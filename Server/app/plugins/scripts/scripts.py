@@ -7,7 +7,7 @@ from werkzeug.datastructures import FileStorage
 from flask_jwt_extended import jwt_required
 from modules.instances import Instance
 from modules.log import log
-from modules.utils import api_response, generate_timestamp
+from modules.utils import api_response
 from modules.config import Config
 import hashlib
 import pathlib

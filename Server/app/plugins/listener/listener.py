@@ -25,7 +25,7 @@ import pathlib
 from plugins.listener.http.listener import Listener
 
 # from modules.redis_models import ActiveService
-from modules.utils import api_response, generate_timestamp, generate_unique_id
+from modules.utils import api_response
 
 # ------------------------------------------------------------------------------------
 #   Docs

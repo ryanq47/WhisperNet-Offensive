@@ -79,7 +79,7 @@ def api_response(
         # Initialize response structure
         response = {
             "rid": generate_unique_id(),  # Unique identifier for this response
-            "timestamp": generate_timestamp(),  # Current timestamp
+            "timestamp": generate_unix_timestamp(),  # Current timestamp - UNIX
             "status": status,  # not needed, but nice to have
             "data": data if data else {},
             "message": str(message),
@@ -118,7 +118,7 @@ def generate_unique_id() -> str:
 
 
 @staticmethod
-def generate_timestamp() -> int:
+def generate_unix_timestamp() -> int:
     """
     Generate a current timestamp.
 
