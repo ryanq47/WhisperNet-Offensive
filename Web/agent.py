@@ -95,6 +95,8 @@ class AgentView:
             .get("system", {})
             .get("hostname", "Unknown Hostname")
         )
+        last_seen = self.agent_data["data"]["agent"].get("last_seen", "Unknown")
+
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
             ui.label(str(hostname)).classes("h-10")
@@ -103,7 +105,8 @@ class AgentView:
             ui.label(self.agent_id).classes("h-6")
             ui.space()
             ui.icon("timer")
-            ui.label("Last Checkin: 01:01:01").classes("h-6")
+
+            ui.label(f"Last Seen: {last_seen}").classes("h-6")
         ui.separator()
 
         current_settings = app.storage.user.get("settings", {})
@@ -274,7 +277,7 @@ class AgentView:
                     with self.shell_container:
                         for entry in data:
                             cmd = entry.get("command", "")
-                            #ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
+                            # ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
                             ui.markdown(f"> `{cmd}`").style("font-family: monospace")
                             response_value = entry.get("response")
                             if response_value:

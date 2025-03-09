@@ -12,6 +12,7 @@ from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
 from sqlalchemy.orm.exc import NoResultFound
+from datetime import datetime
 
 logger = log(__name__)
 
@@ -125,6 +126,17 @@ def generate_timestamp() -> int:
         int: The current timestamp in seconds since the epoch.
     """
     return int(time.time())
+
+
+def get_local_datetime():
+    """Return the current local date and time without microseconds."""
+    # Remove microseconds by replacing them with 0
+    return datetime.now().replace(microsecond=0)
+
+
+def get_utc_datetime():
+    """Return the current UTC date and time without microseconds."""
+    return datetime.utcnow().replace(microsecond=0)
 
 
 def generate_mashed_name():

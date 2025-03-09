@@ -299,7 +299,7 @@ class BaseAgent:
             return command_obj  # Return the command object
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Dequeue command error: {e}")
             raise e
 
     def get_all_commands_and_responses(self):

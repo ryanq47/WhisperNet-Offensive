@@ -1,6 +1,6 @@
 from modules.config import Config
-from datetime import datetime, timezone
 from redis_om import Field, HashModel, JsonModel, get_redis_connection
+from modules.utils import get_utc_datetime
 
 # fix this
 redis = get_redis_connection(  # switch to config values
@@ -58,9 +58,7 @@ class AgentCommand(HashModel):
     agent_id: str  # For which agent this command is
     command: str
     response: str
-    timestamp: str = Field(
-        index=True, default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: str = Field(index=True, default_factory=lambda: str(get_utc_datetime()))
 
     class Meta:
         model_key_prefix = "agent:command"

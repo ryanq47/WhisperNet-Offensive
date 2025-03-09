@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from modules.utils import get_utc_datetime
 
 # from modules.log import log
 
@@ -21,7 +21,7 @@ class Credential(Base):
     password = Column(String, nullable=False)
     realm = Column(String, nullable=True)
     notes = Column(String, nullable=True)
-    date_added = Column(DateTime, default=datetime.utcnow)
+    date_added = Column(DateTime, default=get_utc_datetime())
 
 
 class CredStore:
