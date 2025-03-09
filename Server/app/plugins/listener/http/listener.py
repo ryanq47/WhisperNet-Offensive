@@ -53,7 +53,8 @@ class Listener(BaseListener):
         if not type(self.data.network.port) == int:
             self.data.network.port = int(self.data.network.port)
 
-        proc = self._spawn_beacon_http_listener()
+        # spawn the listener itself
+        proc = self._spawn_agent_http_listener()
         if not proc:
             logger.warning("Failed to start listener!")
             return
@@ -61,7 +62,6 @@ class Listener(BaseListener):
         # giving it the PID for later loads if needed.
         self.data.listener.pid = proc.pid
 
-        # DO NOT JOIN here or you'll block the parent process.
         logger.info(
             f"Beacon HTTP listener spawned. Name={self.data.listener.name}, PID={proc.pid}, port={self.data.network.port}"
         )
@@ -69,12 +69,10 @@ class Listener(BaseListener):
         # Optionally store `proc` in self if you want to kill it later.
         self._process_handle = proc
 
-    def _spawn_beacon_http_listener(self):
+    def _spawn_agent_http_listener(self):
         """
         Launch the mini Flask RESTX server in its own process.
         """
-        # print(self.data.network.address)
-        # print(self.data.network.port)
 
         proc = multiprocessing.Process(
             target=run_app,
