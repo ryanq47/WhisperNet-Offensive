@@ -99,5 +99,7 @@ def enable_redis_backups():
     logger.debug(f"Redis AOF File Location: {config['dir']}/appendonly.aof")
 
     # Verify changes
-    logger.debug("Appendonly:", r.config_get("appendonly"))
-    logger.debug("Appendfsync:", r.config_get("appendfsync"))
+    logger.debug(f"Appendonly: {r.config_get("appendonly")}")
+    logger.debug(
+        f"Appendfsync: {r.config_get("appendfsync")}",
+    )
