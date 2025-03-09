@@ -18,7 +18,7 @@ from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
 from modules.utils import generate_unique_id, plugin_loader
-from modules.startup import start_containers, respawn_listeners
+from modules.startup import start_containers, respawn_listeners, enable_redis_backups
 
 print_banner()
 
@@ -108,6 +108,7 @@ Instance().api = api
 ## Everything that relies on Instance stuff, goes AFTER this line
 logger.debug("Loading containers...")
 start_containers()
+enable_redis_backups()
 
 # Plugin Loader
 logger.info("Loading Plugins...")

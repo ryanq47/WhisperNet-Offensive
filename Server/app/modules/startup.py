@@ -13,6 +13,7 @@ from modules.docker_handler import (
 from modules.log import log
 from modules.listener import ListenerStore
 from plugins.listener.http.listener import Listener as HTTPListener
+import redis
 
 logger = log(__name__)
 
@@ -20,6 +21,10 @@ logger = log(__name__)
 def respawn_listeners():
     """
     Re-spawns listeners from the sqlite DB
+
+
+    Some dev notes about the DB, all the temp data is stored in redis. All the persistence data is stored in
+        the sqlite DB for easier restarts/less PITA when restarting the server. Probably should doc this somewhere
 
     """
     # get list of all listeners
@@ -75,3 +80,24 @@ def _start_redis_container():
         if not wait_for_container(container_name, timeout=10):
             logger.error(f"Container '{container_name}' is not running as expected.")
             # Handle the issue as needed
+
+
+def enable_redis_backups():
+    """
+    Enables AOF (append only file) for redis, which logs every redis key and
+    after a flushall/restart, restores the entire redis db.
+
+    """
+    logger.ingo("Enabling AOF backup of Redis...")
+    r = redis.Redis(host="localhost", port=6379, db=0)
+
+    # Enable AOF persistently
+    r.config_set("appendonly", "yes")
+    r.config_set("appendfsync", "everysec")
+
+    config = r.config_get("dir")
+    logger.debug(f"Redis AOF File Location: {config['dir']}/appendonly.aof")
+
+    # Verify changes
+    logger.debug("Appendonly:", r.config_get("appendonly"))
+    logger.debug("Appendfsync:", r.config_get("appendfsync"))
