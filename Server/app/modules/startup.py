@@ -88,7 +88,7 @@ def enable_redis_backups():
     after a flushall/restart, restores the entire redis db.
 
     """
-    logger.ingo("Enabling AOF backup of Redis...")
+    logger.info("Enabling AOF backup of Redis...")
     r = redis.Redis(host="localhost", port=6379, db=0)
 
     # Enable AOF persistently
