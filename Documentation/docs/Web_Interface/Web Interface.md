@@ -2,4 +2,4 @@
 
 # Overview
 
-The frontend to WhisperNet. Is effetively a glorified API wrapper which controls/communicates with the server.
+The frontend to HCKD. Is effetively a glorified API wrapper which controls/communicates with the server.

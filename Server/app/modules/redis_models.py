@@ -39,7 +39,7 @@ class Agent(HashModel):  # swich to JsonModel?
     class Meta:
         model_key_prefix = "agent"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 # client model
@@ -50,7 +50,7 @@ class AgentData(HashModel):
     class Meta:
         model_key_prefix = "agent:data"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 class AgentCommand(HashModel):
@@ -63,7 +63,7 @@ class AgentCommand(HashModel):
     class Meta:
         model_key_prefix = "agent:command"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 # Create the index explicitly after defining the model
@@ -83,7 +83,7 @@ class Listener(HashModel):
         # swap model_key and global_key... yay
         model_key_prefix = "listener"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 class ListenerData(HashModel):
@@ -93,7 +93,7 @@ class ListenerData(HashModel):
     class Meta:
         model_key_prefix = "listener:data"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for k
+        global_key_prefix = "HCKD"  # Prefix for k
 
 
 class ActiveService(JsonModel):
@@ -110,7 +110,7 @@ class ActiveService(JsonModel):
     class Meta:
         model_key_prefix = "service"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 class Plugin(JsonModel):
@@ -128,7 +128,7 @@ class Plugin(JsonModel):
     class Meta:
         model_key_prefix = "plugin"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 
 
 class Container(JsonModel):
@@ -155,4 +155,4 @@ class Container(JsonModel):
     class Meta:
         model_key_prefix = "container"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys

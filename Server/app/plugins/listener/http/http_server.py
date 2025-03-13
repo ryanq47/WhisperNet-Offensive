@@ -11,7 +11,7 @@ api = Api(
     app,
     version="1.0",
     title="My API",
-    description="Whispernet HTTP Endpoint",
+    description="HCKD HTTP Endpoint",
     doc="/docs",
 )
 

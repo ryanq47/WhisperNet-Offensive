@@ -68,7 +68,7 @@ if ! python3 -m venv --help &>/dev/null; then
 fi
 
 # Create virtual environment
-VENV_DIR="whispernet_venv"
+VENV_DIR="HCKD_venv"
 echo -e "${CYAN}Setting up virtual environment in $VENV_DIR...${RESET}"
 python3 -m venv "$VENV_DIR"
 echo -e "${GREEN}Virtual environment created at ./$VENV_DIR${RESET}"
@@ -93,6 +93,6 @@ echo -e "${GREEN}Installation complete.${RESET}"
 
 echo -e "============================================================"
 echo -e "Cewl - run source ./venv/bin/activate to enter the venv"
-echo -e "Then, start the server: cd Server && python3 app/whispernet.py"
+echo -e "Then, start the server: cd Server && python3 app/HCKD.py"
 echo -e "Finally, spin up the WebGui: cd Web && python3 main.py"
 echo -e "============================================================"

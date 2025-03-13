@@ -41,7 +41,7 @@ class Agent(HashModel):
     class Meta:
         model_key_prefix = "client"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 ```
 
 ### Example Usage
@@ -67,7 +67,7 @@ class AgentData(HashModel):
     class Meta:
         model_key_prefix = "agent:data"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 ```
 
 ### Example Usage
@@ -95,7 +95,7 @@ The `AgentCommand` model is used to store commands for the agents.
 
 
 
-#### Key Format: `whispernet:agent:command:328bdc4c-b85f-4ca0-8293-b8be36438d61`
+#### Key Format: `HCKD:agent:command:328bdc4c-b85f-4ca0-8293-b8be36438d61`
 
 
 
@@ -114,7 +114,7 @@ class AgentCommand(HashModel):
     class Meta:
         model_key_prefix = "agent:command"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 ```
 
 
@@ -135,7 +135,7 @@ class Listener(HashModel):
     class Meta:
         model_key_prefix = "listener"
         database = redis
-        global_key_prefix = "whispernet"  # Prefix for keys
+        global_key_prefix = "HCKD"  # Prefix for keys
 ```
 
 Example Usage:

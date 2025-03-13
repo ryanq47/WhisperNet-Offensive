@@ -1,4 +1,4 @@
-# **Starting WhisperNet**  
+# **Starting HCKD**  
 
 Before starting, ensure your **virtual environment is set up and activated**. Refer to the **Setup Section** for instructions.  
 
@@ -10,10 +10,10 @@ Run the server to handle agent communications and command processing.
 
 ```bash
 cd Server
-python3 app/whispernet.py
+python3 app/HCKD.py
 ```
 
-NOTE: Do not try to run `whispernet.py` if you are currently CD'd into the `app/` directory. There are some path related items that rely on the launch path being `Server/`
+NOTE: Do not try to run `HCKD.py` if you are currently CD'd into the `app/` directory. There are some path related items that rely on the launch path being `Server/`
 
 ---
 

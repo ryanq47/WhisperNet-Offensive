@@ -312,8 +312,8 @@ class BaseAgent:
         try:
             logger.debug(f"Fetching all commands for agent {self.data.agent.id}")
 
-            # Construct key pattern (assuming the storage format follows `whispernet:agent:command:<command_id>`)
-            key_pattern = f"whispernet:agent:command:*"
+            # Construct key pattern (assuming the storage format follows `HCKD:agent:command:<command_id>`)
+            key_pattern = f"HCKD:agent:command:*"
 
             # Use SCAN to iterate over matching keys
             command_keys = list(self.redis_client.scan_iter(key_pattern))
@@ -348,7 +348,7 @@ class BaseAgent:
         Gets a single command and its response based on the provided key.
 
         Args:
-            command_id (str): The Redis key for the command (e.g., "whispernet:agent:command:<command_id>")
+            command_id (str): The Redis key for the command (e.g., "HCKD:agent:command:<command_id>")
 
         Returns:
             A dictionary with command_id, command, response, and timestamp if the agent ID matches,
@@ -359,7 +359,7 @@ class BaseAgent:
                 f"Fetching command for agent {self.data.agent.id} with key {command_id}"
             )
 
-            # Extract the command ID from the key (assumes key is in the format: whispernet:agent:command:<command_id>)
+            # Extract the command ID from the key (assumes key is in the format: HCKD:agent:command:<command_id>)
             # command_id = key.split(":")[-1]
 
             command_obj = AgentCommand.get(command_id)

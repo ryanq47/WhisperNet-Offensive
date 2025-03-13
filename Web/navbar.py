@@ -12,7 +12,7 @@ from nicegui import ui, app
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
-    ui.page_title("WhisperNet")
+    ui.page_title("HCKD")
     # Apply per-user settings.
     LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})

@@ -18,7 +18,7 @@ class AuthView:
         # Doing this as a failsafe for dev, and if any session data gets left in there
         app.storage.user.clear()
         add_particles_background()
-        ui.page_title("WhisperNet")
+        ui.page_title("HCKD")
 
         with ui.column().classes(
             "items-center justify-center absolute-center w-full h-screen"

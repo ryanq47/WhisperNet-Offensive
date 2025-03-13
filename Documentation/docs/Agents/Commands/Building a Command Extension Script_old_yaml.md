@@ -1,6 +1,6 @@
 # **Building Your Own Command Scripts**  
 
-WhisperNet’s YAML-based system is designed for flexibility and modularity, allowing you to create structured command sequences tailored to your needs. This section provides a technical deep dive into structuring, executing, and optimizing your own scripts.
+HCKD’s YAML-based system is designed for flexibility and modularity, allowing you to create structured command sequences tailored to your needs. This section provides a technical deep dive into structuring, executing, and optimizing your own scripts.
 
 Note: This isn’t a full-fledged scripting language—there are no variables or advanced logic, just a structured way to define and execute commands in sequence.
 
@@ -31,7 +31,7 @@ commands:
 
 ## **Execution Flow**  
 
-WhisperNet processes each script dynamically:
+HCKD processes each script dynamically:
 
 1. **Command Validation** 
 
@@ -292,7 +292,7 @@ commands:
 
 ## **Integrating Custom Scripts with the Agent**  
 
-Your scripts are dynamically loaded before each command is executed, meaning **no hardcoded updates** to the agent are needed. WhisperNet will:
+Your scripts are dynamically loaded before each command is executed, meaning **no hardcoded updates** to the agent are needed. HCKD will:
 
 1. Read the YAML **each time a command is run**.  
 2. Convert **each step** into an execution-ready string.  

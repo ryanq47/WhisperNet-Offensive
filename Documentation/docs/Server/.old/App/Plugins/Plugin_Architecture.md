@@ -2,7 +2,7 @@
 
 # Plugin Documentation
 
-Plugins are an essential feature of WhisperNet, enabling extensibility and customization. The `Instance()` class provides access to necessary components, allowing plugins to integrate seamlessly with the system.
+Plugins are an essential feature of HCKD, enabling extensibility and customization. The `Instance()` class provides access to necessary components, allowing plugins to integrate seamlessly with the system.
 
 ## Plugin Structure
 

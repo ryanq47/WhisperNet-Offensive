@@ -12,7 +12,7 @@
 
 README:
 
- - Move funcs here to whispernet API
+ - Move funcs here to HCKD API
  - Learn this properly
 
 */

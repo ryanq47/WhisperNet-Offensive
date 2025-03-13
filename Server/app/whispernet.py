@@ -151,7 +151,7 @@ def start():
         print(e)
 
 
-# Used when calling whispernet.py directly
+# Used when calling HCKD.py directly
 if __name__ == "__main__":
     try:
         ## CANNOT have debug mode on for multiple instances/http listeners. yay

@@ -1,10 +1,10 @@
 # Agents
 
 ## Overview
-WhisperNet Agents are the core components responsible for executing commands, retrieving data, and maintaining remote access to target systems. Unlike traditional RATs (Remote Access Trojans), WhisperNet Agents emphasize modularity, stealth, and operational security.
+HCKD Agents are the core components responsible for executing commands, retrieving data, and maintaining remote access to target systems. Unlike traditional RATs (Remote Access Trojans), HCKD Agents emphasize modularity, stealth, and operational security.
 
 ## Types of Agents
-WhisperNet supports multiple Agent types, each tailored for different operational needs.
+HCKD supports multiple Agent types, each tailored for different operational needs.
 
 | Agent Type       | Format  | Execution Method                               | Notes |
 |------------------|---------|-----------------------------------------------|-------|
@@ -15,7 +15,7 @@ WhisperNet supports multiple Agent types, each tailored for different operationa
 
 ## Building Agents
 ### Modular CMake-Based System
-WhisperNet Agents leverage a CMake-based build system, ensuring:
+HCKD Agents leverage a CMake-based build system, ensuring:
 
 - **Cross-Platform Support**: Easily compile Agents for Windows, Linux, and other platforms.
 - **Extensibility**: Modify core behavior without changing the foundational codebase.

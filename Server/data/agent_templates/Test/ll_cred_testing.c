@@ -1,6 +1,6 @@
 /*
 
-A credential store mechanism for the WhisperNet Agent
+A credential store mechanism for the HCKD Agent
 
 Access store with: 
 

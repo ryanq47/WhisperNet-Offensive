@@ -196,13 +196,13 @@ Loads client data from Redis into `self.data`.
 
 Registers an agent in the system and stores it in Redis using the `Agent` model from `modules.redis_models`. The agent is uniquely identified by `self.data.agent.id`.
 
-Keys look like: `whispernet:client:UNIQUE_ID`
+Keys look like: `HCKD:client:UNIQUE_ID`
 
 #### `unregister(self)`
 
 Removes the agent from the system by calling the `Agent` model from `modules.redis_models`, using `self.data.agent.id` for identification.
 
-Keys look like: `whispernet:client:UNIQUE_ID`
+Keys look like: `HCKD:client:UNIQUE_ID`
 
 ### Class Management:
 
@@ -217,7 +217,7 @@ Loads client data (`self.data`) from Redis into the class instance.
 - On success: (Bool): Returns `True`
 - On Failure/Error: (Bool): Raises `Exception`
 
-Keys look like: `whispernet:client:data:UNIQUE_ID`
+Keys look like: `HCKD:client:data:UNIQUE_ID`
 
 #### `unload_data(self)` 
 
@@ -226,7 +226,7 @@ Unloads client data (`self.data`) into Redis from the class instance.
 - On success: (Bool): Returns `True`
 - On Failure/Error: (Bool): Raises `Exception`
 
-Keys look like: `whispernet:client:data:UNIQUE_ID`
+Keys look like: `HCKD:client:data:UNIQUE_ID`
 
 ---
 
@@ -376,7 +376,7 @@ Both have pros/cons, either are valid options.
 
 Redis Queue's are used to hold commands to be run. This is achieved with redis's `rpush`, and `blpop` functions. 
 
-Each queue item is put into the redis DB as such: `whispernet:client:id_of_client`. 
+Each queue item is put into the redis DB as such: `HCKD:client:id_of_client`. 
 
 #### `enqueue_command(self, command)`
 
@@ -419,7 +419,7 @@ Just some helpful redis commands to view the keys/contents of the keys, from wit
 
 | **Action**                 | **Command**                      | **Example**                       |
 | -------------------------- | -------------------------------- | --------------------------------- |
-| **View Agent Keys**        | `KEYS "whispernet:agent:*"`      | `KEYS "whispernet:agent:*"`       |
-| **View Data Keys**         | `KEYS "whispernet:agent:data:*"` | `KEYS "whispernet:agent:data:*"`  |
+| **View Agent Keys**        | `KEYS "HCKD:agent:*"`      | `KEYS "HCKD:agent:*"`       |
+| **View Data Keys**         | `KEYS "HCKD:agent:data:*"` | `KEYS "HCKD:agent:data:*"`  |
 | **View All Keys**          | `KEYS *`                         | `KEYS *`                          |
-| **View Contents of a Key** | `HGETALL "KEYNAME"`              | `HGETALL "whispernet:agent:1234"` |
+| **View Contents of a Key** | `HGETALL "KEYNAME"`              | `HGETALL "HCKD:agent:1234"` |

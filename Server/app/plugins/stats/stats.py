@@ -96,27 +96,27 @@ class StatsAgentsResource(Resource):
         Returns all agents + agent data in redis.
 
         Example Output:
-            "{'whispernet:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
+            "{'HCKD:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
         """
         try:
             # Fetch all keys with the prefix 'agent:' using SCAN
             # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
-            # small oversight in my key naming. All other keys are whispernet:x:x:data or something
-            # If I didn't do this, all subkeys under "whispernet:agent:*" would be included in the response
+            # small oversight in my key naming. All other keys are HCKD:x:x:data or something
+            # If I didn't do this, all subkeys under "HCKD:agent:*" would be included in the response
             agent_keys = [
                 key
-                for key in redis_conn.scan_iter("whispernet:agent:*")
+                for key in redis_conn.scan_iter("HCKD:agent:*")
                 if len(key.split(":")) == 3
             ]
 
-            agent_data_keys = redis_conn.scan_iter("whispernet:agent:data:*")
+            agent_data_keys = redis_conn.scan_iter("HCKD:agent:data:*")
 
             # Dictionary to store client data
             agents_dict = {}
             agents_data_dict = {}
 
             # Convert agent_data_keys iterator to a list, prevents the generator (scan_iter) from discarding as it loops over
-            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+            agent_data_keys = list(redis_conn.scan_iter("HCKD:agent:data:*"))
 
             # Combining the registration key with the data key
             for key in agent_keys:
@@ -140,9 +140,9 @@ class StatsAgentsResource(Resource):
                         break  # Stop once we find the correct match for this agent_key
 
             # Example data output
-            # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'}}"
+            # "{'HCKD:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'}}"
             # IDEA: Add data key, ex:
-            # "{'whispernet:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'} 'data': data_dict}"
+            # "{'HCKD:agent:SOMEID_1': {'pk': '01JGX7R9298ECF43ZJQTK0M0ER', 'agent_id': 'SOMEID_1'} 'data': data_dict}"
             return api_response(data=agents_dict)
 
         except Exception as e:
@@ -182,7 +182,7 @@ class StatsAgentResource(Resource):
                 )
 
             # Fetch agent registration data
-            agent_registration_key = f"whispernet:agent:{agent_uuid}"
+            agent_registration_key = f"HCKD:agent:{agent_uuid}"
             agent_registration_data = redis_conn.hgetall(agent_registration_key)
 
             if not agent_registration_data:
@@ -192,7 +192,7 @@ class StatsAgentResource(Resource):
             agent_dict = dict(agent_registration_data)
 
             # Fetch agent data
-            agent_data_key = f"whispernet:agent:data:{agent_uuid}"
+            agent_data_key = f"HCKD:agent:data:{agent_uuid}"
             agent_data = redis_conn.hgetall(agent_data_key)
 
             if agent_data:
@@ -248,12 +248,12 @@ class StatsListenersResource(Resource):
             # Fetch all keys with the prefix 'listeners:' using SCAN
             listener_keys = [
                 key
-                for key in redis_conn.scan_iter("whispernet:listener:*")
+                for key in redis_conn.scan_iter("HCKD:listener:*")
                 if len(key.split(":")) == 3
             ]
 
             # Convert the agent_data_keys generator to a list
-            agent_data_keys = list(redis_conn.scan_iter("whispernet:listener:data:*"))
+            agent_data_keys = list(redis_conn.scan_iter("HCKD:listener:data:*"))
 
             # Dictionary to store client data
             listener_dict = {}
@@ -316,7 +316,7 @@ class StatsListenerResource(Resource):
                 )
 
             # Fetch agent registration data
-            agent_registration_key = f"whispernet:listener:{listener_uuid}"
+            agent_registration_key = f"HCKD:listener:{listener_uuid}"
             agent_registration_data = redis_conn.hgetall(agent_registration_key)
 
             if not agent_registration_data:
@@ -326,7 +326,7 @@ class StatsListenerResource(Resource):
             agent_dict = dict(agent_registration_data)
 
             # Fetch agent data
-            agent_data_key = f"whispernet:listener:data:{listener_uuid}"
+            agent_data_key = f"HCKD:listener:data:{listener_uuid}"
             agent_data = redis_conn.hgetall(agent_data_key)
 
             if agent_data:
@@ -432,9 +432,9 @@ class StatsAllResource(Resource):
         in a single top-level dictionary, e.g.:
 
         {
-          "whispernet:agent:AGENT_1": { ... },
-          "whispernet:agent:AGENT_2": { ... },
-          "whispernet:listener:LISTENER_1": { ... },
+          "HCKD:agent:AGENT_1": { ... },
+          "HCKD:agent:AGENT_2": { ... },
+          "HCKD:listener:LISTENER_1": { ... },
           ...
         }
         """
@@ -444,11 +444,11 @@ class StatsAllResource(Resource):
             # ---------------------------------------------------------------
             agent_keys = [
                 key
-                for key in redis_conn.scan_iter("whispernet:agent:*")
+                for key in redis_conn.scan_iter("HCKD:agent:*")
                 if len(key.split(":")) == 3
             ]
             # Convert agent_data_keys to a list
-            agent_data_keys = list(redis_conn.scan_iter("whispernet:agent:data:*"))
+            agent_data_keys = list(redis_conn.scan_iter("HCKD:agent:data:*"))
 
             # Dictionary to store combined agent data
             combined_dict = {}
@@ -475,12 +475,12 @@ class StatsAllResource(Resource):
             # ---------------------------------------------------------------
             listener_keys = [
                 key
-                for key in redis_conn.scan_iter("whispernet:listener:*")
+                for key in redis_conn.scan_iter("HCKD:listener:*")
                 if len(key.split(":")) == 3
             ]
             # Convert listener_data_keys to a list
             listener_data_keys = list(
-                redis_conn.scan_iter("whispernet:listener:data:*")
+                redis_conn.scan_iter("HCKD:listener:data:*")
             )
 
             for key in listener_keys:
@@ -537,14 +537,14 @@ class StatsLogsResource(Resource):
     )
     # @stats_ns.marshal_with(stats_response, code=200)
     # def get(self):
-    #     with open("./whispernet.log", "r") as log_file:
+    #     with open("./HCKD.log", "r") as log_file:
     #         return log_file.read(), 200
     @jwt_required()
     def get(self):
         ANSI_COLOR_REGEX = re.compile(r"\x1B\[[0-9;]*m")
 
         def generate():
-            with open("whispernet.log", "r", encoding="utf-8") as log_file:
+            with open("HCKD.log", "r", encoding="utf-8") as log_file:
                 for line in log_file:
                     # Strip out ANSI color codes
                     yield ANSI_COLOR_REGEX.sub("", line)
@@ -576,7 +576,7 @@ class StatsHTMLLogsResource(Resource):
     )
     # @stats_ns.marshal_with(stats_response, code=200)
     # def get(self):
-    #     with open("./whispernet.log", "r") as log_file:
+    #     with open("./HCKD.log", "r") as log_file:
     #         return log_file.read(), 200
     @jwt_required()
     def get(self):
@@ -603,7 +603,7 @@ class StatsHTMLLogsResource(Resource):
             return f'<span style="{css}">'
 
         # Read the entire file
-        with open("./whispernet.log", "r", encoding="utf-8") as log_file:
+        with open("./HCKD.log", "r", encoding="utf-8") as log_file:
             raw_text = log_file.read()
 
         # Replace color codes like \x1b[31m with <span style="color:red;">

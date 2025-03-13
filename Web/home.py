@@ -19,7 +19,7 @@ class HomeView:
                     # ui.icon("home").classes("text-blue-500 text-6xl")
                     ui.image("/static/icon_full.png").classes("w-32 h-32")
 
-                    ui.label("WhisperNet Dashboard").classes(
+                    ui.label("HCKD Dashboard").classes(
                         "text-3xl font-bold  700 ml-4"
                     )
 

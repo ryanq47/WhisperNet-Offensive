@@ -1,6 +1,6 @@
 # Web Interface + Quickstart
 
-This is the main interface for interacting with the Whispernet Server. All actions can be performed here, making it your primary point of interaction.
+This is the main interface for interacting with the HCKD Server. All actions can be performed here, making it your primary point of interaction.
 
 ## Quickstart
 

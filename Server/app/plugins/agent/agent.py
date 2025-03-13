@@ -162,7 +162,7 @@ class AgentEnqueueCommandResource(Resource):
             asi = AgentScriptInterpreter(
                 script_name=command_script_name,
                 agent_id=agent_uuid,
-                # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+                # "/home/kali/Documents/GitHub/HCKD-Offensive/Server/data/scripts/script1.yaml"
             )
 
             command_results = asi.process_command(command)

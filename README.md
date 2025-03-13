@@ -1,8 +1,8 @@
 
 
-# <img src="WebInterface/static/icon_full.png" alt="WhisperNet C2 Server" width="100" height="100"> WhisperNet - C2 Framework
+# <img src="WebInterface/static/icon_full.png" alt="HCKD C2 Server" width="100" height="100"> HCKD - C2 Framework
 
-Welcome to the WhisperNet C2 server! This project is currently in active development, and features, functionalities, and APIs may change. Please check back regularly for updates! 
+Welcome to the HCKD C2 server! This project is currently in active development, and features, functionalities, and APIs may change. Please check back regularly for updates! 
 
 ---
 
@@ -40,7 +40,7 @@ Custom Windows API function wrappers designed for stealthy execution. These call
 	 - ...
 
 ### **Comms Spec (whisper_x.h)**
-CommsSpec for WhisperNet. Note, Any agent that can speak this, can communicate with the server.
+CommsSpec for HCKD. Note, Any agent that can speak this, can communicate with the server.
 
 GetCommand
 ```

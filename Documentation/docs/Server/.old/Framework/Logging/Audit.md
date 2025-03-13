@@ -1,6 +1,6 @@
 # Audit Logging
 
-Whispernet offers robust(ish) audit logging for all the actions happening on clients. This is seperate from the main log, which contains application based logs. 
+HCKD offers robust(ish) audit logging for all the actions happening on clients. This is seperate from the main log, which contains application based logs. 
 
 The audit log is meant to leave an audit trail for if/when you need to check back on what you've been running on hosts. These logs are located at the root directory of the server
 
@@ -14,7 +14,7 @@ The audit log is meant to leave an audit trail for if/when you need to check bac
 ├── README.md
 ├── requirements.txt
 ├── run_tests.sh
-└── whispernet.log
+└── HCKD.log
 
 ```
 

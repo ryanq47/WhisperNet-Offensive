@@ -16,13 +16,13 @@ class AboutView:
                     ui.image("/static/icon_full.png").classes("w-32 h-32 mx-auto")
 
                     # Header Section
-                    ui.label("About WhisperNet").classes(
+                    ui.label("About HCKD").classes(
                         "text-3xl font-extrabold text-center  800"
                     )
 
                     # Description Section
                     # ui.label(
-                    #     "WhisperNet is an offensive cybersecurity platform designed to streamline C2 operations. It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations."
+                    #     "HCKD is an offensive cybersecurity platform designed to streamline C2 operations. It integrates powerful tools and automation to assist red teams in executing quiet, efficient network operations."
                     # ).classes("text-base text-center  600")
 
                     ui.label(
@@ -36,13 +36,13 @@ class AboutView:
                         )
                         ui.link(
                             "GitHub Page",
-                            "https://github.com/ryanq47/WhisperNet-Offensive",
+                            "https://github.com/ryanq47/HCKD-Offensive",
                         ).classes(
                             f"text-lg font-medium text-blue-600 hover:underline {ThemeConfig.link}"
                         )
                         ui.link(
                             "Submit a Problem",
-                            "https://github.com/ryanq47/WhisperNet-Offensive/issues",
+                            "https://github.com/ryanq47/HCKD-Offensive/issues",
                         ).classes(
                             f"text-lg font-medium text-blue-600 hover:underline {ThemeConfig.link}"
                         )

@@ -12,7 +12,7 @@ This logger is meant for logging things
 ├── README.md
 ├── requirements.txt
 ├── run_tests.sh
-└── whispernet.log << Here
+└── HCKD.log << Here
 
 ```
 

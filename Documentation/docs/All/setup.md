@@ -1,6 +1,6 @@
-# **WhisperNet Project Setup**  
+# **HCKD Project Setup**  
 
-This guide provides step-by-step instructions for setting up WhisperNet, including environment configuration and required dependencies.  
+This guide provides step-by-step instructions for setting up HCKD, including environment configuration and required dependencies.  
 
 I promise setup is shorter than it looks :)
 
@@ -20,13 +20,13 @@ I promise setup is shorter than it looks :)
    A virtual environment isolates project dependencies to avoid conflicts with system packages.  
 
 ```bash
-python3 -m venv whispernet_venv
+python3 -m venv HCKD_venv
 ```
 
  - **Activate the Virtual Environment**  
 
 ```bash
-source whispernet_venv/bin/activate
+source HCKD_venv/bin/activate
 ```
 
 
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 
 ## **2. Install Additional Dependencies**  
 
-The following system dependencies are required for building and running WhisperNet:  
+The following system dependencies are required for building and running HCKD:  
 
 - **CMake** – Required for building C/C++ components.  
 - **MinGW** – Needed for compiling Windows-compatible binaries.  
@@ -74,4 +74,4 @@ If all commands return version numbers, the setup was successful.
 
 ## **4. Next Steps**  
 
-Once setup is complete, you can proceed with building and running WhisperNet. Follow the project’s documentation for compiling, configuring, and executing the system.
+Once setup is complete, you can proceed with building and running HCKD. Follow the project’s documentation for compiling, configuring, and executing the system.

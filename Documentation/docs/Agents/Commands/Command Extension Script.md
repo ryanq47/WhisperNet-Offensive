@@ -4,9 +4,9 @@ Below is an updated version of the documentation that explains the **new Python-
 
 # **Command Extension Modules**
 
-WhisperNet now supports extending commands using **Python-based modules** rather than a YAML-only scripting approach. This change allows you to leverage full Python capabilities, making your command definitions more modular and dynamic.
+HCKD now supports extending commands using **Python-based modules** rather than a YAML-only scripting approach. This change allows you to leverage full Python capabilities, making your command definitions more modular and dynamic.
 
-Think of it as an **object-oriented macro system**—you define each command as a Python class that inherits from a core `BaseCommand`, and WhisperNet handles command execution by instantiating and running these classes.
+Think of it as an **object-oriented macro system**—you define each command as a Python class that inherits from a core `BaseCommand`, and HCKD handles command execution by instantiating and running these classes.
 
 **Dev Note**: This approach was introduced to provide greater flexibility and control over command behavior while still maintaining a minimal set of core commands within the agent. It lets you extend and modify behavior on-the-fly without needing to hardcode every command into the agent.
 
@@ -118,4 +118,4 @@ class PingHost(BaseCommand):
 
 ---
 
-This updated Python-based command script style makes command execution in WhisperNet more structured, flexible, and secure, ensuring that your operations remain dynamic and adaptable to changing needs.
+This updated Python-based command script style makes command execution in HCKD more structured, flexible, and secure, ensuring that your operations remain dynamic and adaptable to changing needs.

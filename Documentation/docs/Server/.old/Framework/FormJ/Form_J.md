@@ -1,10 +1,10 @@
 # FormJ
 
-FormJ - Short for Format Json. This is (currently the only) one of the communication formats developed with Whispernet. 
+FormJ - Short for Format Json. This is (currently the only) one of the communication formats developed with HCKD. 
 
 These protocols are designed to work with any transportation channel/protocol, HTTP, DNS, ICMP, basically whatever you can fit it into. 
 
-Currently, a form of FormJ is used to communicate between items in WhisperNet. 
+Currently, a form of FormJ is used to communicate between items in HCKD. 
 
 (opt add: It's also the main communication format used in the simple_http C2 Plugin)
 

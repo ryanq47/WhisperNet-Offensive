@@ -2,7 +2,7 @@
 
 ## Overview
 
-The server is the part that glues the entire WhisperNet Suite together. 
+The server is the part that glues the entire HCKD Suite together. 
 
 
 note... maybe go a bit more technical here.

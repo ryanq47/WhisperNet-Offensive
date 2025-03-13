@@ -13,7 +13,7 @@
 
 
 /*
-    Baked in commands to Whispernet Agent
+    Baked in commands to HCKD Agent
 
     uses things like whisper_winapi to do actions here
 

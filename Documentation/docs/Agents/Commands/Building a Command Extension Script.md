@@ -1,6 +1,6 @@
 # **Building Your Own Python Command Scripts**
 
-WhisperNet now supports extending commands using **Python modules**. This approach is designed for flexibility and modularity, allowing you to define command sequences using standard Python classes. This section provides a technical deep dive into structuring, executing, and optimizing your own command scripts.
+HCKD now supports extending commands using **Python modules**. This approach is designed for flexibility and modularity, allowing you to define command sequences using standard Python classes. This section provides a technical deep dive into structuring, executing, and optimizing your own command scripts.
 
 > **Note:** This isn’t a full scripting language—rather, it’s a modular, object‑oriented way to define commands. Each command is implemented as a Python class that inherits from a common base class and implements a standardized interface.
 
@@ -81,7 +81,7 @@ class PingHost(BaseCommand):
 
    - A command factory or loader scans your designated directory for Python files.
    - Each module is imported dynamically, and all classes inheriting from `BaseCommand` are registered using their `command_name` attribute.
-   - This allows WhisperNet to discover and execute new command modules without any hardcoded updates.
+   - This allows HCKD to discover and execute new command modules without any hardcoded updates.
 
 2. **Command Invocation**
 
@@ -167,7 +167,7 @@ class CommandFactory:
 
 ## **Integrating Python Command Scripts with the Agent**
 
-With dynamic module loading, WhisperNet automatically loads your command scripts before each command is executed. This means:
+With dynamic module loading, HCKD automatically loads your command scripts before each command is executed. This means:
 
 1. **Immediate Application:**  
    Any changes or additions to command modules take effect instantly without restarting the agent.
