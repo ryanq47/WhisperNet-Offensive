@@ -62,7 +62,7 @@ else()
     set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
     set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-    set(WINDOWS_LIBS -lwininet -lws2_32 -lkernel32 -luser32 -ladvapi32) # Added -ltlhelp32
+    set(WINDOWS_LIBS -lwininet -lws2_32 -lkernel32 -luser32 -ladvapi32)
     # Linker optimizations
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -s -flto")
 endif()
@@ -73,6 +73,9 @@ target_include_directories(agent PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(agent ${WINDOWS_LIBS})
 
 # Output Name
-set_target_properties(agent PROPERTIES OUTPUT_NAME "MACRO_OUTPUT_NAME")
+set_target_properties(agent PROPERTIES 
+    OUTPUT_NAME "MACRO_OUTPUT_NAME"
+    SUFFIX ".exe"                  # Ensure .exe extension   
+)
 
 message(STATUS "CMake configured successfully for AgentC2.")
