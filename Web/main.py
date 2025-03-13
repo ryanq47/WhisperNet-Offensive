@@ -10,9 +10,12 @@ from error import ErrorPage
 from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
-from credstore import CredentialStore
+from credstore import CredentialStore, CredentialStorePage
 from files import FilePage
 import argparse
+import logging
+
+logging.getLogger('niceGUI').setLevel(logging.CRITICAL)
 
 
 parser = argparse.ArgumentParser(description="Set the API host for the application.")
@@ -82,7 +85,7 @@ def settings():
     check_login()
     main_container = navbar()
     with main_container:
-        c = CredentialStore()
+        c = CredentialStorePage()
         c.render()
 
 
@@ -166,6 +169,7 @@ def auth_view_page():
     a.render()
 
 
+# Note - this dir has no auth
 app.add_static_files(
     "/static", "static"
 )  # Serve files from the 'static' directory, to /static

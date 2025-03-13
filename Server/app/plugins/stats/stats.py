@@ -98,8 +98,6 @@ class StatsAgentsResource(Resource):
         Example Output:
             "{'whispernet:agent:SOMEID_1': {'pk': '01JGX9MT0YRVZZHXYVS26ZT1Z1', 'agent_id': 'SOMEID_1', 'data': {'system': {'hostname': None, 'os': None, 'os_version': None, 'architecture': None, 'username': None, 'privileges': None, 'uptime': None}, 'network': {'internal_ip': None, 'external_ip': None, 'mac_address': None, 'default_gateway': None, 'dns_servers': [], 'domain': None}, 'hardware': {'cpu': None, 'cpu_cores': None, 'ram': None, 'disk_space': None}, 'agent': {'id': 'SOMEID_1', 'version': None, 'first_seen': None, 'last_seen': None}, 'security': {'av_installed': [], 'firewall_status': None, 'sandbox_detected': False, 'debugger_detected': False}, 'geo': {'country': None, 'city': None, 'latitude': None, 'longitude': None}, 'config': {'file': None}}}}"
         """
-        logger.warning("UNAUTH ENDPOINT: Stats/clients")
-
         try:
             # Fetch all keys with the prefix 'agent:' using SCAN
             # List comp, to catch all keys that only have a segment of 3. This makes sure we catch the keys that only have 3 segments, which are registration keys
@@ -175,7 +173,6 @@ class StatsAgentResource(Resource):
         Returns:
             JSON in the specified format.
         """
-        logger.warning("UNAUTH ENDPOINT: Stats/clients")
 
         try:
             # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
@@ -247,7 +244,6 @@ class StatsListenersResource(Resource):
 
         Returns: JSON
         """
-        logger.warning("UNAUTH ENDPOINT: Stats/plugins")
         try:
             # Fetch all keys with the prefix 'listeners:' using SCAN
             listener_keys = [
@@ -311,7 +307,6 @@ class StatsListenerResource(Resource):
         Returns:
             JSON in the specified format.
         """
-        logger.warning("UNAUTH ENDPOINT: Stats/clients")
 
         try:
             # Sanitize the agent_uuid to allow only alphanumeric characters and hyphens
@@ -386,7 +381,6 @@ class AgentCommandsResource(Resource):
         Returns:
             JSON in the specified format.
         """
-        logger.warning("UNAUTH ENDPOINT: Stats/clients")
 
         try:
             temp_list_of_dicts = [

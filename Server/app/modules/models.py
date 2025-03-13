@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from modules.instances import Instance
-import datetime
 
 db = Instance().db_engine
 

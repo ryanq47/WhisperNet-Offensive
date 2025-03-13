@@ -11,6 +11,7 @@ from modules.config import Config
 
 # notes, may need to think about SAN n stuff when matching domain to the cert
 
+
 def generate_pem(key_path: str, key_name: str, cert_path: str, cert_name: str):
     try:
         # Convert string paths to pathlib Paths
@@ -23,9 +24,7 @@ def generate_pem(key_path: str, key_name: str, cert_path: str, cert_name: str):
 
         # Generate a private key
         private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-            backend=default_backend()
+            public_exponent=65537, key_size=2048, backend=default_backend()
         )
 
         # Create a public key
@@ -39,43 +38,49 @@ def generate_pem(key_path: str, key_name: str, cert_path: str, cert_name: str):
         expire = Config().config.server.tls.tls_expire
 
         # Create a certificate builder
-        subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COUNTRY_NAME, country),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, org),
-            x509.NameAttribute(NameOID.COMMON_NAME, cn),
-            x509.NameAttribute(NameOID.EMAIL_ADDRESS, email),
-        ])
+        subject = issuer = x509.Name(
+            [
+                x509.NameAttribute(NameOID.COUNTRY_NAME, country),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, org),
+                x509.NameAttribute(NameOID.COMMON_NAME, cn),
+                x509.NameAttribute(NameOID.EMAIL_ADDRESS, email),
+            ]
+        )
 
-        builder = x509.CertificateBuilder().subject_name(
-            subject
-        ).issuer_name(
-            issuer
-        ).public_key(
-            public_key
-        ).serial_number(
-            x509.random_serial_number()
-        ).not_valid_before(
-            datetime.datetime.utcnow()
-        ).not_valid_after(
-            # Certificate will be valid for the configured number of days
-            datetime.datetime.utcnow() + datetime.timedelta(days=expire)
-        ).sign(private_key, hashes.SHA256(), default_backend())
+        builder = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(public_key)
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(datetime.datetime.utcnow())
+            .not_valid_after(
+                # Certificate will be valid for the configured number of days
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=expire)
+            )
+            .sign(private_key, hashes.SHA256(), default_backend())
+        )
 
         # Write private key to a file
         private_key_path = key_dir / f"{key_name}.pem"
         with private_key_path.open("wb") as f:
-            f.write(private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ))
+            f.write(
+                private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.TraditionalOpenSSL,
+                    encryption_algorithm=serialization.NoEncryption(),
+                )
+            )
 
         # Write certificate to a file
         certificate_path = cert_dir / f"{cert_name}.pem"
         with certificate_path.open("wb") as f:
             f.write(builder.public_bytes(serialization.Encoding.PEM))
 
-        print(f"TLS certificate and private key generated successfully.\n"
-            f"Private Key: {private_key_path}\nCertificate: {certificate_path}")
+        print(
+            f"TLS certificate and private key generated successfully.\n"
+            f"Private Key: {private_key_path}\nCertificate: {certificate_path}"
+        )
     except Exception as e:
         print(e)

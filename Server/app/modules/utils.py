@@ -12,6 +12,7 @@ from modules.config import Config
 from modules.instances import Instance
 from modules.log import log
 from sqlalchemy.orm.exc import NoResultFound
+from datetime import datetime
 
 logger = log(__name__)
 
@@ -78,7 +79,7 @@ def api_response(
         # Initialize response structure
         response = {
             "rid": generate_unique_id(),  # Unique identifier for this response
-            "timestamp": generate_timestamp(),  # Current timestamp
+            "timestamp": generate_unix_timestamp(),  # Current timestamp - UNIX
             "status": status,  # not needed, but nice to have
             "data": data if data else {},
             "message": str(message),
@@ -117,7 +118,7 @@ def generate_unique_id() -> str:
 
 
 @staticmethod
-def generate_timestamp() -> int:
+def generate_unix_timestamp() -> int:
     """
     Generate a current timestamp.
 
@@ -125,6 +126,17 @@ def generate_timestamp() -> int:
         int: The current timestamp in seconds since the epoch.
     """
     return int(time.time())
+
+
+def get_local_datetime():
+    """Return the current local date and time without microseconds."""
+    # Remove microseconds by replacing them with 0
+    return datetime.now().replace(microsecond=0)
+
+
+def get_utc_datetime():
+    """Return the current UTC date and time without microseconds."""
+    return datetime.utcnow().replace(microsecond=0)
 
 
 def generate_mashed_name():

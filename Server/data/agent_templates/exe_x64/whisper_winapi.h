@@ -26,6 +26,7 @@ Current method(s):
                 - WhisperInternetCloseHandle()
                 - WhisperHttpSendRequestA()
 */
+#pragma once
 
 #ifndef WHISPER_WINAPI_H
 #define WHISPER_WINAPI_H
@@ -33,10 +34,20 @@ Current method(s):
 #include <stdio.h>
 #include <windows.h>
 #include <wininet.h> // Required for HINTERNET functions
+#include <tlhelp32.h> // For WhisperCreateToolhelp32Snapshot, Process32First, Process32Next
+
 
 // Function to dynamically resolve APIs
-FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name);
+//FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name);
+/*
+Moved from const char* to const BYTE* since XOR encryption operates on BYTE arrays. 
+Using BYTE* makes it explicit that this is raw data rather than a null-terminated string, 
+avoiding potential string-related issues.
+*/
+FARPROC ResolveFunction(const wchar_t* module_name, const BYTE* function_name); 
 
+FARPROC GetProcAddressReplacement(IN HMODULE hModule, IN LPCSTR lpApiName);
+void XorText(char *text, char key);
 // Process Creation
 // int WhisperSimpleCreateProcessA(LPCSTR lpApplicationName, LPSTR
 // lpCommandLine, LPCSTR lpCurrentDirectory);
@@ -74,9 +85,6 @@ BOOL WhisperSetHandleInformation(HANDLE hObject, DWORD dwMask, DWORD dwFlags);
 BOOL WhisperCloseHandle(HANDLE hObject);
 DWORD WhisperWaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
 
-// File I/O
-BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead,
-    LPOVERLAPPED lpOverlapped);
 
 // WinINet API Wrappers
 HINTERNET WhisperInternetOpenA(LPCSTR lpszAgent, DWORD dwAccessType, LPCSTR lpszProxy, LPCSTR lpszProxyBypass,
@@ -94,5 +102,28 @@ HINTERNET WhisperInternetConnectA(HINTERNET, LPCSTR, INTERNET_PORT, LPCSTR, LPCS
 BOOL WhisperHttpSendRequestA(HINTERNET hRequest, LPCSTR lpszHeaders, DWORD dwHeadersLength, LPVOID lpOptional,
     DWORD dwOptionalLength);
 HINTERNET WhisperHttpOpenRequestA(HINTERNET, LPCSTR, LPCSTR, LPCSTR, LPCSTR, LPCSTR*, DWORD, DWORD_PTR);
+
+HANDLE WhisperOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+BOOL WhisperTerminateProcess(HANDLE hProcess, UINT uExitCode);
+DWORD WhisperSuspendThread(HANDLE hThread);
+DWORD WhisperFormatMessageA(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPSTR lpBuffer, DWORD nSize, va_list *Arguments);
+HANDLE WhisperCreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID);
+BOOL WhisperProcess32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+BOOL WhisperProcess32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+//DWORD WINAPI GetFileSize(HANDLE hFile, LPWORD lpFileSizeHigh);
+BOOL WINAPI DeleteFileA(LPCSTR lpFileName);
+BOOL WINAPI WriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
+BOOL WINAPI MoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+BOOL WINAPI CopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists);
+HANDLE WINAPI FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
+BOOL WINAPI FindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
+BOOL WINAPI FindClose(HANDLE hFindFile);
+BOOL WINAPI SetCurrentDirectoryA(LPCSTR lpPathName);
+BOOL WINAPI CreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+BOOL WINAPI RemoveDirectoryA(LPCSTR lpPathName);
+DWORD WINAPI GetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer); // From the previous example
+HANDLE WINAPI CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+
+void SecureFree(void* ptr, size_t size);
 
 #endif // WHISPER_WINAPI_H

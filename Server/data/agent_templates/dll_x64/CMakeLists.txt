@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 project(AgentC2_DLL LANGUAGES C CXX)
 
 # Note, all the set bin stuff is so the output goes to proj/build/bin/some.dll 
@@ -22,7 +22,18 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Common compiler definitions
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-add_compile_options(-DWIN32_LEAN_AND_MEAN -D_CALLCONV=__stdcall -Wall -Wextra -O2)
+add_compile_options(
+    -DWIN32_LEAN_AND_MEAN          # Reduce Windows headers bloat
+    -D_CALLCONV=__stdcall          # Calling convention optimization
+    -Os                            # Optimize for size
+    -fno-stack-protector           # Disable stack protection - somewhat fine. Disables canaries
+    -ffunction-sections            # Place functions in separate sections
+    -fdata-sections                # Place data in separate sections
+    -flto                           # Enable Link Time Optimization (LTO)
+    -Wl,--gc-sections              # Remove unused sections during linking
+    -s                             # Strip debug symbols
+    -Wall -Wextra                  # Keep warnings for code hygiene
+)
 
 # Source and header files
 set(DLL_SOURCES
@@ -48,6 +59,8 @@ set(DLL_HEADERS
 if (WIN32)
     message(STATUS "Compiling natively for Windows.")
     set(WINDOWS_LIBS wininet ws2_32 kernel32 user32 advapi32)
+    # Linker optimizations
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /OPT:REF /OPT:ICF /LTCG")
 else()
     message(STATUS "Cross-compiling for Windows from Linux.")
     set(CMAKE_SYSTEM_NAME Windows)
@@ -61,6 +74,9 @@ else()
     set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
     set(WINDOWS_LIBS -lwininet -lws2_32 -lkernel32 -luser32 -ladvapi32)
+    # Linker optimizations
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -s -flto")
+
 endif()
 
 # Build the DLL

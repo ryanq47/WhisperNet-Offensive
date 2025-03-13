@@ -18,6 +18,8 @@ class AuthView:
         # Doing this as a failsafe for dev, and if any session data gets left in there
         app.storage.user.clear()
         add_particles_background()
+        ui.page_title("WhisperNet")
+
         with ui.column().classes(
             "items-center justify-center absolute-center w-full h-screen"
         ):
@@ -67,7 +69,9 @@ class AuthView:
         if self.auth_api_call():
             ui.navigate.to("/")
         else:
-            ui.notify("Invalid username or password", type="negative")
+            ui.notify(
+                "Invalid username or password", type="negative", position="top-right"
+            )
 
     def auth_api_call(self):
         data = {"username": self.username.value, "password": self.password.value}
@@ -80,7 +84,7 @@ class AuthView:
             store_token(token=access_token)
             store_user(username=self.username.value)
             # print(access_token)
-            ui.notify("success")
+            ui.notify("success", position="top-right")
             return True
 
         return False
@@ -90,7 +94,7 @@ class AuthView:
 def logout():
     check_login()
     app.storage.user.clear()  # Clear user-specific session data
-    ui.notify("Logged out successfully", type="positive")
+    ui.notify("Logged out successfully", type="positive", position="top-right")
     ui.navigate.to("/auth")
 
 
@@ -119,7 +123,9 @@ def check_login():
     if is_valid_jwt(jwt):
         return True
     else:
-        ui.notify("Please log in to access this page", type="negative")
+        ui.notify(
+            "Please log in to access this page", type="negative", position="top-right"
+        )
         ui.navigate.to("/auth")
 
 

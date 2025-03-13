@@ -73,18 +73,26 @@ def api_post_call(url, data=None, files=None):
                 error_message = r.json().get("message", r.text)
             except Exception:
                 error_message = r.text
-            ui.notify(f"Error {r.status_code}: {error_message}", type="negative")
+            ui.notify(
+                f"Error {r.status_code}: {error_message}",
+                type="negative",
+                position="top-right",
+            )
             return {}
 
         try:
             resp_json = r.json()
-            ui.notify("Request succeeded", type="positive")
+            ui.notify("Request succeeded", type="positive", position="top-right")
             return resp_json
         except Exception:
-            ui.notify("Request succeeded, but no JSON in response", type="warning")
+            ui.notify(
+                "Request succeeded, but no JSON in response",
+                type="warning",
+                position="top-right",
+            )
             return {}
     except Exception as e:
-        ui.notify(f"Request exception: {str(e)}", type="negative")
+        ui.notify(f"Request exception: {str(e)}", type="negative", position="top-right")
         return {}
 
 
@@ -104,9 +112,13 @@ def api_delete_call(url):
                 error_message = r.json().get("message", r.text)
             except Exception:
                 error_message = r.text
-            ui.notify(f"Error {r.status_code}: {error_message}", type="negative")
+            ui.notify(
+                f"Error {r.status_code}: {error_message}",
+                type="negative",
+                position="top-right",
+            )
             return {}
         return r.json() if r.text else {}
     except Exception as e:
-        ui.notify(f"Request exception: {str(e)}", type="negative")
+        ui.notify(f"Request exception: {str(e)}", type="negative", position="top-right")
         return {}

@@ -157,26 +157,26 @@ class FileView:
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Deleted: {filename}")
+                ui.notify(f"Deleted: {filename}", position="top-right")
                 url = f"/static-serve/delete/{filename}"
                 api_delete_call(url=url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
     async def download_selected_rows(self):
         rows = await self.aggrid_element.get_selected_rows()
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Downloading: {filename}")
+                ui.notify(f"Downloading: {filename}", position="top-right")
                 url = f"{Config.API_HOST}/{filename}"
                 ui.download(url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
 
 class FileUploadView:
@@ -210,9 +210,12 @@ class FileUploadView:
             ui.notify(
                 f"Upload failed: {resp.get('message', 'Unknown error')}",
                 type="negative",
+                position="top-right",
             )
         else:
-            ui.notify("File uploaded successfully!", type="positive")
+            ui.notify(
+                "File uploaded successfully!", type="positive", position="top-right"
+            )
 
         # Refresh after each file upload
         # self.on_refresh()

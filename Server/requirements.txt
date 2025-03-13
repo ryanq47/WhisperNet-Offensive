@@ -57,3 +57,5 @@ types-setuptools==75.1.0.20240917
 typing_extensions==4.12.2
 urllib3==2.2.3
 Werkzeug==3.0.4
+flask_restx
+waitress==3.0.2

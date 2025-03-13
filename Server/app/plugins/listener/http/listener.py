@@ -13,9 +13,6 @@ from plugins.listener.http.http_server import run_app
 
 import multiprocessing
 
-# from modules.redis_models import ActiveService
-from modules.utils import api_response, generate_timestamp, generate_unique_id
-
 
 logger = log(__name__)
 
@@ -38,26 +35,23 @@ class Info:
     author = "ryanq.47"
 
 
-# does this need its own listener .py?
 class Listener(BaseListener):
 
-    def __init__(self, listener_id=None):
+    def __init__(self, host, name, port, listener_id=None):
         # init super
-        super().__init__(listener_id)
+        super().__init__(listener_id=listener_id, port=port, host=host, name=name)
 
-    def spawn(self, port: int, host: str, name: str):
+    # def spawn(self, port: int, host: str, name: str):
+    def spawn(self):
         """
         Start the server as a child process and let the parent continue.
         """
         # make sure port is an int
-        if not type(port) == int:
-            port = int(port)
+        if not type(self.data.network.port) == int:
+            self.data.network.port = int(self.data.network.port)
 
-        self.data.network.port = port
-        self.data.network.address = host
-        self.data.listener.name = name
-
-        proc = self._spawn_beacon_http_listener()
+        # spawn the listener itself
+        proc = self._spawn_agent_http_listener()
         if not proc:
             logger.warning("Failed to start listener!")
             return
@@ -65,20 +59,18 @@ class Listener(BaseListener):
         # giving it the PID for later loads if needed.
         self.data.listener.pid = proc.pid
 
-        # DO NOT JOIN here or you'll block the parent process.
         logger.info(
             f"Beacon HTTP listener spawned. Name={self.data.listener.name}, PID={proc.pid}, port={self.data.network.port}"
         )
 
-        self.register()  # to store in redis
-
         # Optionally store `proc` in self if you want to kill it later.
         self._process_handle = proc
 
-    def _spawn_beacon_http_listener(self):
+    def _spawn_agent_http_listener(self):
         """
         Launch the mini Flask RESTX server in its own process.
         """
+
         proc = multiprocessing.Process(
             target=run_app,
             args=(self.data.network.address, self.data.network.port),

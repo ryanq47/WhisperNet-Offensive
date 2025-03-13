@@ -12,7 +12,7 @@
 // Function prototype
 DWORD WINAPI BeaconLoop();
 DWORD WINAPI execute_async(char * agent_id);
-
+void generate_uuid4(char *);
 // Standard Exported Functions
 
 //note: The thread allows for the functions to detach/return okay, makes it more normal + cleaner

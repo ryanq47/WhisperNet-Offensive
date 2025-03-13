@@ -6,6 +6,16 @@ from config import Config, ThemeConfig
 from build import BuildView
 from navbar import *
 from networking import api_call, api_post_call, api_delete_call
+from scripts import ScriptsView
+from nicegui.events import KeyEventArguments
+
+# ---------------------------
+#   Easy Settings
+# ---------------------------
+
+SHELL_SCROLL_DURATION = (
+    0.25  # really just speed, how long it takes for the "scroll animation" to complete
+)
 
 
 # ---------------------------
@@ -85,6 +95,8 @@ class AgentView:
             .get("system", {})
             .get("hostname", "Unknown Hostname")
         )
+        last_seen = self.agent_data["data"]["agent"].get("last_seen", "Unknown")
+
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
             ui.label(str(hostname)).classes("h-10")
@@ -93,7 +105,8 @@ class AgentView:
             ui.label(self.agent_id).classes("h-6")
             ui.space()
             ui.icon("timer")
-            ui.label("Last Checkin: 01:01:01").classes("h-6")
+
+            ui.label(f"Last Seen: {last_seen}").classes("h-6")
         ui.separator()
 
         current_settings = app.storage.user.get("settings", {})
@@ -198,6 +211,52 @@ class AgentView:
         self.shell_container = None
         self.auto_scroll_enabled = True
 
+        def handle_keydown(e):
+            # Access the key from e.args dictionary
+            key = e.args.get("key")
+            # Check if the Enter key was pressed
+            if key == "Enter":
+                # e.prevent_default()  # Prevents newline in textarea
+                send_command()
+
+        def update_scripts_options():
+            # move into dedicated func
+            # kinda tall - but script selection
+            # get valid scripts
+            # api_call("script list api")
+            # need to get current script as well, and put in this value so user doenst get confused
+            # on refresh
+            # Fetch the API response
+            response = api_call(url=f"/scripts/files")
+
+            # Extract script data properly
+            scripts_data = (
+                [
+                    script.get("filename", "Unknown Script")
+                    for script in response.get("data", [])
+                ]
+                if response.get("data")
+                else ["No Scripts Available"]
+            )
+
+            # Populate the UI dropdown
+            # on change... trigger API call to select a script.
+            # /agents/uuid/script (POST req, takes script name)
+            script_selector = ui.select(
+                options=scripts_data,
+                label="Extension Scripts",
+                on_change=lambda e: update_script(script_selector.value),
+                value=scripts_data[0] if scripts_data else "",
+            ).classes("w-full")
+
+        def update_script(script_name):
+            data = {"command_script": script_name}
+
+            api_post_call(
+                url=f"/agent/{self.agent_id}/command-script/register", data=data
+            )
+            ui.notify("Updated script on agent", position="top-right")
+
         def on_scroll(e):
             # Disable auto-scroll if the user scrolls away from the bottom.
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
@@ -218,19 +277,26 @@ class AgentView:
                     with self.shell_container:
                         for entry in data:
                             cmd = entry.get("command", "")
-                            ui.markdown(f"> {cmd}").style("font-family: monospace")
+                            # ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
+                            ui.markdown(f"> `{cmd}`").style("font-family: monospace")
                             response_value = entry.get("response")
                             if response_value:
-                                ui.label(response_value).style(
+                                # was ui.label
+                                ui.markdown(response_value).style(
                                     "white-space: pre; font-family: monospace;"
                                 )
+                                ui.separator()
+
                             else:
                                 # not using animation at the moment due to the way the shell refreshes/updates
                                 ui.skeleton(animation="none").style(
                                     "width: 50%; height: 1.2em; margin: 4px 0;"
                                 )
                     if self.auto_scroll_enabled:
-                        self.shell_container.scroll_to(percent=1.0)
+                        pass
+                        # self.shell_container.scroll_to(
+                        #     percent=1.0, duration=SHELL_SCROLL_DURATION
+                        # )
 
         def send_command():
             api_post_call(
@@ -239,6 +305,9 @@ class AgentView:
             )
             command_input.value = ""
             update_shell_data()
+
+        # update the script options
+        update_scripts_options()
 
         # Shell tab layout: Fill parent container (using h-full).
         with ui.column().classes(
@@ -257,6 +326,9 @@ class AgentView:
                     ui.textarea(placeholder="Type a command...")
                     .props('autofocus outlined input-class="ml-3" input-class=h-12')
                     .classes("text-black grow mr-4")
+                    .on(
+                        "keydown", handle_keydown
+                    )  # handle keydown here cuz nested functions
                 )
                 ui.button("Send Command", on_click=send_command).classes("w-32")
         update_shell_data()
@@ -382,6 +454,7 @@ class AgentsPage:
             with ui.tabs() as tabs:
                 ui.tab("Agents")
                 ui.tab("Binaries + Builder")
+                ui.tab("Scripts")
 
             # -- TAB PANELS --
             with ui.tab_panels(tabs, value="Agents").classes("w-full h-full border"):
@@ -390,4 +463,7 @@ class AgentsPage:
                     a.render()
                 with ui.tab_panel("Binaries + Builder"):
                     a = BuildView()
+                    a.render()
+                with ui.tab_panel("Scripts"):
+                    a = ScriptsView()
                     a.render()

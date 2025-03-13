@@ -12,6 +12,7 @@ from modules.log import log
 from modules.utils import api_response
 from redis_om import get_redis_connection
 import re
+from modules.agent_script_interpreter import AgentScriptInterpreter
 
 logger = log(__name__)
 
@@ -108,7 +109,6 @@ class AgentDequeueCommandResource(Resource):
         a = Agent(agent_id=agent_uuid)
         command = a.dequeue_command()
 
-        print(api_response)
         return api_response(data=command)
         # "pong", 200
 
@@ -152,11 +152,40 @@ class AgentEnqueueCommandResource(Resource):
                 return api_response(message="'command' cannot be empty"), 400
 
             a = Agent(agent_id=agent_uuid)
-            command_id = a.enqueue_command(command=command)
 
-            print(api_response)
-            return api_response(data=command_id)
+            ##########
+            # Script Stuff
+            ##########
+            logger.debug(f"Command inbound from server: {command}")
+
+            command_script_name = a.get_command_script()
+            asi = AgentScriptInterpreter(
+                script_name=command_script_name,
+                agent_id=agent_uuid,
+                # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+            )
+
+            command_results = asi.process_command(command)
+
+            # queue multiple commands
+            if command_results:
+                logger.debug("Successful execution of commands")
+                # not doing here, letting the logic handle this.
+                # for command in command_results:
+                #    command_id = a.enqueue_command(command=command)
+
+                return api_response(data="Extension Script Command queued")
+            # queue a single command
+            else:
+                a = Agent(agent_id=agent_uuid)
+                command_id = a.enqueue_command(command=command)
+
+                # print(api_response)
+                return api_response(data=command_id), 200
+
+        # 500ing for some reason?
         except Exception as e:
+            logger.error(e)
             return api_response(message="An error occured"), 500
 
 
@@ -197,6 +226,64 @@ class AgentEnqueueCommandResource(Resource):
 
             return api_response(data=all_commands)
         except Exception as e:
+            logger.error(e)
+            return api_response(message="An error occured"), 500
+
+
+@agent_ns.route("/<string:agent_uuid>/command-script/register")
+@agent_ns.doc(description="Register a command script to this agent")
+class AgentUploadCommandScriptResource(Resource):
+    """
+
+    JSON:
+
+    {
+        "command_script": "scriptname.yaml"
+    }
+
+    """
+
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @ping_ns.marshal_with(ping_response, code=200)
+    # @jwt_required
+    # @agent_ns.expect(command_request_model)
+    @jwt_required()
+    def post(self, agent_uuid):
+        """
+        Tell which script for the agent to use.
+
+        JSON:
+
+        {
+            "command_script": "scriptname.py"
+        }
+
+        """
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            if not data or "command_script" not in data:
+                return (
+                    api_response(message="missing 'command_script' in message body"),
+                    400,
+                )
+
+            command_script = data.get("command_script", "")
+            # if command_script == "":
+            #     return api_response(message="'command_script' cannot be empty"), 400
+
+            a = Agent(agent_id=agent_uuid)
+            a.set_command_script(command_script)
+
+            return api_response(message="Script registered successfully")
+        except Exception as e:
+            logger.error(e)
             return api_response(message="An error occured"), 500
 
 

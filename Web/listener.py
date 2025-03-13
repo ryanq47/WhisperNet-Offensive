@@ -360,7 +360,7 @@ class ListenersView:
                 result.get("address", ""),
             )
         else:
-            ui.notify("Listener creation was canceled.")
+            ui.notify("Listener creation was canceled.", position="top-right")
 
     # Example function to be called with the dialog values
     def spawn_listener(self, name: str, port: str, protocol: str, address: str):

@@ -12,6 +12,7 @@ from nicegui import ui, app
 
 # navbar is loaded everywhere so it's a good spot to do things that need to be done everywere
 def navbar():
+    ui.page_title("WhisperNet")
     # Apply per-user settings.
     LocalSettings.apply_settings()
     current_settings = app.storage.user.get("settings", {})
@@ -69,7 +70,9 @@ def fun_navbar():
                 ).props("flat color=white").classes("py-2 text-xs")
 
                 ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                    "Agents",
+                    icon="computer",
+                    on_click=lambda: ui.navigate.to("/agents"),
                 ).props("flat color=white").classes("py-2 text-xs")
 
         # An extra button on the far right as an example
@@ -114,6 +117,13 @@ def fun_navbar():
             "Hosted Files",
             on_click=lambda: ui.navigate.to("/files"),
             icon="dns",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
+        ui.button(
+            "Cred Store",
+            on_click=lambda: ui.navigate.to("/credstore"),
+            icon="key",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
 
@@ -187,7 +197,9 @@ def normal_navbar():
                 ).props("flat color=white").classes("py-2 text-xs")
 
                 ui.button(
-                    "About", icon="help", on_click=lambda: ui.navigate.to("/about")
+                    "Agents",
+                    icon="computer",
+                    on_click=lambda: ui.navigate.to("/agents"),
                 ).props("flat color=white").classes("py-2 text-xs")
 
         # An extra button on the far right as an example
@@ -232,6 +244,13 @@ def normal_navbar():
             "Hosted Files",
             on_click=lambda: ui.navigate.to("/files"),
             icon="dns",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
+        ui.button(
+            "Cred Store",
+            on_click=lambda: ui.navigate.to("/credstore"),
+            icon="key",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
 

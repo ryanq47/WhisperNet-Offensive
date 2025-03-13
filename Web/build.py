@@ -25,6 +25,25 @@ class BuildView:
         self.fetch_file_list()
         self.update_aggrid()
 
+    # handle key inputs
+    # def handle_key(self, e: KeyEventArguments):
+    #     # can't do due to async problems
+    #     # if e.key == "Delete" and not e.action.repeat and e.action.keydown:
+    #     #     ui.notify("Del key presses")
+    #     #     asyncio.create_task(self.delete_selected_rows())  # Key change
+
+    #     # if e.key == "Backspace" and not e.action.repeat and e.action.keydown:
+    #     #     ui.notify("Backspace key presses")
+    #     #     asyncio.create_task(self.delete_selected_rows())  # Key change
+
+    #     if e.key == "r" and not e.action.repeat and e.action.keydown:
+    #         ui.notify("Refreshing...", position="top-right")
+    #         self.on_refresh()
+
+    # if e.key == "d" and not e.action.repeat and e.action.keydown:
+    #     ui.notify("d key presses")
+    #     self.download_selected_rows()
+
     def update_aggrid(self):
         """Convert self.file_list -> row data for AG Grid."""
         row_data = []
@@ -147,26 +166,26 @@ class BuildView:
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Deleted: {filename}")
+                ui.notify(f"Deleted: {filename}", position="top-right")
                 url = f"/build/delete/{filename}"
                 api_delete_call(url=url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
     async def download_selected_rows(self):
         rows = await self.aggrid_element.get_selected_rows()
         if rows:
             for row in rows:
                 filename = row.get("Filename", "")
-                ui.notify(f"Downloading: {filename}")
+                ui.notify(f"Downloading: {filename}", position="top-right")
                 url = f"{Config.API_HOST}/build/{filename}"
                 ui.download(url)
                 # trigger refresh
                 self.on_refresh()
         else:
-            ui.notify("No rows selected.")
+            ui.notify("No rows selected.", position="top-right")
 
     # def render_agents_tab(self):
     #     # just importing instead of copying full code
@@ -190,17 +209,31 @@ class BuildView:
                 "data", ""
             )
 
-            ui.label("Spawn a New Listener")
+            ui.label("Build a new Agent")
             # Input fields for the dialog
-            with ui.element().classes(
-                "w-full"
-            ):  # make sure fields are full width of parent dialogue container
-                name_input = ui.input(label="Agent Name (blank = random name)")
+            with ui.element().classes("w-full"):  # Ensure full width
+                name_input = ui.input(label="[OPT] Agent Name (blank = random name)")
                 agent_type_input = ui.select(
-                    options=agent_template_options, label="Agent Type"
-                )  # ui.input(label="Agent Type")
-                address_input = ui.input(label="Callback Address")
-                port_input = ui.input(label="Port Callback")
+                    options=agent_template_options,
+                    label="[REQ] Agent Type",
+                    on_change=lambda e: update_build_scripts(),  # ui.notify("HI"),  # update_build_scripts(),
+                )
+                address_input = ui.input(label="[REQ] Callback Address")
+                port_input = ui.input(label="[REQ] Port Callback")
+                build_script_input = ui.select(
+                    options=[],
+                    label="[REQ] Build Scripts (select an agent first)",
+                )
+
+                def update_build_scripts():
+                    agent_type = agent_type_input.value
+                    if agent_type:  # Ensure agent type is selected
+                        build_script_options = self.fetch_build_scripts(agent_type)
+                        build_script_input.options = build_script_options
+                        build_script_input.update()  # Refresh UI
+                        # ui.notify(
+                        #     f"Updated build script options: {build_script_options}"
+                        # )  # Debugging log
 
             with ui.row():
                 # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
@@ -212,6 +245,7 @@ class BuildView:
                             "agent_type": agent_type_input.value,
                             "callback_port": port_input.value,
                             "callback_address": address_input.value,
+                            "build_script": build_script_input.value,
                         }
                     ),
                 )
@@ -229,9 +263,10 @@ class BuildView:
                 agent_type=result.get("agent_type", ""),
                 callback_address=result.get("callback_address", ""),
                 callback_port=result.get("callback_port", ""),
+                build_script=result.get("build_script", ""),
             )
         else:
-            ui.notify("Agent Builder was canceled.")
+            ui.notify("Agent Builder was canceled.", position="top-right")
 
     # Example function to be called with the dialog values
     def build_agent(
@@ -240,8 +275,9 @@ class BuildView:
         agent_type: str,
         callback_address: str,
         callback_port: str,
+        build_script: str,
     ):
-        ui.notify("Build started, wait a few seconds and refresh")
+        ui.notify("Build started, wait a few seconds and refresh", position="top-right")
         # network call + stuff
 
         build_dict = {
@@ -249,7 +285,14 @@ class BuildView:
             "agent_type": agent_type,
             "callback_address": callback_address,
             "callback_port": callback_port,
+            "build_script": build_script,
         }
 
         # api_post_call(data=listener_dict, url="/plugin/beacon-http/listener/spawn")
         api_post_call(url=f"/build/{agent_type}/build", data=build_dict)
+
+    def fetch_build_scripts(self, agent_type: str):
+        print("UPDATING")
+        if agent_type:  # Ensure agent_type is not empty or None
+            return api_call(url=f"/build/{agent_type}/scripts").get("data", [])
+        return []

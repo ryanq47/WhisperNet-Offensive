@@ -4,6 +4,7 @@ from flask_restx import Api, Namespace, Resource, fields
 from waitress import serve
 from modules.config import Config
 from plugins.listener.http.agent import Agent
+from modules.utils import get_utc_datetime
 
 app = Flask("MYSECONDAPP")
 api = Api(
@@ -79,6 +80,7 @@ class AgentDequeueCommandResource(Resource):
         """
         try:
             a = Agent(agent_id=agent_uuid)
+            update_last_seen(agent_class=a)
             command_object = a.dequeue_command()
 
             command = command_object.command
@@ -154,6 +156,19 @@ def run_app(host, port):
     serve(app, host=host, port=port)
 
     # app.run(host=host, port=port, debug=False)
+
+
+def update_last_seen(agent_class):
+    """
+    Updates the last time an agent was seen.
+    Triggers on GET request.
+
+    Currently uses UTC datetime
+    """
+    # logger.debug("Updating date & time for agent")
+    # upate last checkin
+    agent_class.data.agent.last_seen = str(get_utc_datetime())
+    agent_class.unload_data()
 
 
 # If you run `python app.py` directly, it defaults to 5000
