@@ -64,12 +64,6 @@ def fun_navbar():
                 ).props("flat color=white").classes("text-xs py-2")
 
                 ui.button(
-                    "Search",
-                    icon="search",
-                    on_click=lambda: ui.navigate.to("/search"),
-                ).props("flat color=white").classes("py-2 text-xs")
-
-                ui.button(
                     "Agents",
                     icon="computer",
                     on_click=lambda: ui.navigate.to("/agents"),
@@ -90,12 +84,7 @@ def fun_navbar():
             icon="home",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.button(
-            "Search",
-            on_click=lambda: ui.navigate.to("/search"),
-            icon="search",
-            color="bg-neutral-600",
-        ).classes("w-full text-slate-50").props("square flat condensed")
+
         ui.separator().classes("my-2 border-slate-400")
 
         # Operations Section
@@ -191,12 +180,6 @@ def normal_navbar():
                 ).props("flat color=white").classes("text-xs py-2")
 
                 ui.button(
-                    "Search",
-                    icon="search",
-                    on_click=lambda: ui.navigate.to("/search"),
-                ).props("flat color=white").classes("py-2 text-xs")
-
-                ui.button(
                     "Agents",
                     icon="computer",
                     on_click=lambda: ui.navigate.to("/agents"),
@@ -217,12 +200,7 @@ def normal_navbar():
             icon="home",
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
-        ui.button(
-            "Search",
-            on_click=lambda: ui.navigate.to("/search"),
-            icon="search",
-            color="bg-neutral-600",
-        ).classes("w-full text-slate-50").props("square flat condensed")
+
         ui.separator().classes("my-2 border-slate-400")
 
         # Operations Section
