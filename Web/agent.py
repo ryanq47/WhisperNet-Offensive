@@ -164,7 +164,8 @@ class AgentView:
                 ui.button(
                     "Export",
                     on_click=lambda: self.command_grid.run_grid_method(
-                        "exportDataAsCsv"
+                        "exportDataAsCsv",
+                        {"fileName": f"{self.agent_id}_command_history.csv"},
                     ),
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
@@ -260,7 +261,7 @@ class AgentView:
                 if not cmd_id:
                     cmd_id = f"no_id_{entry.get('timestamp', '')}"
                 cmd = entry.get("command", "")
-                response_value = entry.get("response", "")
+                response_value = entry.get("response") or "Waiting on callback..."
 
                 if cmd_id not in self.known_command_ids:
                     # Append new entry HTML to the output element.
