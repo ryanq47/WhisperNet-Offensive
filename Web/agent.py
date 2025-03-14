@@ -234,7 +234,8 @@ class AgentView:
                 options=scripts_data,
                 label="Extension Scripts",
                 on_change=lambda e: update_script(e.value),
-                value=scripts_data[0] if scripts_data else "",
+                value=None,  # if scripts_data else ""
+                # shitty fix to show default.py on elemnt load
             ).classes("w-full")
 
         def update_script(script_name):
@@ -242,7 +243,7 @@ class AgentView:
                 url=f"/agent/{self.agent_id}/command-script/register",
                 data={"command_script": script_name},
             )
-            ui.notify("Updated script on agent", position="top-right")
+            ui.notify(f"Updated script to {script_name} on agent", position="top-right")
 
         def on_scroll(e):
             # If the user scrolls away from the bottom, disable auto-scroll.
@@ -310,6 +311,10 @@ class AgentView:
 
         # Initialize the script options.
         update_scripts_options()
+        # on load, load "default.py", the default scirpt
+        # ducttape bug fix, if this is not called, no script is rendered, and if there's only one script, you can't select a script
+        # update_script("default.py")
+        # FUCK this doesn't work, script forces default.py on refresh...
 
         # Shell tab layout.
         with ui.column().classes("h-full w-full flex flex-col"):

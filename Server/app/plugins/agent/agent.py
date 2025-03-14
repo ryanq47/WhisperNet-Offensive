@@ -142,6 +142,7 @@ class AgentEnqueueCommandResource(Resource):
 
         returns: command_id
         """
+        # This might be cooked - is way slower now? May not be this code, might be sleep time
         try:
             data = request.get_json()  # Get JSON data from the request
             if not data or "command" not in data:
@@ -156,34 +157,65 @@ class AgentEnqueueCommandResource(Resource):
             ##########
             # Script Stuff
             ##########
+            ## old code that fails if no script is loaded.
+            #     logger.debug(f"Command inbound from server: {command}")
+
+            #     # check if a script is even registerd to the agent
+            #     command_script_name = a.get_command_script()
+            #     asi = AgentScriptInterpreter(
+            #         script_name=command_script_name,
+            #         agent_id=agent_uuid,
+            #         # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+            #     )
+            #     command_results = asi.process_command(command)
+
+            #     # if command found in script...
+            #     if command_results:
+            #         logger.debug("Successful execution of commands")
+            #         return api_response(data="Extension Script Command queued")
+
+            #     else:
+            #         logger.debug("No script registered for agent")
+
+            #         # queue command normally if not in script
+            #         a = Agent(agent_id=agent_uuid)
+            #         command_id = a.enqueue_command(command=command)
+
+            #         # print(api_response)
+            #         return api_response(data=command_id), 200
+
+            # except Exception as e:
+            #     logger.error(e)
+            #     return api_response(message="An error occured"), 500
+
+            ## this fixes it.
             logger.debug(f"Command inbound from server: {command}")
 
+            # check if a script is even registerd to the agent
             command_script_name = a.get_command_script()
-            asi = AgentScriptInterpreter(
-                script_name=command_script_name,
-                agent_id=agent_uuid,
-                # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
-            )
+            if command_script_name != None:
+                asi = AgentScriptInterpreter(
+                    script_name=command_script_name,
+                    agent_id=agent_uuid,
+                    # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+                )
+                command_results = asi.process_command(command)
 
-            command_results = asi.process_command(command)
+                # if command found in script...
+                if command_results:
+                    logger.debug("Successful execution of commands")
+                    return api_response(data="Extension Script Command queued")
 
-            # queue multiple commands
-            if command_results:
-                logger.debug("Successful execution of commands")
-                # not doing here, letting the logic handle this.
-                # for command in command_results:
-                #    command_id = a.enqueue_command(command=command)
-
-                return api_response(data="Extension Script Command queued")
-            # queue a single command
             else:
-                a = Agent(agent_id=agent_uuid)
-                command_id = a.enqueue_command(command=command)
+                logger.debug("No script registered for agent")
 
-                # print(api_response)
-                return api_response(data=command_id), 200
+            # queue command normally if not in script
+            a = Agent(agent_id=agent_uuid)
+            command_id = a.enqueue_command(command=command)
 
-        # 500ing for some reason?
+            # print(api_response)
+            return api_response(data=command_id), 200
+
         except Exception as e:
             logger.error(e)
             return api_response(message="An error occured"), 500
