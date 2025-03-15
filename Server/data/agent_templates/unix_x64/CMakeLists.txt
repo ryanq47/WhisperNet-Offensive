@@ -23,10 +23,16 @@ add_compile_options(
 # Source & Header Files
 set(AGENT_SOURCES
     ${CMAKE_SOURCE_DIR}/core.c
+    ${CMAKE_SOURCE_DIR}/cJSON.c
+
 )
 
 set(AGENT_HEADERS
-    ${CMAKE_SOURCE_DIR}/config.h
+    ${CMAKE_SOURCE_DIR}/whisper_config.h
+    ${CMAKE_SOURCE_DIR}/whisper_json.h
+    ${CMAKE_SOURCE_DIR}/whisper_commands.h
+    ${CMAKE_SOURCE_DIR}/comms_http.h
+    ${CMAKE_SOURCE_DIR}/cJSON.h
 )
 
 if (UNIX)
@@ -41,8 +47,12 @@ endif()
 add_executable(agent ${AGENT_SOURCES} ${AGENT_HEADERS})
 target_include_directories(agent PRIVATE ${CMAKE_SOURCE_DIR})
 
+
+
 # If any Unix-specific libraries are needed, link them here.
-# For example: target_link_libraries(agent ${UNIX_LIBS})
+find_package(CURL REQUIRED)
+target_include_directories(agent PRIVATE ${CURL_INCLUDE_DIRS})
+target_link_libraries(agent PRIVATE CURL::libcurl)
 
 # Output Name - 'MACRO_OUTPUT_NAME' gets replaced by build_interface, so the user can specify a name
 set_target_properties(agent PROPERTIES OUTPUT_NAME "MACRO_OUTPUT_NAME")

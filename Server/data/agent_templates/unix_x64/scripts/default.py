@@ -25,7 +25,9 @@ class Configure:
         """
 
         self.base_build_path = base_build_path
-        self.config_file = base_build_path / "config.h"  # Put your config.h here
+        self.config_file = (
+            base_build_path / "whisper_config.h"
+        )  # Put your config.h here
 
         self._setup_logger()
 
