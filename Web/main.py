@@ -10,6 +10,7 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore, CredentialStorePage
+from multi_console import MultiConsolePage
 from files import FilePage
 import argparse
 import logging
@@ -86,6 +87,15 @@ def settings():
     with main_container:
         c = CredentialStorePage()
         c.render()
+
+
+@ui.page("/multi-console")
+def settings():
+    check_login()
+    main_container = navbar()
+    with main_container:
+        mc = MultiConsolePage()
+        mc.render()
 
 
 @ui.page("/about")

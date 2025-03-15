@@ -86,6 +86,13 @@ def normal_navbar():
                     color="bg-neutral-600",
                 ).props("flat color=white").classes("py-2 text-xs")
 
+                ui.button(
+                    "Multi Console",
+                    on_click=lambda: ui.navigate.to("/multi-console"),
+                    icon="computer",
+                    color="bg-neutral-600",
+                ).props("flat color=white").classes("py-2 text-xs")
+
         # An extra button on the far right as an example
         ui.button(icon="menu").props("flat color=white").classes(
             "py-2 text-xs"
