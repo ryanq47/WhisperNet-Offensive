@@ -432,7 +432,7 @@ void sleep(OutboundJsonDataStruct* response_struct, char* args) {
         set_response_data(response_struct, "Sleep time too large.");
         return;
     }
-    dwTime = (DWORD)(sleep_seconds * 1000); // Convert to milliseconds
+    dwTime = (DWORD)(sleep_seconds);
 
     set_sleep_time(dwTime);
     char message[256];

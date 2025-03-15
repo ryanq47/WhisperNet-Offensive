@@ -27,7 +27,7 @@ typedef struct {
 */
 
 
-AgentConfig g_agent_config = { CALLBACK_SLEEP_TIME * 6, 10 };
+AgentConfig g_agent_config = { CALLBACK_SLEEP_TIME, 10 };
 CRITICAL_SECTION g_agent_config_mutex;
 
 ExecutionMode g_execution_mode = EXEC_MODE_ASYNC;
