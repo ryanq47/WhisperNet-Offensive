@@ -48,7 +48,7 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     }  
     else if (strcmp(command, "help") == 0) {
         DEBUG_LOG("[COMMAND] help\n");
-        set_response_data(response_struct, "Help Menu Placeholder");
+        set_response_data(response_struct, "BetaAF, so you get ONE command:\n`shell <shellargs>`\nEx: shell whoami");
     }
     else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
