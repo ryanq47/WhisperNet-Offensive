@@ -467,6 +467,7 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "sort": "desc",
                             },
                         ],
                         "rowData": row_data,

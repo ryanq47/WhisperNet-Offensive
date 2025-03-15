@@ -137,6 +137,7 @@ def get_local_datetime():
 def get_utc_datetime():
     """Return the current UTC date and time without microseconds."""
     return datetime.utcnow().replace(microsecond=0)
+    # return datetime.now(datetime.timezone.utc).replace(microsecond=0)
 
 
 def generate_mashed_name():
