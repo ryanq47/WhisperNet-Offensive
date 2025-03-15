@@ -213,37 +213,16 @@ class AgentView:
         # Keep track of which command entries have been appended.
         self.known_command_ids = {}
 
+        # and finally, render the script options
+        self.render_scripts_options()
+
         def handle_keydown(e):
             # Trigger send_command on Enter key.
             if e.args.get("key") == "Enter":
                 send_command()
 
-        def update_scripts_options():
-            # Get the list of available scripts.
-            response = api_call(url="/scripts/files")
-            scripts_data = (
-                [
-                    script.get("filename", "Unknown Script")
-                    for script in response.get("data", [])
-                ]
-                if response.get("data")
-                else ["No Scripts Available"]
-            )
-            # Create the script selector dropdown.
-            ui.select(
-                options=scripts_data,
-                label="Extension Scripts",
-                on_change=lambda e: update_script(e.value),
-                value=None,  # if scripts_data else ""
-                # shitty fix to show default.py on elemnt load
-            ).classes("w-full")
-
-        def update_script(script_name):
-            api_post_call(
-                url=f"/agent/{self.agent_id}/command-script/register",
-                data={"command_script": script_name},
-            )
-            ui.notify(f"Updated script to {script_name} on agent", position="top-right")
+        # fix: get current script. If current script is none, put "no script selected" on selector.
+        # additionally, break it out a bit, it's annoyingly duct taped together
 
         def on_scroll(e):
             # If the user scrolls away from the bottom, disable auto-scroll.
@@ -310,7 +289,7 @@ class AgentView:
             update_shell_data()
 
         # Initialize the script options.
-        update_scripts_options()
+        # render_scripts_options()
         # on load, load "default.py", the default scirpt
         # ducttape bug fix, if this is not called, no script is rendered, and if there's only one script, you can't select a script
         # update_script("default.py")
@@ -340,6 +319,64 @@ class AgentView:
         # Load the initial shell data and set up the auto-refresh timer.
         update_shell_data()
         ui.timer(interval=1.0, callback=update_shell_data)
+
+    def render_scripts_options(self):
+        """
+        Handles the script options.
+
+        Checks if an agent has a script. If so, sets that to the current script on the ui.select
+        If not, display's None.
+
+        When updating a script, it calls the _register_script to update the script for the agent.
+
+
+        """
+        # Get the list of available scripts.
+        response = api_call(url="/scripts/files")
+        scripts_data = (
+            [
+                script.get("filename", "Unknown Script")
+                for script in response.get("data", [])
+            ]
+            if response.get("data")
+            else ["No Scripts Available"]
+        )
+
+        # with agent id, get current script.
+        agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+
+        # Get the inner dictionary, which holds the actual agent info. Only one agent is returned from this call, so it'll just grab the first one
+        agent_info = next(iter(agent_data.values()), {})
+
+        # Then navigate to the command_script inside the nested structure.
+        agent_script = (
+            agent_info.get("data", {}).get("config", {}).get("command_script")
+        )
+
+        # Create the script selector dropdown.
+        ui.select(
+            options=scripts_data,
+            label="Extension Scripts",
+            on_change=lambda e: self._register_script(e.value),
+            value=agent_script,  # show the currently selected script if there is one
+        ).classes("w-full")
+
+    def _register_script(self, script_name):
+        """
+        POST call to update the script for an agent on the server
+
+        script_name: The name of the script on the server
+
+        Usually this would be under the render_scripts_options method, but ui.select needs a callback func to call on change
+
+        Endpoint: /agent/{self.agent_id}/command-script/register
+
+        """
+        api_post_call(
+            url=f"/agent/{self.agent_id}/command-script/register",
+            data={"command_script": script_name},
+        )
+        ui.notify(f"Updated script to {script_name} on agent", position="top-right")
 
     def render_notes_tab(self):
         """
