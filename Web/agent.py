@@ -470,6 +470,7 @@ class AgentsView:
                                 "sort": "desc",
                             },
                         ],
+                        "rowSelection": "multiple",
                         "rowData": row_data,
                     },
                     html_columns=[0],

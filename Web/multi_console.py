@@ -29,7 +29,8 @@ class MultiConsolePage:
             with ui.splitter().classes("h-full") as splitter:
                 with splitter.before:
                     # maybe get a custom one in here with a select option?
-                    AgentsView().render()
+                    self.mutliconsoleagentsview = MultiConsoleAgentsView()
+                    self.mutliconsoleagentsview.render()
                     # ui.label("Agents Aggrid")
                 with splitter.after:
                     # custom console here too
@@ -113,11 +114,19 @@ class MultiConsolePage:
                 """
                 )
 
-        def send_command():
+        async def send_command():
             # api_post_call(
             #     url=f"/agent/{self.agent_id}/command/enqueue",
             #     data={"command": command_input.value},
             # )
+
+            # proooblem... list of agents has HTML as the agent ID... so yeah gonna need to strip that out or
+            # just find where it's only the agnts, not the full html
+            list_of_agents = await self.mutliconsoleagentsview.get_selected_agents()
+
+            for agent in list_of_agents:
+                ui.notify(f"{agent}", position="top-right")
+
             command_input.value = ""
             update_shell_data()
 
@@ -210,3 +219,130 @@ class MultiConsolePage:
     #         data={"command_script": script_name},
     #     )
     #     ui.notify(f"Updated script to {script_name} on agent", position="top-right")
+
+
+# ---------------------------
+#   Agents List View
+#   Use a slightly modified agents view for the multi console, that include select + handling
+# ---------------------------
+class MultiConsoleAgentsView:
+    """
+    Displays a list of agents.
+    """
+
+    def __init__(self):
+        self.request_data = api_call(url=f"/stats/agents")
+        self.request_data = self.request_data.get("data", {})
+
+    def render(self):
+        self.render_agents_grid()
+
+    def render_agents_grid(self):
+        try:
+            current_settings = app.storage.user.get("settings", {})
+            agents = self.request_data
+            row_data = []
+            for key, agent_info in agents.items():
+                agent_id = agent_info.get("agent_id", "Unknown")
+                hostname = agent_info["data"]["system"].get("hostname", "Unknown")
+                os = agent_info["data"]["system"].get("os", "Unknown")
+                internal_ip = agent_info["data"]["network"].get(
+                    "internal_ip", "Unknown"
+                )
+                last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+                row_data.append(
+                    {
+                        "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Raw Agent ID": agent_id,
+                        "Hostname": hostname,
+                        "OS": os,
+                        "Internal IP": internal_ip,
+                        "Last Seen": last_seen,
+                    }
+                )
+            with ui.column().classes("w-full h-full overflow-auto"):
+                aggrid_theme = (
+                    "ag-theme-balham-dark"
+                    if current_settings.get("Dark Mode", False)
+                    else "ag-theme-balham"
+                )
+                self.aggrid = ui.aggrid(
+                    {
+                        "columnDefs": [
+                            {
+                                "headerName": "",
+                                "checkboxSelection": True,
+                                "headerCheckboxSelection": True,
+                                "width": 50,
+                                "pinned": "left",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Link Agent ID",
+                                "field": "Link Agent ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                            },
+                            {  # used for storing JUST the agent ID, without HTML stuff
+                                "headerName": "Raw Agent ID",
+                                "field": "Raw Agent ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                                "hide": True,
+                            },
+                            {
+                                "headerName": "Hostname",
+                                "field": "Hostname",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                            },
+                            {
+                                "headerName": "OS",
+                                "field": "OS",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                            },
+                            {
+                                "headerName": "Internal IP",
+                                "field": "Internal IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                            },
+                            {
+                                "headerName": "Last Seen",
+                                "field": "Last Seen",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                                "sort": "desc",
+                            },
+                        ],
+                        "rowSelection": "multiple",
+                        "rowData": row_data,
+                    },
+                    html_columns=[1],
+                ).classes(f"{aggrid_theme} w-full h-full")
+        except Exception as e:
+            print(f"Error rendering grid: {e}")
+
+    async def get_selected_agents(self):
+        rows = await self.aggrid.get_selected_rows()
+        list_of_agents = []
+        if rows:
+            for row in rows:
+                agent_id = row.get("Raw Agent ID", "")
+                # ui.notify(f"{agent_id}", position="top-right")
+                # url = f"{Config.API_HOST}/build/{filename}"
+                # ui.download(url)
+                # trigger refresh
+                # self.on_refresh()
+                list_of_agents.append(agent_id)
+            return list_of_agents
+        else:
+            ui.notify("No agents selected.", position="top-right")
+            return None
