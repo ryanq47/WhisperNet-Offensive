@@ -16,7 +16,13 @@ class MultiConsolePage:
     Multi console for interacting with multiple agents
     """
 
-    def __init__(self, agent_id: str = None): ...
+    def __init__(self, agent_id: str = None):
+        self.list_of_agent_ids = (
+            []
+        )  # A list to track which agents have been queued commands based on what is selected
+        self.list_of_command_ids = (
+            []
+        )  # anda list to track the queued commands based on ID
 
     def render(self):
         """
@@ -62,26 +68,36 @@ class MultiConsolePage:
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
         def update_shell_data():
-            # instead of none, get something here, maybe all the responses? or don't even bother with shell result history?
-            data = None  # api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
-            if not data:
-                return
+            # this is gonna be SLOOOOW
+            responses_from_agents = []
+
+            # go get the data from these requests...
+            # this just POUNDS the server fyi...
+            for command_id in self.list_of_command_ids:
+                # ui.notify(
+                #     f"Getting results from request {command_id}", position="top-right"
+                # )
+                # send REQUEST id not client id... uhhhh
+                data = api_call(url=f"/agent/command/{command_id}").get("data", [])
+                responses_from_agents.append(data)
 
             # Sort entries chronologically.
-            data.sort(key=lambda entry: entry.get("timestamp", ""))
-            for entry in data:
+            # responses_from_agents.sort(key=lambda entry: entry.get("timestamp", ""))
+            for entry in responses_from_agents:
                 # Use a unique identifier for the command.
                 cmd_id = entry.get("command_id", "")
                 if not cmd_id:
                     cmd_id = f"no_id_{entry.get('timestamp', '')}"
                 cmd = entry.get("command", "")
+                agent_id = entry.get("agent_id", "")
+
                 response_value = entry.get("response") or "Waiting on callback..."
 
                 if cmd_id not in self.known_command_ids:
                     # Append new entry HTML to the output element.
                     html = (
                         f"<div id='shell_entry_{cmd_id}' style='margin-bottom: 10px;'>"
-                        f"<div style='font-family: monospace;'>&gt; {cmd}</div>"
+                        f"<div style='font-family: monospace;'>[{agent_id}] &gt; {cmd}</div>"
                         f"<div id='response_{cmd_id}' style='white-space: pre; font-family: monospace;'>{response_value}</div>"
                         "<hr/></div>"
                     )
@@ -90,6 +106,7 @@ class MultiConsolePage:
                     )
                     self.known_command_ids[cmd_id] = True
                 else:
+                    # ui.notify("olddata")
                     # Update an existing entry's response only if new response data is available.
                     if response_value:
                         # Update using only text node modification if no selection is active.
@@ -120,13 +137,34 @@ class MultiConsolePage:
             #     data={"command": command_input.value},
             # )
 
-            # proooblem... list of agents has HTML as the agent ID... so yeah gonna need to strip that out or
-            # just find where it's only the agnts, not the full html
-            list_of_agents = await self.mutliconsoleagentsview.get_selected_agents()
+            self.list_of_agent_ids = (
+                await self.mutliconsoleagentsview.get_selected_agents()
+            )
 
-            for agent in list_of_agents:
-                ui.notify(f"{agent}", position="top-right")
+            for agent_id in self.list_of_agent_ids:
+                ui.notify(f"{agent_id}", position="top-right")
 
+                """
+                    Okkkayyy... discussion time. Can either create a multiqueue endpoint (may be best for API purposes/best practices)
+                    or just loop over each selected agent and send to the enqueue URL. < faster to implement,  and easier. 
+                
+                """
+                request_output = api_post_call(
+                    url=f"/agent/{agent_id}/command/enqueue",
+                    data={"command": command_input.value},
+                )
+
+                extracted_command_id = request_output.get("data", "")
+                self.list_of_command_ids.append(extracted_command_id)
+
+                # gonna need to check each agent id as well for responses to this message. Switch from one id to a loop
+                """
+                    Plan here: Have a get one command endpoint for an agent - or just a general command id lookup endpoint, no agent id needed
+                    For each command id, fetch the command results as usual
+
+                    /stats/agents/command
+                
+                """
             command_input.value = ""
             update_shell_data()
 
