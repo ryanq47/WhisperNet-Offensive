@@ -30,7 +30,9 @@ class MultiConsolePage:
         """
         with ui.element().classes("w-full h-full"):
 
-            current_settings = app.storage.user.get("settings", {})
+            ui.markdown(
+                "#### Select Agents on the left, and all commands typed into the console on the right will be sent to them!"
+            )
 
             with ui.splitter().classes("h-full") as splitter:
                 with splitter.before:
@@ -142,12 +144,12 @@ class MultiConsolePage:
             )
 
             for agent_id in self.list_of_agent_ids:
-                ui.notify(f"{agent_id}", position="top-right")
+                # ui.notify(f"{agent_id}", position="top-right")
 
                 """
-                    Okkkayyy... discussion time. Can either create a multiqueue endpoint (may be best for API purposes/best practices)
-                    or just loop over each selected agent and send to the enqueue URL. < faster to implement,  and easier. 
-                
+                Okkkayyy... discussion time. Can either create a multiqueue endpoint (may be best for API purposes/best practices)
+                or just loop over each selected agent and send to the enqueue URL. < faster to implement,  and easier.
+
                 """
                 request_output = api_post_call(
                     url=f"/agent/{agent_id}/command/enqueue",
