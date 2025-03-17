@@ -24,12 +24,9 @@ Custom Windows API function wrappers designed for stealthy execution. These call
   - Prevents static analysis detections tied to well-known API calls.  
   - Enables function resolution only when needed, minimizing exposure.
 
-- **(Planned) Standalone `whisper_winapi.h` version**  
+- **Standalone `whisper_winapi.h` version**  
   - Provides a true drop-in replacement for existing API calls.  
   - Makes writing your malware easier
-
-### **Whisper Config (whisper_config.h)**
-
 
 ### **Encryption (whisper_config.h)**
  - XOR:
