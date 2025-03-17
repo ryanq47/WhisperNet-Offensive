@@ -37,25 +37,6 @@ Custom Windows API function wrappers designed for stealthy execution. These call
 		 - `resolve("kernel32.dll","VirtualAllocEx");` > `resolve("kernel32.dll","Fybdeq|Q||sUh");`
 		 - Why?: Keeps static string detections to a minimum as the plaintext strings are not included in the binary
 
-	 - ...
-
-### **Comms Spec (whisper_x.h)**
-CommsSpec for WhisperNet. Note, Any agent that can speak this, can communicate with the server.
-
-GetCommand
-```
-{
-	"json_of_get_command"
-}
-```
-SendCommand
-```
-{
-	"json_of_send_command"
-}
-```
-
-
 
 ---
 
@@ -114,6 +95,9 @@ The web interface was made to be easy to use.
 
 ### Listeners: All the current listeners:
 ![listeners_ss](https://github.com/user-attachments/assets/cf733f53-f4bc-4b7a-bd3a-e4dcde5a5c4a)
+
+### File Hosting: 
+![host_files_ss](https://github.com/user-attachments/assets/42bbcd3b-dd5d-47ee-964d-02887e824d31)
 
 
 ...
