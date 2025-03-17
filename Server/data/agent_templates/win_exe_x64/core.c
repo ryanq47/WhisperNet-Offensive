@@ -63,7 +63,8 @@ int main() {
         execution_setup(agent_id); // Call the command execution function
 
         //WhisperSleep(get_sleep_time());
-        WhisperSleep(10 * 60);
+        //Sleep is in MS, so we take the input of sleep time * 1000 to get seconds
+        WhisperSleep(1000 * get_sleep_time());
 
     }
 

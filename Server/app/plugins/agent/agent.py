@@ -13,6 +13,7 @@ from modules.utils import api_response
 from redis_om import get_redis_connection
 import re
 from modules.agent_script_interpreter import AgentScriptInterpreter
+from modules.redis_models import AgentCommand
 
 logger = log(__name__)
 
@@ -142,6 +143,7 @@ class AgentEnqueueCommandResource(Resource):
 
         returns: command_id
         """
+        # This might be cooked - is way slower now? May not be this code, might be sleep time
         try:
             data = request.get_json()  # Get JSON data from the request
             if not data or "command" not in data:
@@ -156,34 +158,65 @@ class AgentEnqueueCommandResource(Resource):
             ##########
             # Script Stuff
             ##########
+            ## old code that fails if no script is loaded.
+            #     logger.debug(f"Command inbound from server: {command}")
+
+            #     # check if a script is even registerd to the agent
+            #     command_script_name = a.get_command_script()
+            #     asi = AgentScriptInterpreter(
+            #         script_name=command_script_name,
+            #         agent_id=agent_uuid,
+            #         # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+            #     )
+            #     command_results = asi.process_command(command)
+
+            #     # if command found in script...
+            #     if command_results:
+            #         logger.debug("Successful execution of commands")
+            #         return api_response(data="Extension Script Command queued")
+
+            #     else:
+            #         logger.debug("No script registered for agent")
+
+            #         # queue command normally if not in script
+            #         a = Agent(agent_id=agent_uuid)
+            #         command_id = a.enqueue_command(command=command)
+
+            #         # print(api_response)
+            #         return api_response(data=command_id), 200
+
+            # except Exception as e:
+            #     logger.error(e)
+            #     return api_response(message="An error occured"), 500
+
+            ## this fixes it.
             logger.debug(f"Command inbound from server: {command}")
 
+            # check if a script is even registerd to the agent
             command_script_name = a.get_command_script()
-            asi = AgentScriptInterpreter(
-                script_name=command_script_name,
-                agent_id=agent_uuid,
-                # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
-            )
+            if command_script_name != None:
+                asi = AgentScriptInterpreter(
+                    script_name=command_script_name,
+                    agent_id=agent_uuid,
+                    # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
+                )
+                command_results = asi.process_command(command)
 
-            command_results = asi.process_command(command)
+                # if command found in script...
+                if command_results:
+                    logger.debug("Successful execution of commands")
+                    return api_response(data="Extension Script Command queued")
 
-            # queue multiple commands
-            if command_results:
-                logger.debug("Successful execution of commands")
-                # not doing here, letting the logic handle this.
-                # for command in command_results:
-                #    command_id = a.enqueue_command(command=command)
-
-                return api_response(data="Extension Script Command queued")
-            # queue a single command
             else:
-                a = Agent(agent_id=agent_uuid)
-                command_id = a.enqueue_command(command=command)
+                logger.debug("No script registered for agent")
 
-                # print(api_response)
-                return api_response(data=command_id), 200
+            # queue command normally if not in script
+            a = Agent(agent_id=agent_uuid)
+            command_id = a.enqueue_command(command=command)
 
-        # 500ing for some reason?
+            # print(api_response)
+            return api_response(data=command_id), 200
+
         except Exception as e:
             logger.error(e)
             return api_response(message="An error occured"), 500
@@ -225,6 +258,52 @@ class AgentEnqueueCommandResource(Resource):
             all_commands = a.get_all_commands_and_responses()
 
             return api_response(data=all_commands)
+        except Exception as e:
+            logger.error(e)
+            return api_response(message="An error occured"), 500
+
+
+@agent_ns.route("/command/<string:command_uuid>")
+@agent_ns.doc(description="Get one command, searching from all the agents")
+class AgentGetOneCommandFromAllResource(Resource):
+    """
+    Searches all agent commands for ONE command, identified by UUID
+    """
+
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    # @ping_ns.marshal_with(ping_response, code=200)
+    # @jwt_required
+    # @agent_ns.expect(command_request_model)
+    @jwt_required()
+    def get(self, command_uuid):
+        try:
+
+            # manual redis search here for UUID, and arragnign of data.
+            # This is manual as it searches ALL of redis for the key, not just one agent, like baseagent would
+            agent_command = AgentCommand.get(command_uuid)
+            if agent_command:
+                agent_dict = {
+                    "command_id": agent_command.command_id,
+                    "command": agent_command.command,
+                    "response": (
+                        agent_command.response if agent_command.response else None
+                    ),
+                    "timestamp": agent_command.timestamp,
+                    "agent_id": agent_command.agent_id,
+                }
+
+            if agent_command:
+                return api_response(data=agent_dict)
+            else:
+                return api_response(data="No results found for command")
+
         except Exception as e:
             logger.error(e)
             return api_response(message="An error occured"), 500

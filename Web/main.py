@@ -1,5 +1,4 @@
 from nicegui import events, ui, app
-from searchbar import Search
 from agent import AgentView, AgentsPage
 from listener import ListenerView, ListenersPage
 from about import AboutView
@@ -11,11 +10,12 @@ from navbar import navbar
 from logs import LogsView
 from auth import AuthView, check_login
 from credstore import CredentialStore, CredentialStorePage
+from multi_console import MultiConsolePage
 from files import FilePage
 import argparse
 import logging
 
-logging.getLogger('niceGUI').setLevel(logging.CRITICAL)
+logging.getLogger("niceGUI").setLevel(logging.CRITICAL)
 
 
 parser = argparse.ArgumentParser(description="Set the API host for the application.")
@@ -89,13 +89,13 @@ def settings():
         c.render()
 
 
-@ui.page("/search")
-def search():
+@ui.page("/multi-console")
+def settings():
     check_login()
     main_container = navbar()
     with main_container:
-        s = Search()
-        s.spawn_search_bar()
+        mc = MultiConsolePage()
+        mc.render()
 
 
 @ui.page("/about")

@@ -104,30 +104,36 @@ class AgentScriptInterpreter:
         inbound_command: The FULL inbound command, ex "ping 127.0.0.1"
 
         """
-        logger.debug(f"Processing command: {inbound_command}")
+        try:
+            logger.debug(f"Processing command: {inbound_command}")
 
-        # need to split args and command? aka get first item in inbound_Cmmand,
-        # then the rest are args? - let the command itself do that
+            # need to split args and command? aka get first item in inbound_Cmmand,
+            # then the rest are args? - let the command itself do that
 
-        split_command = inbound_command.split()
-        command = split_command[0]
-        args_list = split_command[1:]
+            split_command = inbound_command.split()
+            command = split_command[0]
+            args_list = split_command[1:]
 
-        # have the factory choose WHCIH command class to create based on inputted command
-        # create it, and return it to use
-        command_instance = self.command_factory.create_command(
-            command_name=command, args_list=args_list, agent_id=self.agent_id
-        )
+            # have the factory choose WHCIH command class to create based on inputted command
+            # create it, and return it to use
+            command_instance = self.command_factory.create_command(
+                command_name=command, args_list=args_list, agent_id=self.agent_id
+            )
 
-        if command_instance:
-            # run the command instance, which will queue up the needed commands based
-            # on inputs, etc. and so forth. Entirely up to the user to do
-            command_instance.run()
-            return True
+            if command_instance:
+                # run the command instance, which will queue up the needed commands based
+                # on inputs, etc. and so forth. Entirely up to the user to do
+                command_instance.run()
+                return True
 
-        # if the command isn't registered here, return false
-        else:
+            # if the command isn't registered here, return false
+            else:
+                return False
+        except Exception as e:
+            logger.debug(f"Error with processing command: {e}")
+            # raise e
             return False
+            # returning instead of raising, it's okay if the script fails/falls through
 
     def extract_help_info(self):
         """

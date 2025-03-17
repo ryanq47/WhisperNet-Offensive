@@ -1,5 +1,4 @@
 from nicegui import ui
-from searchbar import Search
 from networking import api_call, api_post_call, api_delete_call
 from config import Config, ThemeConfig
 
@@ -67,19 +66,6 @@ class HomeView:
                     #         "text-xl font-medium  700"
                     #     )
                     ui.separator()
-
-                # figure out later, needs a bit of adjustment
-                # # Searchbar Section
-                # with ui.row().classes(
-                #     "w-full items-center justify-center mt-6"
-                # ):
-                #     ui.label("Searchbar").classes(
-                #         "text-lg  600 font-medium mb-2 underline"
-                #     )
-                #     s = Search(
-                #         vertical_padding=False, full_horizontal_width=True
-                #     )
-                #     s.spawn_search_bar()
 
         except Exception as e:
             print(e)

