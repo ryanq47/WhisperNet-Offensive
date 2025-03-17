@@ -87,6 +87,8 @@ WhisperAgents use Cmake based build systems, which just makes **everything** soo
 |--------------------------------|------------------------------------------------------|-----------|-----------|
 |Standard Agent| **.EXE**      | Bog standard EXE agent      | Command: `.\agent.exe` |
 |Standard Agent| **.DLL**        |. Same as EXE agent, but in DLL form | Entry Point Function: `Start`<br> Command: `rundll32.exe agent.dll, Start`|
+|Standard Agent| **.ELF Executable**      | Bog standard EXE agent, for linux      | Command: `.\agent` |
+
 
 ---
 
@@ -96,7 +98,7 @@ Opsec features for the Agents. They may vary between agent types, see the `Suppo
 
 | Feature                        | OPSEC Benefit                                         | Supported By... | Notes |
 |--------------------------------|------------------------------------------------------|-----------|-----------|
-| **Dynamic API Resolution**      | Bypasses IAT-based hooks and detection methods      | - Standard Agent (DLL, EXE) <br> - ... |... |
+| **Dynamic API Resolution**      | Bypasses IAT-based hooks and detection methods      | - Standard Agent (DLL, EXE) <br> |
 
 
 ---
