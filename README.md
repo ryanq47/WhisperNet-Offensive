@@ -103,13 +103,17 @@ Opsec features for the Agents. They may vary between agent types, see the `Suppo
 
 ## The (Web) Interface
 
-Something Something simple interface
+The web interface was made to be easy to use.
 
-<image of homepage>
+### Agents View: All the agents that are actively checking in:
+![agents_ss](https://github.com/user-attachments/assets/7786d4ba-9ba4-44db-b3f2-ef0c3cf24eea)
 
-<image of agents + build + shell + stats>
 
-<image of listeners>
+### MultiConsole: Send commands to multiple, or ALL agents at once:
+![multi_console_ss](https://github.com/user-attachments/assets/a3e85bd7-b44c-492d-9d56-9e263c73ab56)
+
+### Listeners: All the current listeners:
+![listeners_ss](https://github.com/user-attachments/assets/cf733f53-f4bc-4b7a-bd3a-e4dcde5a5c4a)
 
 
 ...
