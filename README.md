@@ -68,7 +68,7 @@ WhisperAgents use Cmake based build systems, which just makes **everything** soo
 |--------------------------------|------------------------------------------------------|-----------|-----------|
 |Standard Agent| **.EXE**      | Bog standard EXE agent      | Command: `.\agent.exe` |
 |Standard Agent| **.DLL**        |. Same as EXE agent, but in DLL form | Entry Point Function: `Start`<br> Command: `rundll32.exe agent.dll, Start`|
-|Standard Agent| **.ELF Executable**      | Bog standard EXE agent, for linux      | Command: `.\agent` |
+|Standard Agent| **.ELF Executable**      | Bog standard agent, for linux      | Command: `.\agent` |
 
 
 ---
