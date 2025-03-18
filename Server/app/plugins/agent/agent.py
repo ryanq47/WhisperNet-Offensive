@@ -14,6 +14,7 @@ from redis_om import get_redis_connection
 import re
 from modules.agent_script_interpreter import AgentScriptInterpreter
 from modules.redis_models import AgentCommand
+from redis_om.model.model import NotFoundError
 
 logger = log(__name__)
 
@@ -200,12 +201,15 @@ class AgentEnqueueCommandResource(Resource):
                     agent_id=agent_uuid,
                     # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
                 )
-                command_results = asi.process_command(command)
+                command_ids = asi.process_command(command)
 
                 # if command found in script...
-                if command_results:
+                if command_ids:
                     logger.debug("Successful execution of commands")
-                    return api_response(data="Extension Script Command queued")
+                    # have a list of commands that got enqueeud here?
+                    return api_response(
+                        message="Extension Script Command queued", data=command_ids
+                    )
 
             else:
                 logger.debug("No script registered for agent")
@@ -218,7 +222,7 @@ class AgentEnqueueCommandResource(Resource):
             return api_response(data=command_id), 200
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"API Error occured enqueueing agent: {e}")
             return api_response(message="An error occured"), 500
 
 
@@ -259,7 +263,9 @@ class AgentEnqueueCommandResource(Resource):
 
             return api_response(data=all_commands)
         except Exception as e:
-            logger.error(e)
+            logger.error(
+                f"Error occured while getting all commands and responses for an agent: {e}"
+            )
             return api_response(message="An error occured"), 500
 
 
@@ -284,6 +290,8 @@ class AgentGetOneCommandFromAllResource(Resource):
     @jwt_required()
     def get(self, command_uuid):
         try:
+            if command_uuid == None:
+                return api_response(message="command_uuid req'd"), 400
 
             # manual redis search here for UUID, and arragnign of data.
             # This is manual as it searches ALL of redis for the key, not just one agent, like baseagent would
@@ -304,8 +312,14 @@ class AgentGetOneCommandFromAllResource(Resource):
             else:
                 return api_response(data="No results found for command")
 
+        except NotFoundError:
+            logger.debug("No command found with that UUID")
+            return api_response(message="No command found with that UUID"), 404
+
         except Exception as e:
-            logger.error(e)
+            logger.exception(
+                f"Error occured while searching for a command from all the agents: {e}"
+            )
             return api_response(message="An error occured"), 500
 
 
@@ -362,7 +376,7 @@ class AgentUploadCommandScriptResource(Resource):
 
             return api_response(message="Script registered successfully")
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error occured registering a script for an agent: {e}")
             return api_response(message="An error occured"), 500
 
 
@@ -399,7 +413,7 @@ class AgentUpdateNotesFieldResource(Resource):
 
             return api_response(message="Notes updated successfully"), 200
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error occured setting the notes for an agent: {e}")
             return api_response(message="An error occured"), 500
 
 
@@ -433,7 +447,7 @@ class AgentUpdateNewFieldResource(Resource):
 
             return api_response(message="New status updated successfully"), 200
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error occured setting the new status for an agent: {e}")
             return api_response(message="An error occured"), 500
 
 

@@ -156,7 +156,7 @@ class BaseAgent:
         Registers an agent in the system and ensures that the latest data is stored in Redis.
         """
         try:
-            logger.info(f"Registering agent: {self.data.agent.id}")
+            logger.debug(f"Registering agent: {self.data.agent.id}")
 
             # Retrieve latest data from Redis before saving
             # doing this AGAIN (as well as in INIT), just incase data got changed somewhere
@@ -262,7 +262,7 @@ class BaseAgent:
             return command_id
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error enqueing commands: {e}")
             raise e
 
     def dequeue_command(self):
@@ -291,7 +291,7 @@ class BaseAgent:
                 )
                 return False
 
-            print(f"Dequeued Command: {command_obj.command}")
+            logger.debug(f"Dequeued Command: {command_obj.command}")
 
             return command_obj  # Return the command object
 
@@ -395,7 +395,7 @@ class BaseAgent:
 
             ac.save()
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error storing commands: {e}")
             raise e
 
     def store_response(self, command_id, response):
@@ -422,7 +422,7 @@ class BaseAgent:
             if handler:
                 handler.store(command_entry=command_entry, agent_id=agent_id)
             else:
-                print(f"No custom handler found for {command_entry.command}")
+                logger.debug(f"No custom handler found for {command_entry.command}")
 
             # Check if command has a specific location to store its response
             self._check_store_on_callback_commands(command_entry=command_entry)
@@ -463,11 +463,16 @@ class BaseAgent:
 
         command_entry: Dict with `response`, and `command` (the original command). Pulled from redis
         """
+        try:
+            commands_to_store_output_on_callback = self.data.config.store_on_callback
+            for command, location in commands_to_store_output_on_callback:
+                if command == command_entry.command:
+                    self.update_data_field(location, command_entry.response)
 
-        commands_to_store_output_on_callback = self.data.config.store_on_callback
-        for command, location in commands_to_store_output_on_callback:
-            if command == command_entry.command:
-                self.update_data_field(location, command_entry.response)
+        except Exception as e:
+            logger.error(
+                f"Error checking store on callback commands commands for {self.data.agent.id}: {e}"
+            )
 
     ##########
     # Update some data methods

@@ -42,9 +42,11 @@ class CommandFactory:
                 if hasattr(cls, "command_name"):
                     command_name = getattr(cls, "command_name")
                     self.commands[command_name] = cls
-                    print(f"Registered command: {command_name}")
+                    logger.debug(f"Registered command: {command_name}")
                 else:
-                    print(f"Warning: {name} does not define a command_name attribute")
+                    logger.warning(
+                        f"Warning: {name} does not define a command_name attribute"
+                    )
 
     # inits the class for us
     def create_command(self, command_name, args_list, agent_id):
@@ -54,7 +56,7 @@ class CommandFactory:
             # raise ValueError(f"Command '{command_name}' is not registered")
             # Allow the script to fail if a non-registered command exists, which
             # allows the default commands to be called (ex, shell, etc)
-            logger.info(
+            logger.debug(
                 f"Command {command_name} not registered, falling through to default command handling."
             )
             return False
@@ -95,11 +97,11 @@ class AgentScriptInterpreter:
         self.command_factory = CommandFactory()
         self.command_factory.register_commands_from_module(module)
 
-    def process_command(self, inbound_command):
+    def process_command(self, inbound_command) -> list:
         """
         Processes the given command from the script.
-        If found, returns a list of full command strings to enqueue.
-        If not found, logs an error and returns False.
+        If found, returns a list of full command ID's
+        If not found, logs an error and returns a blank list
 
         inbound_command: The FULL inbound command, ex "ping 127.0.0.1"
 
@@ -123,12 +125,12 @@ class AgentScriptInterpreter:
             if command_instance:
                 # run the command instance, which will queue up the needed commands based
                 # on inputs, etc. and so forth. Entirely up to the user to do
-                command_instance.run()
-                return True
+                command_ids = command_instance.run()
+                return command_ids
 
             # if the command isn't registered here, return false
             else:
-                return False
+                return []
         except Exception as e:
             logger.debug(f"Error with processing command: {e}")
             # raise e
@@ -158,7 +160,7 @@ class AgentScriptInterpreter:
             return "".join(help_info)
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error creating help menu: {e}")
             return "Error creating help dialogue from command classes"
 
 

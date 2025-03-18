@@ -17,6 +17,8 @@ class SystemRecon(BaseCommand):
         super().__init__(command, args_list, agent_id)
         self.agent_class = BaseAgent(agent_id)
 
+        self.command_ids = []
+
     # this is how we are gonna do it
     def run(self):
         # list of commands to run
@@ -31,7 +33,11 @@ class SystemRecon(BaseCommand):
 
         for cmd, location in cmds.items():
             self.agent_class.store_command_response_on_callback(cmd, location)
-            self.agent_class.enqueue_command(cmd)
+            command_ids = self.agent_class.enqueue_command(cmd)
+            self.command_ids.append(command_ids)
+
+        # must return list of command ID's that were queued.
+        return self.command_ids
 
 
 ######################################

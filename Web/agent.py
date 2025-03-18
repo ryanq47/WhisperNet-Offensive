@@ -228,10 +228,10 @@ class AgentView:
         # and finally, render the script options
         self.render_scripts_options()
 
-        def handle_keydown(e):
+        async def handle_keydown(e):
             # Trigger send_command on Enter key.
             if e.args.get("key") == "Enter":
-                send_command()
+                await send_command()
 
         # fix: get current script. If current script is none, put "no script selected" on selector.
         # additionally, break it out a bit, it's annoyingly duct taped together
