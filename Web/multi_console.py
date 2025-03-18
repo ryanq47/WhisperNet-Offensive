@@ -291,6 +291,7 @@ class MultiConsoleAgentsView:
                     "internal_ip", "Unknown"
                 )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+                new_agent = agent_info["data"]["agent"].get("new", False)
                 row_data.append(
                     {
                         "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
@@ -300,6 +301,7 @@ class MultiConsoleAgentsView:
                         "Notes": notes,
                         "Internal IP": internal_ip,
                         "Last Seen": last_seen,
+                        "New": new_agent,  # used for cell highligthing, not currently shown in the grid itself
                     }
                 )
             with ui.column().classes("w-full h-full overflow-auto"):
@@ -309,6 +311,8 @@ class MultiConsoleAgentsView:
                     else "ag-theme-balham"
                 )
                 self.aggrid = ui.aggrid(
+                    # notes: Using per cell highlighting as it's a quick fix.
+                    # it's apparently possible to do it for the whole thing, I'll get to that later
                     {
                         "columnDefs": [
                             {
@@ -318,6 +322,9 @@ class MultiConsoleAgentsView:
                                 "width": 50,
                                 "pinned": "left",
                                 "floatingFilter": True,
+                                "cellClassRules": {
+                                    "bg-blue-500": "data.New"  # use the New field that is in the aggrid data
+                                },
                             },
                             {
                                 "headerName": "Link Agent ID",
@@ -325,6 +332,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {  # used for storing JUST the agent ID, without HTML stuff
                                 "headerName": "Raw Agent ID",
@@ -333,6 +341,7 @@ class MultiConsoleAgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "hide": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Hostname",
@@ -340,6 +349,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "OS",
@@ -347,6 +357,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Notes (Editable)",
@@ -355,6 +366,7 @@ class MultiConsoleAgentsView:
                                 "floatingFilter": True,
                                 "width": 150,
                                 "editable": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Internal IP",
@@ -362,6 +374,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Last Seen",
@@ -370,6 +383,7 @@ class MultiConsoleAgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "sort": "desc",
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                         ],
                         "rowSelection": "multiple",

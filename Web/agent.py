@@ -51,6 +51,18 @@ class AgentView:
         data = self.request_data.get("data", {})
         first_key = next(iter(data))
         self.agent_data = data.get(first_key, {})
+        self.check_new_status()
+
+    def check_new_status(self):
+        # On click of agent, if not new, send a "not new" to the server
+        if self.agent_data.get("data", {}).get("agent").get("new"):
+            ui.notify(
+                "Agent clicked into, no longer considered new", position="top-right"
+            )
+            data = {"new": False}
+            # async this?
+            # api_post_call(f"/agent/{self.agent_id}/new", data=data)
+            api_post_call(f"/agent/{self.agent_id}/new", data=data)
 
     def render(self):
         """
@@ -416,6 +428,8 @@ class AgentsView:
                     "internal_ip", "Unknown"
                 )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+                new_agent = agent_info["data"]["agent"].get("new", False)
+
                 row_data.append(
                     {
                         "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
@@ -425,6 +439,7 @@ class AgentsView:
                         "Notes": notes,
                         "Internal IP": internal_ip,
                         "Last Seen": last_seen,
+                        "New": new_agent,  # used for cell highligthing, not currently shown in the grid itself
                     }
                 )
             with ui.column().classes("w-full h-full overflow-auto"):
@@ -434,14 +449,28 @@ class AgentsView:
                     else "ag-theme-balham"
                 )
                 self.aggrid = ui.aggrid(
+                    # notes: Using per cell highlighting as it's a quick fix.
+                    # it's apparently possible to do it for the whole thing, I'll get to that later
                     {
                         "columnDefs": [
+                            {
+                                "headerName": "",
+                                "checkboxSelection": True,
+                                "headerCheckboxSelection": True,
+                                "width": 50,
+                                "pinned": "left",
+                                "floatingFilter": True,
+                                "cellClassRules": {
+                                    "bg-blue-500": "data.New"  # use the New field that is in the aggrid data
+                                },
+                            },
                             {
                                 "headerName": "Link Agent ID",
                                 "field": "Link Agent ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {  # used for storing JUST the agent ID, without HTML stuff
                                 "headerName": "Raw Agent ID",
@@ -450,6 +479,7 @@ class AgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "hide": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Hostname",
@@ -457,6 +487,7 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "OS",
@@ -464,13 +495,7 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
-                            },
-                            {
-                                "headerName": "Internal IP",
-                                "field": "Internal IP",
-                                "filter": "agTextColumnFilter",
-                                "floatingFilter": True,
-                                "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Notes (Editable)",
@@ -479,6 +504,15 @@ class AgentsView:
                                 "floatingFilter": True,
                                 "width": 150,
                                 "editable": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "Internal IP",
+                                "field": "Internal IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Last Seen",
@@ -487,13 +521,13 @@ class AgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "sort": "desc",
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                         ],
                         "rowSelection": "multiple",
                         "rowData": row_data,
                     },
-                    html_columns=[0],
-                    # on_cell_value_changed=self._on_cell_value_changed,
+                    html_columns=[1],
                 ).classes(f"{aggrid_theme} w-full h-full")
 
                 # handler for change

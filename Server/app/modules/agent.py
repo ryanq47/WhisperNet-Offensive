@@ -68,6 +68,7 @@ class BaseAgent:
                     "version": None,
                     "first_seen": None,
                     "last_seen": None,
+                    "new": None,  # for now, set new to true by default. May be better to set at first checkin. # agent would not show up until first checkin, so this is probably file
                 },
                 "security": {
                     "av_installed": [],
@@ -180,9 +181,13 @@ class BaseAgent:
 
             # blanket exception, should handle this better
             except Exception as e:
+                logger.critical("First connect relies on a except, works for now, FIX!")
                 logger.warning(
                     f"Agent {self.data.agent.id} not found in Redis. This is expected on first check-in."
                 )
+                # hacky putting this here, treating this except as a proof of first connect. bad idea.
+                # fine for now
+                self.data.agent.new = True
 
             # Save the updated agent model in Redis
             agent_model = Agent(agent_id=self.data.agent.id)
@@ -437,6 +442,7 @@ class BaseAgent:
     ##########
     # Update some data methods
     # Better than direct access, start implementing these for common fields.
+    # helps enforcing types as well
     ##########
     def update_notes(self, notes):
         """
@@ -453,6 +459,19 @@ class BaseAgent:
 
         except Exception as e:
             logger.error(f"Error updating notes field: {e}")
+
+    def update_new_status(self, new: bool):
+        """
+        Updates notes field in data
+        """
+        try:
+            logger.debug(f"Updating new status: {new}")
+            self.data.agent.new = new
+            # dump data
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(f"Error updating new status field: {e}")
 
 
 ## command registry stuff
