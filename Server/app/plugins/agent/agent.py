@@ -142,7 +142,8 @@ class AgentEnqueueCommandResource(Resource):
         }
 
 
-        returns: command_id
+        returns: str: command_id, or list of command ID's if a script command (whcih wouldrun multiple commmands)
+            is run.
         """
         # This might be cooked - is way slower now? May not be this code, might be sleep time
         try:

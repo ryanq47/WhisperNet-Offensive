@@ -132,7 +132,7 @@ def run_app(host, port):
 
     Use waitress to serve.
     """
-    serve(app, host=host, port=port)
+    serve(app, host=host, port=port, connection_limit=5000, threads=20)
 
 
 def update_last_seen(agent_class):

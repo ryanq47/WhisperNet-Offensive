@@ -5,7 +5,7 @@ from nicegui import app, ui
 ## Add in 401 handling here for re-token?
 
 
-def api_call(url, timeout=3, return_dict_from_json=True):
+def api_call(url, timeout=20, return_dict_from_json=True):
     """
     Makes a synchronous GET request to the specified URL and returns the JSON response.
 
@@ -66,7 +66,7 @@ def api_post_call(url, data=None, files=None):
         else:
             # JSON-only request
             headers["Content-Type"] = "application/json"
-            r = requests.post(url=endpoint, json=data, headers=headers)
+            r = requests.post(url=endpoint, json=data, headers=headers, timeout=20)
 
         if r.status_code not in (200, 201):
             try:
@@ -106,7 +106,7 @@ def api_delete_call(url):
     headers = {"Authorization": f"Bearer {jwt_token}"}
 
     try:
-        r = requests.delete(endpoint, headers=headers)
+        r = requests.delete(endpoint, headers=headers, timeout=20)
         if r.status_code not in (200, 201):
             try:
                 error_message = r.json().get("message", r.text)
