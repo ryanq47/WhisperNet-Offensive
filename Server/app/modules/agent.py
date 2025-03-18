@@ -88,45 +88,10 @@ class BaseAgent:
         )
         self.data.agent.id = agent_id
 
-        # setup registry handling for certain commands - need a better spot to do this, instead of being stored here
-        # TLDR refresher: THe output of these commands gets stored in certain JSON fields, see self.data
-        # These fields are used as the main data store for each agent.
-        # IDEA: do this in the command scripts, let them handle what they store and where, is more dynamic then too
+        # hardcoded regiser commands
+        # need a betetr way to do help, this way is dumb
         self.handler_registry = CommandHandlerRegistry()
-        # self.handler_registry.register(
-        #     "shell whoami", GenericHandler, "system.username"
-        # )
-        # self.handler_registry.register(
-        #     "shell hostname", GenericHandler, "system.hostname"
-        # )
-        # self.handler_registry.register("shell ver", GenericHandler, "system.os")
-        # self.handler_registry.register("help", HelpHandler)
-        # self.handler_registry.register(
-        #     "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '",
-        #     GenericHandler,
-        #     "network.internal_ip",
-        # )
-        # #
-        # self.handler_registry.register(
-        #     'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
-        #     GenericHandler,
-        #     "network.domain",
-        # )
-        # self.handler_registry.register(
-        #     'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
-        #     GenericHandler,
-        #     "network.next_hop",
-        # )
-        # logger.critical(
-        #     "Temporarily setting extenal_ip as next hop for CyberConquest purposes"
-        # )
-        # self.handler_registry.register(
-        #     'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
-        #     GenericHandler,
-        #     "network.external_ip",
-        # )
-
-        # (Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop
+        self.handler_registry.register("help", HelpHandler)
 
     @property
     def data(self):
@@ -452,27 +417,15 @@ class BaseAgent:
             command_entry.save()  # Save back to Redis
 
             # Use handler if one is registered
-            # ex, help command
+            # ex, help command. help is the only thing using this right now.
             handler = self.handler_registry.get_handler(command_entry.command)
             if handler:
                 handler.store(command_entry=command_entry, agent_id=agent_id)
             else:
                 print(f"No custom handler found for {command_entry.command}")
 
-            # new way
-            commands_to_store_output_on_callback = self.data.config.store_on_callback
-            for command, location in commands_to_store_output_on_callback:
-                if command == command_entry.command:
-                    self.update_data_field(location, command_entry.response)
-
-            """
-            New idea: 
-            
-            if on response, loop over registerd commands. If command in there, set that data field to it
-
-            This would be entered at run time with register_command, and stored in redis
-            
-            """
+            # Check if command has a specific location to store its response
+            self._check_store_on_callback_commands(command_entry=command_entry)
 
             logger.debug(f"Response stored for Command ID {command_id}")
             return True  # Successfully updated
@@ -487,9 +440,34 @@ class BaseAgent:
 
         Ex: agent.store_command_response_on_callback("shell whoami", "system.user")
 
+        This list stored in the agent, so EVERY command that matches this will have its output stored in the field specified
+
         """
-        self.data.config.store_on_callback.append((command, location))
-        self.unload_data()
+        try:
+            self.data.config.store_on_callback.append((command, location))
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(
+                f"Error storing response on callback for Command {command}: {e}"
+            )
+            raise e
+
+    def _check_store_on_callback_commands(self, command_entry):
+        """
+        Internal
+
+        Checks if command & its response is in the agent's list of 'store_output_on_callback'.
+
+        If so, it updates that field in the agent's data model
+
+        command_entry: Dict with `response`, and `command` (the original command). Pulled from redis
+        """
+
+        commands_to_store_output_on_callback = self.data.config.store_on_callback
+        for command, location in commands_to_store_output_on_callback:
+            if command == command_entry.command:
+                self.update_data_field(location, command_entry.response)
 
     ##########
     # Update some data methods

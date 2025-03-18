@@ -4,46 +4,6 @@ import time
 
 
 ######################################
-# 1. Enhanced Ping Host with Automation
-######################################
-class EnhancedPingHost(BaseCommand):
-    command_name = "ping_host"
-    command_help = (
-        "\tUsage: `ping_host` <host ip/hostname>\n"
-        "\tPings a host and, if successful, gathers additional system info.\n"
-        "\tChained recon commands (whoami, hostname) are enqueued if the host is alive."
-    )
-
-    def __init__(self, command, args_list, agent_id):
-        super().__init__(command, args_list, agent_id)
-        if not args_list:
-            raise ValueError("Usage: ping_host <host ip/hostname>")
-        self.host = args_list[0]
-        self.agent_class = BaseAgent(agent_id)
-
-    def run(self):
-        ping_cmd = f"shell ping {self.host}"
-        ping_id = self.agent_class.enqueue_command(ping_cmd)
-        time.sleep(1)
-        ping_response = self.agent_class.get_one_command_and_response(ping_id).get(
-            "response", ""
-        )
-
-        # set output to data
-        self.agent_class.data.system.hostname = "URMOM"
-        self.agent_class.unload_data()
-
-        if "Reply from" in ping_response:
-            print("Ping successful. Proceeding with additional recon.")
-            for cmd in ["shell whoami", "shell hostname"]:
-                self.agent_class.enqueue_command(cmd)
-            ping_response += "\nHost is alive. Additional system info queued."
-            self.agent_class.store_response(ping_id, ping_response)
-        else:
-            print("Ping failed or no response.")
-
-
-######################################
 # 2. System Recon (Multi-step)
 ######################################
 class SystemRecon(BaseCommand):
@@ -51,7 +11,6 @@ class SystemRecon(BaseCommand):
     command_help = (
         "\tUsage: `system_recon` [exfiltration_url] [temp_filepath]\n"
         "\tAggregates system information and network connections.\n"
-        "\tOptionally exfiltrates data if an exfiltration URL is provided (default temp file: C:\\temp\\sys_recon.txt)."
     )
 
     def __init__(self, command, args_list, agent_id):
