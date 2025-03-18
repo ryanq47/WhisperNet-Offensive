@@ -83,9 +83,7 @@ class BaseAgent:
                     "latitude": None,
                     "longitude": None,
                 },
-                "config": {
-                    "command_script": None,
-                },
+                "config": {"command_script": None, "store_on_callback": []},
             }
         )
         self.data.agent.id = agent_id
@@ -95,38 +93,38 @@ class BaseAgent:
         # These fields are used as the main data store for each agent.
         # IDEA: do this in the command scripts, let them handle what they store and where, is more dynamic then too
         self.handler_registry = CommandHandlerRegistry()
-        self.handler_registry.register(
-            "shell whoami", GenericHandler, "system.username"
-        )
-        self.handler_registry.register(
-            "shell hostname", GenericHandler, "system.hostname"
-        )
-        self.handler_registry.register("shell ver", GenericHandler, "system.os")
-        self.handler_registry.register("help", HelpHandler)
-        self.handler_registry.register(
-            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '",
-            GenericHandler,
-            "network.internal_ip",
-        )
-        #
-        self.handler_registry.register(
-            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
-            GenericHandler,
-            "network.domain",
-        )
-        self.handler_registry.register(
-            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
-            GenericHandler,
-            "network.next_hop",
-        )
-        logger.critical(
-            "Temporarily setting extenal_ip as next hop for CyberConquest purposes"
-        )
-        self.handler_registry.register(
-            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
-            GenericHandler,
-            "network.external_ip",
-        )
+        # self.handler_registry.register(
+        #     "shell whoami", GenericHandler, "system.username"
+        # )
+        # self.handler_registry.register(
+        #     "shell hostname", GenericHandler, "system.hostname"
+        # )
+        # self.handler_registry.register("shell ver", GenericHandler, "system.os")
+        # self.handler_registry.register("help", HelpHandler)
+        # self.handler_registry.register(
+        #     "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '",
+        #     GenericHandler,
+        #     "network.internal_ip",
+        # )
+        # #
+        # self.handler_registry.register(
+        #     'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
+        #     GenericHandler,
+        #     "network.domain",
+        # )
+        # self.handler_registry.register(
+        #     'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
+        #     GenericHandler,
+        #     "network.next_hop",
+        # )
+        # logger.critical(
+        #     "Temporarily setting extenal_ip as next hop for CyberConquest purposes"
+        # )
+        # self.handler_registry.register(
+        #     'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
+        #     GenericHandler,
+        #     "network.external_ip",
+        # )
 
         # (Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop
 
@@ -461,12 +459,37 @@ class BaseAgent:
             else:
                 print(f"No custom handler found for {command_entry.command}")
 
+            # new way
+            commands_to_store_output_on_callback = self.data.config.store_on_callback
+            for command, location in commands_to_store_output_on_callback:
+                if command == command_entry.command:
+                    self.update_data_field(location, command_entry.response)
+
+            """
+            New idea: 
+            
+            if on response, loop over registerd commands. If command in there, set that data field to it
+
+            This would be entered at run time with register_command, and stored in redis
+            
+            """
+
             logger.debug(f"Response stored for Command ID {command_id}")
             return True  # Successfully updated
 
         except Exception as e:
             logger.error(f"Error storing response for Command ID {command_id}: {e}")
             raise e
+
+    def store_command_response_on_callback(self, command, location):
+        """
+        Queues up a specific commands response to be stored on callback.
+
+        Ex: agent.store_command_response_on_callback("shell whoami", "system.user")
+
+        """
+        self.data.config.store_on_callback.append((command, location))
+        self.unload_data()
 
     ##########
     # Update some data methods
@@ -501,6 +524,31 @@ class BaseAgent:
 
         except Exception as e:
             logger.error(f"Error updating new status field: {e}")
+
+    def update_data_field(self, field, value):
+        """
+        Updates a field in the agent's data model.
+
+        Args:
+            field (str): Dot-notated string indicating where to store the data
+                        (e.g., "system.hostname" or "network.internal_ip").
+            value: The new value to set at the specified field.
+        """
+        # Split the dot-notated string into parts
+        field_parts = field.split(".")
+        target = self.data
+
+        # Traverse through the nested attributes except the last one
+        for part in field_parts[:-1]:
+            # If the attribute does not exist or is None, initialize it as a Munch object
+            if not hasattr(target, part) or getattr(target, part) is None:
+                setattr(target, part, munch.Munch())
+            target = getattr(target, part)
+
+        # Set the final attribute to the new value
+        setattr(target, field_parts[-1], value)
+        # Save (unload) the updated data to Redis
+        self.unload_data()
 
 
 ## command registry stuff

