@@ -366,5 +366,42 @@ class AgentUploadCommandScriptResource(Resource):
             return api_response(message="An error occured"), 500
 
 
+# ------------------------------------------------------------------------
+#                      Agent Data routes
+# ------------------------------------------------------------------------
+@agent_ns.route("/<string:agent_uuid>/notes")
+@agent_ns.doc(description="Update the notes for an agent.")
+class AgentUpdateNotesFieldResource(Resource):
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @jwt_required()
+    def post(self, agent_uuid):
+        """
+        Post notes to agent
+
+        {
+            "notes":
+        }
+
+        returns: command_id
+        """
+        try:
+            data = request.get_json()
+            notes = data.get("notes", "")
+            a = Agent(agent_id=agent_uuid)
+            a.update_notes(notes)
+
+            return api_response(message="Notes updated successfully"), 200
+        except Exception as e:
+            logger.error(e)
+            return api_response(message="An error occured"), 500
+
+
 # 2) Register the namespaces with paths
 Instance().api.add_namespace(agent_ns, path="/agent")

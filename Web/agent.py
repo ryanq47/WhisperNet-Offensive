@@ -411,15 +411,18 @@ class AgentsView:
                 agent_id = agent_info.get("agent_id", "Unknown")
                 hostname = agent_info["data"]["system"].get("hostname", "Unknown")
                 os = agent_info["data"]["system"].get("os", "Unknown")
+                notes = agent_info["data"]["agent"].get("notes", "")
                 internal_ip = agent_info["data"]["network"].get(
                     "internal_ip", "Unknown"
                 )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
                 row_data.append(
                     {
-                        "Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Raw Agent ID": agent_id,
                         "Hostname": hostname,
                         "OS": os,
+                        "Notes": notes,
                         "Internal IP": internal_ip,
                         "Last Seen": last_seen,
                     }
@@ -430,15 +433,23 @@ class AgentsView:
                     if current_settings.get("Dark Mode", False)
                     else "ag-theme-balham"
                 )
-                ui.aggrid(
+                self.aggrid = ui.aggrid(
                     {
                         "columnDefs": [
                             {
-                                "headerName": "Agent ID",
-                                "field": "Agent ID",
+                                "headerName": "Link Agent ID",
+                                "field": "Link Agent ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                            },
+                            {  # used for storing JUST the agent ID, without HTML stuff
+                                "headerName": "Raw Agent ID",
+                                "field": "Raw Agent ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                                "hide": True,
                             },
                             {
                                 "headerName": "Hostname",
@@ -462,6 +473,14 @@ class AgentsView:
                                 "width": 150,
                             },
                             {
+                                "headerName": "Notes (Editable)",
+                                "field": "Notes",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "editable": True,
+                            },
+                            {
                                 "headerName": "Last Seen",
                                 "field": "Last Seen",
                                 "filter": "agTextColumnFilter",
@@ -474,9 +493,38 @@ class AgentsView:
                         "rowData": row_data,
                     },
                     html_columns=[0],
+                    # on_cell_value_changed=self._on_cell_value_changed,
                 ).classes(f"{aggrid_theme} w-full h-full")
+
+                # handler for change
+                self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+    def _on_cell_value_changed(self, event):
+        """
+        Handles cell value changes for the aggrid
+
+        """
+        # Access the event details via event.args, which is a dictionary.
+        event_data = event.args
+        """
+        {'value': 'test', 'newValue': 'test', 'rowIndex': 1, 'data': {'Agent ID': "<u><a href='/agent/df4adb60-1653-4fd0-821a-356f12642b53'>df4adb60-1653-4fd0-821a-356f12642b53</a></u>", 'Hostname': None, 'OS': None, 'Internal IP': None, 'Last Seen': '2025-03-18 13:22:52', 'Notes': 'test'}, 'source': 'edit', 'colId': 'Notes', 'selected': True, 'rowHeight': 28, 'rowId': '0'}
+        """
+        if event_data.get("colId", {}) == "Notes":
+            # send API request to /agents/{agent_id}/notes
+            # pull agent ID from hidden ID row (Raw Agent ID)
+
+            clicked_agent_id = event_data.get("data").get("Raw Agent ID")
+
+            # directly get new data from event.
+            note_data = {"notes": event_data.get("newValue")}
+            api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
+            ui.notify(
+                f"Updated notes for {clicked_agent_id} with: {event_data.get("newValue")}",
+                position="top-right",
+            )
 
 
 class AgentsPage:

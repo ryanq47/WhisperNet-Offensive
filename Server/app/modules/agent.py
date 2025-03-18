@@ -434,6 +434,26 @@ class BaseAgent:
             logger.error(f"Error storing response for Command ID {command_id}: {e}")
             raise e
 
+    ##########
+    # Update some data methods
+    # Better than direct access, start implementing these for common fields.
+    ##########
+    def update_notes(self, notes):
+        """
+        Updates notes field in data
+
+        """
+        try:
+            if notes == None:
+                logger.warning(f"Notes being updated for {self.data.agent.id} are None")
+            logger.debug(f"Updating notes: {notes}")
+            self.data.agent.notes = notes
+            # dump data
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(f"Error updating notes field: {e}")
+
 
 ## command registry stuff
 # TLDR: Allows for custom handling to each command that is registered, in order to record outputs

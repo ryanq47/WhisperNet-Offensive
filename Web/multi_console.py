@@ -286,6 +286,7 @@ class MultiConsoleAgentsView:
                 agent_id = agent_info.get("agent_id", "Unknown")
                 hostname = agent_info["data"]["system"].get("hostname", "Unknown")
                 os = agent_info["data"]["system"].get("os", "Unknown")
+                notes = agent_info["data"]["agent"].get("notes", "")
                 internal_ip = agent_info["data"]["network"].get(
                     "internal_ip", "Unknown"
                 )
@@ -296,6 +297,7 @@ class MultiConsoleAgentsView:
                         "Raw Agent ID": agent_id,
                         "Hostname": hostname,
                         "OS": os,
+                        "Notes": notes,
                         "Internal IP": internal_ip,
                         "Last Seen": last_seen,
                     }
@@ -347,6 +349,14 @@ class MultiConsoleAgentsView:
                                 "width": 225,
                             },
                             {
+                                "headerName": "Notes (Editable)",
+                                "field": "Notes",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "editable": True,
+                            },
+                            {
                                 "headerName": "Internal IP",
                                 "field": "Internal IP",
                                 "filter": "agTextColumnFilter",
@@ -367,8 +377,36 @@ class MultiConsoleAgentsView:
                     },
                     html_columns=[1],
                 ).classes(f"{aggrid_theme} w-full h-full")
+
+            # on change handler
+            self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+    def _on_cell_value_changed(self, event):
+        """
+        Handles cell value changes for the aggrid
+
+        """
+        # Access the event details via event.args, which is a dictionary.
+        event_data = event.args
+        """
+        {'value': 'test', 'newValue': 'test', 'rowIndex': 1, 'data': {'Agent ID': "<u><a href='/agent/df4adb60-1653-4fd0-821a-356f12642b53'>df4adb60-1653-4fd0-821a-356f12642b53</a></u>", 'Hostname': None, 'OS': None, 'Internal IP': None, 'Last Seen': '2025-03-18 13:22:52', 'Notes': 'test'}, 'source': 'edit', 'colId': 'Notes', 'selected': True, 'rowHeight': 28, 'rowId': '0'}
+        """
+        if event_data.get("colId", {}) == "Notes":
+            # send API request to /agents/{agent_id}/notes
+            # pull agent ID from hidden ID row (Raw Agent ID)
+
+            clicked_agent_id = event_data.get("data").get("Raw Agent ID")
+
+            # directly get new data from event.
+            note_data = {"notes": event_data.get("newValue")}
+            api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
+            ui.notify(
+                f"Updated notes for {clicked_agent_id} with: {event_data.get("newValue")}",
+                position="top-right",
+            )
 
     async def get_selected_agents(self):
         rows = await self.aggrid.get_selected_rows()
