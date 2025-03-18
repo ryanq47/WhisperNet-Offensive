@@ -290,6 +290,9 @@ class MultiConsoleAgentsView:
                 internal_ip = agent_info["data"]["network"].get(
                     "internal_ip", "Unknown"
                 )
+                external_ip = agent_info["data"]["network"].get(
+                    "external_ip", "Unknown"
+                )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
                 new_agent = agent_info["data"]["agent"].get("new", False)
                 row_data.append(
@@ -300,6 +303,7 @@ class MultiConsoleAgentsView:
                         "OS": os,
                         "Notes": notes,
                         "Internal IP": internal_ip,
+                        "External IP": external_ip,
                         "Last Seen": last_seen,
                         "New": new_agent,  # used for cell highligthing, not currently shown in the grid itself
                     }
@@ -371,6 +375,14 @@ class MultiConsoleAgentsView:
                             {
                                 "headerName": "Internal IP",
                                 "field": "Internal IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "External IP",
+                                "field": "External IP",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 150,

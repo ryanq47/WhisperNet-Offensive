@@ -56,6 +56,7 @@ class BaseAgent:
                     "default_gateway": None,
                     "dns_servers": [],
                     "domain": None,
+                    "next_hop": None,
                 },
                 "hardware": {
                     "cpu": None,  # could get with the one assembly command to get that info - would be quiet.
@@ -89,8 +90,10 @@ class BaseAgent:
         )
         self.data.agent.id = agent_id
 
-        # setup registry handling for certain commands
-        # could make this more modular
+        # setup registry handling for certain commands - need a better spot to do this, instead of being stored here
+        # TLDR refresher: THe output of these commands gets stored in certain JSON fields, see self.data
+        # These fields are used as the main data store for each agent.
+        # IDEA: do this in the command scripts, let them handle what they store and where, is more dynamic then too
         self.handler_registry = CommandHandlerRegistry()
         self.handler_registry.register(
             "shell whoami", GenericHandler, "system.username"
@@ -100,6 +103,32 @@ class BaseAgent:
         )
         self.handler_registry.register("shell ver", GenericHandler, "system.os")
         self.handler_registry.register("help", HelpHandler)
+        self.handler_registry.register(
+            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '",
+            GenericHandler,
+            "network.internal_ip",
+        )
+        #
+        self.handler_registry.register(
+            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"',
+            GenericHandler,
+            "network.domain",
+        )
+        self.handler_registry.register(
+            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
+            GenericHandler,
+            "network.next_hop",
+        )
+        logger.critical(
+            "Temporarily setting extenal_ip as next hop for CyberConquest purposes"
+        )
+        self.handler_registry.register(
+            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"',
+            GenericHandler,
+            "network.external_ip",
+        )
+
+        # (Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop
 
     @property
     def data(self):
