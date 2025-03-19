@@ -1,7 +1,7 @@
-site_name: My Docs
+site_name: WhispernetOffensive
 
 theme:
-  name: readthedocs
+  name: readthedocs #terminal #gitbook #readthedocs
   language: en
   favicon: assets/favicon.png
   

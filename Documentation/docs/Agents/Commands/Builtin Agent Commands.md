@@ -1,4 +1,4 @@
-# Commands
+# Builtin Agent Commands
 
 ## File Commands
 
