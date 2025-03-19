@@ -50,7 +50,7 @@ class log(logging.Logger):
 
         ## add stream handler
         console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
+        console.setLevel(logging.DEBUG)
         formatter = logging.Formatter(log_format)
         console.setFormatter(formatter)
         self.addHandler(console)
