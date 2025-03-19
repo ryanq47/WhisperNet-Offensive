@@ -14,6 +14,7 @@ from redis_om import get_redis_connection
 import re
 from modules.agent_script_interpreter import AgentScriptInterpreter
 from modules.redis_models import AgentCommand
+from redis_om.model.model import NotFoundError
 
 logger = log(__name__)
 
@@ -141,7 +142,8 @@ class AgentEnqueueCommandResource(Resource):
         }
 
 
-        returns: command_id
+        returns: str: command_id, or list of command ID's if a script command (whcih wouldrun multiple commmands)
+            is run.
         """
         # This might be cooked - is way slower now? May not be this code, might be sleep time
         try:
@@ -200,12 +202,15 @@ class AgentEnqueueCommandResource(Resource):
                     agent_id=agent_uuid,
                     # "/home/kali/Documents/GitHub/WhisperNet-Offensive/Server/data/scripts/script1.yaml"
                 )
-                command_results = asi.process_command(command)
+                command_ids = asi.process_command(command)
 
                 # if command found in script...
-                if command_results:
+                if command_ids:
                     logger.debug("Successful execution of commands")
-                    return api_response(data="Extension Script Command queued")
+                    # have a list of commands that got enqueeud here?
+                    return api_response(
+                        message="Extension Script Command queued", data=command_ids
+                    )
 
             else:
                 logger.debug("No script registered for agent")
@@ -218,7 +223,7 @@ class AgentEnqueueCommandResource(Resource):
             return api_response(data=command_id), 200
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"API Error occured enqueueing agent: {e}")
             return api_response(message="An error occured"), 500
 
 
@@ -259,7 +264,9 @@ class AgentEnqueueCommandResource(Resource):
 
             return api_response(data=all_commands)
         except Exception as e:
-            logger.error(e)
+            logger.error(
+                f"Error occured while getting all commands and responses for an agent: {e}"
+            )
             return api_response(message="An error occured"), 500
 
 
@@ -284,6 +291,8 @@ class AgentGetOneCommandFromAllResource(Resource):
     @jwt_required()
     def get(self, command_uuid):
         try:
+            if command_uuid == None:
+                return api_response(message="command_uuid req'd"), 400
 
             # manual redis search here for UUID, and arragnign of data.
             # This is manual as it searches ALL of redis for the key, not just one agent, like baseagent would
@@ -304,8 +313,14 @@ class AgentGetOneCommandFromAllResource(Resource):
             else:
                 return api_response(data="No results found for command")
 
+        except NotFoundError:
+            logger.debug("No command found with that UUID")
+            return api_response(message="No command found with that UUID"), 404
+
         except Exception as e:
-            logger.error(e)
+            logger.exception(
+                f"Error occured while searching for a command from all the agents: {e}"
+            )
             return api_response(message="An error occured"), 500
 
 
@@ -362,7 +377,78 @@ class AgentUploadCommandScriptResource(Resource):
 
             return api_response(message="Script registered successfully")
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error occured registering a script for an agent: {e}")
+            return api_response(message="An error occured"), 500
+
+
+# ------------------------------------------------------------------------
+#                      Agent Data routes
+# ------------------------------------------------------------------------
+@agent_ns.route("/<string:agent_uuid>/notes")
+@agent_ns.doc(description="Update the notes for an agent.")
+class AgentUpdateNotesFieldResource(Resource):
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @jwt_required()
+    def post(self, agent_uuid):
+        """
+        Post notes to agent
+
+        {
+            "notes":
+        }
+
+        returns: command_id
+        """
+        try:
+            data = request.get_json()
+            notes = data.get("notes", "")
+            a = Agent(agent_id=agent_uuid)
+            a.update_notes(notes)
+
+            return api_response(message="Notes updated successfully"), 200
+        except Exception as e:
+            logger.error(f"Error occured setting the notes for an agent: {e}")
+            return api_response(message="An error occured"), 500
+
+
+@agent_ns.route("/<string:agent_uuid>/new")
+@agent_ns.doc(description="Update the new status for an agent.")
+class AgentUpdateNewFieldResource(Resource):
+    @agent_ns.doc(
+        responses={
+            200: "Success",
+            400: "Bad Request",
+            401: "Missing Auth",
+            500: "Server Side error",
+        },
+    )
+    @jwt_required()
+    def post(self, agent_uuid):
+        """
+        Post notes to agent
+
+        {
+            "new":True/False bool
+        }
+
+        returns: command_id
+        """
+        try:
+            data = request.get_json()
+            new_status = data.get("new", "")
+            a = Agent(agent_id=agent_uuid)
+            a.update_new_status(new=new_status)
+
+            return api_response(message="New status updated successfully"), 200
+        except Exception as e:
+            logger.error(f"Error occured setting the new status for an agent: {e}")
             return api_response(message="An error occured"), 500
 
 

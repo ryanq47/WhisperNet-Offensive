@@ -51,6 +51,18 @@ class AgentView:
         data = self.request_data.get("data", {})
         first_key = next(iter(data))
         self.agent_data = data.get(first_key, {})
+        self.check_new_status()
+
+    def check_new_status(self):
+        # On click of agent, if not new, send a "not new" to the server
+        if self.agent_data.get("data", {}).get("agent").get("new"):
+            ui.notify(
+                "Agent clicked into, no longer considered new", position="top-right"
+            )
+            data = {"new": False}
+            # async this?
+            # api_post_call(f"/agent/{self.agent_id}/new", data=data)
+            api_post_call(f"/agent/{self.agent_id}/new", data=data)
 
     def render(self):
         """
@@ -216,10 +228,10 @@ class AgentView:
         # and finally, render the script options
         self.render_scripts_options()
 
-        def handle_keydown(e):
+        async def handle_keydown(e):
             # Trigger send_command on Enter key.
             if e.args.get("key") == "Enter":
-                send_command()
+                await send_command()
 
         # fix: get current script. If current script is none, put "no script selected" on selector.
         # additionally, break it out a bit, it's annoyingly duct taped together
@@ -411,17 +423,27 @@ class AgentsView:
                 agent_id = agent_info.get("agent_id", "Unknown")
                 hostname = agent_info["data"]["system"].get("hostname", "Unknown")
                 os = agent_info["data"]["system"].get("os", "Unknown")
+                notes = agent_info["data"]["agent"].get("notes", "")
                 internal_ip = agent_info["data"]["network"].get(
                     "internal_ip", "Unknown"
                 )
+                external_ip = agent_info["data"]["network"].get(
+                    "external_ip", "Unknown"
+                )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+                new_agent = agent_info["data"]["agent"].get("new", False)
+
                 row_data.append(
                     {
-                        "Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
+                        "Raw Agent ID": agent_id,
                         "Hostname": hostname,
                         "OS": os,
+                        "Notes": notes,
                         "Internal IP": internal_ip,
+                        "External IP": external_ip,
                         "Last Seen": last_seen,
+                        "New": new_agent,  # used for cell highligthing, not currently shown in the grid itself
                     }
                 )
             with ui.column().classes("w-full h-full overflow-auto"):
@@ -430,15 +452,38 @@ class AgentsView:
                     if current_settings.get("Dark Mode", False)
                     else "ag-theme-balham"
                 )
-                ui.aggrid(
+                self.aggrid = ui.aggrid(
+                    # notes: Using per cell highlighting as it's a quick fix.
+                    # it's apparently possible to do it for the whole thing, I'll get to that later
                     {
                         "columnDefs": [
                             {
-                                "headerName": "Agent ID",
-                                "field": "Agent ID",
+                                "headerName": "",
+                                "checkboxSelection": True,
+                                "headerCheckboxSelection": True,
+                                "width": 50,
+                                "pinned": "left",
+                                "floatingFilter": True,
+                                "cellClassRules": {
+                                    "bg-blue-500": "data.New"  # use the New field that is in the aggrid data
+                                },
+                            },
+                            {
+                                "headerName": "Link Agent ID",
+                                "field": "Link Agent ID",
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {  # used for storing JUST the agent ID, without HTML stuff
+                                "headerName": "Raw Agent ID",
+                                "field": "Raw Agent ID",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 225,
+                                "hide": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Hostname",
@@ -446,6 +491,7 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "OS",
@@ -453,6 +499,16 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "Notes (Editable)",
+                                "field": "Notes",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "editable": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Internal IP",
@@ -460,6 +516,15 @@ class AgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "External IP",
+                                "field": "External IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Last Seen",
@@ -468,15 +533,44 @@ class AgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "sort": "desc",
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                         ],
                         "rowSelection": "multiple",
                         "rowData": row_data,
                     },
-                    html_columns=[0],
+                    html_columns=[1],
                 ).classes(f"{aggrid_theme} w-full h-full")
+
+                # handler for change
+                self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+    def _on_cell_value_changed(self, event):
+        """
+        Handles cell value changes for the aggrid
+
+        """
+        # Access the event details via event.args, which is a dictionary.
+        event_data = event.args
+        """
+        {'value': 'test', 'newValue': 'test', 'rowIndex': 1, 'data': {'Agent ID': "<u><a href='/agent/df4adb60-1653-4fd0-821a-356f12642b53'>df4adb60-1653-4fd0-821a-356f12642b53</a></u>", 'Hostname': None, 'OS': None, 'Internal IP': None, 'Last Seen': '2025-03-18 13:22:52', 'Notes': 'test'}, 'source': 'edit', 'colId': 'Notes', 'selected': True, 'rowHeight': 28, 'rowId': '0'}
+        """
+        if event_data.get("colId", {}) == "Notes":
+            # send API request to /agents/{agent_id}/notes
+            # pull agent ID from hidden ID row (Raw Agent ID)
+
+            clicked_agent_id = event_data.get("data").get("Raw Agent ID")
+
+            # directly get new data from event.
+            note_data = {"notes": event_data.get("newValue")}
+            api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
+            ui.notify(
+                f"Updated notes for {clicked_agent_id} with: {event_data.get("newValue")}",
+                position="top-right",
+            )
 
 
 class AgentsPage:

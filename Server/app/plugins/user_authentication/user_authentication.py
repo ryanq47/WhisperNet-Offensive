@@ -112,9 +112,10 @@ class LoginResource(Resource):
                 # Compare the request password with hashed password in DB
                 if bcrypt.checkpw(password.encode(), user.password):
                     logger.info(f"{user.uuid}:{user.username} logging in")
-                    logger.warning("Hardcoded 60 minute token expiration")
+                    logger.warning("Hardcoded 1440 (one day) minute token expiration")
                     access_token = create_access_token(
-                        identity=user.uuid, expires_delta=datetime.timedelta(minutes=60)
+                        identity=user.uuid,
+                        expires_delta=datetime.timedelta(minutes=1440),
                     )
 
                     return api_response(

@@ -56,6 +56,7 @@ class BaseAgent:
                     "default_gateway": None,
                     "dns_servers": [],
                     "domain": None,
+                    "next_hop": None,
                 },
                 "hardware": {
                     "cpu": None,  # could get with the one assembly command to get that info - would be quiet.
@@ -68,6 +69,7 @@ class BaseAgent:
                     "version": None,
                     "first_seen": None,
                     "last_seen": None,
+                    "new": None,  # for now, set new to true by default. May be better to set at first checkin. # agent would not show up until first checkin, so this is probably file
                 },
                 "security": {
                     "av_installed": [],
@@ -81,23 +83,14 @@ class BaseAgent:
                     "latitude": None,
                     "longitude": None,
                 },
-                "config": {
-                    "command_script": None,
-                },
+                "config": {"command_script": None, "store_on_callback": []},
             }
         )
         self.data.agent.id = agent_id
 
-        # setup registry handling for certain commands
-        # could make this more modular
+        # hardcoded regiser commands
+        # need a betetr way to do help, this way is dumb
         self.handler_registry = CommandHandlerRegistry()
-        self.handler_registry.register(
-            "shell whoami", GenericHandler, "system.username"
-        )
-        self.handler_registry.register(
-            "shell hostname", GenericHandler, "system.hostname"
-        )
-        self.handler_registry.register("shell ver", GenericHandler, "system.os")
         self.handler_registry.register("help", HelpHandler)
 
     @property
@@ -163,7 +156,7 @@ class BaseAgent:
         Registers an agent in the system and ensures that the latest data is stored in Redis.
         """
         try:
-            logger.info(f"Registering agent: {self.data.agent.id}")
+            logger.debug(f"Registering agent: {self.data.agent.id}")
 
             # Retrieve latest data from Redis before saving
             # doing this AGAIN (as well as in INIT), just incase data got changed somewhere
@@ -180,9 +173,13 @@ class BaseAgent:
 
             # blanket exception, should handle this better
             except Exception as e:
+                logger.critical("First connect relies on a except, works for now, FIX!")
                 logger.warning(
                     f"Agent {self.data.agent.id} not found in Redis. This is expected on first check-in."
                 )
+                # hacky putting this here, treating this except as a proof of first connect. bad idea.
+                # fine for now
+                self.data.agent.new = True
 
             # Save the updated agent model in Redis
             agent_model = Agent(agent_id=self.data.agent.id)
@@ -265,7 +262,7 @@ class BaseAgent:
             return command_id
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error enqueing commands: {e}")
             raise e
 
     def dequeue_command(self):
@@ -294,7 +291,7 @@ class BaseAgent:
                 )
                 return False
 
-            print(f"Dequeued Command: {command_obj.command}")
+            logger.debug(f"Dequeued Command: {command_obj.command}")
 
             return command_obj  # Return the command object
 
@@ -398,7 +395,7 @@ class BaseAgent:
 
             ac.save()
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error storing commands: {e}")
             raise e
 
     def store_response(self, command_id, response):
@@ -420,12 +417,15 @@ class BaseAgent:
             command_entry.save()  # Save back to Redis
 
             # Use handler if one is registered
-            # ex, help command
+            # ex, help command. help is the only thing using this right now.
             handler = self.handler_registry.get_handler(command_entry.command)
             if handler:
                 handler.store(command_entry=command_entry, agent_id=agent_id)
             else:
-                print(f"No custom handler found for {command_entry.command}")
+                logger.debug(f"No custom handler found for {command_entry.command}")
+
+            # Check if command has a specific location to store its response
+            self._check_store_on_callback_commands(command_entry=command_entry)
 
             logger.debug(f"Response stored for Command ID {command_id}")
             return True  # Successfully updated
@@ -433,6 +433,105 @@ class BaseAgent:
         except Exception as e:
             logger.error(f"Error storing response for Command ID {command_id}: {e}")
             raise e
+
+    def store_command_response_on_callback(self, command, location):
+        """
+        Queues up a specific commands response to be stored on callback.
+
+        Ex: agent.store_command_response_on_callback("shell whoami", "system.user")
+
+        This list stored in the agent, so EVERY command that matches this will have its output stored in the field specified
+
+        """
+        try:
+            self.data.config.store_on_callback.append((command, location))
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(
+                f"Error storing response on callback for Command {command}: {e}"
+            )
+            raise e
+
+    def _check_store_on_callback_commands(self, command_entry):
+        """
+        Internal
+
+        Checks if command & its response is in the agent's list of 'store_output_on_callback'.
+
+        If so, it updates that field in the agent's data model
+
+        command_entry: Dict with `response`, and `command` (the original command). Pulled from redis
+        """
+        try:
+            commands_to_store_output_on_callback = self.data.config.store_on_callback
+            for command, location in commands_to_store_output_on_callback:
+                if command == command_entry.command:
+                    self.update_data_field(location, command_entry.response)
+
+        except Exception as e:
+            logger.error(
+                f"Error checking store on callback commands commands for {self.data.agent.id}: {e}"
+            )
+
+    ##########
+    # Update some data methods
+    # Better than direct access, start implementing these for common fields.
+    # helps enforcing types as well
+    ##########
+    def update_notes(self, notes):
+        """
+        Updates notes field in data
+
+        """
+        try:
+            if notes == None:
+                logger.warning(f"Notes being updated for {self.data.agent.id} are None")
+            logger.debug(f"Updating notes: {notes}")
+            self.data.agent.notes = notes
+            # dump data
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(f"Error updating notes field: {e}")
+
+    def update_new_status(self, new: bool):
+        """
+        Updates notes field in data
+        """
+        try:
+            logger.debug(f"Updating new status: {new}")
+            self.data.agent.new = new
+            # dump data
+            self.unload_data()
+
+        except Exception as e:
+            logger.error(f"Error updating new status field: {e}")
+
+    def update_data_field(self, field, value):
+        """
+        Updates a field in the agent's data model.
+
+        Args:
+            field (str): Dot-notated string indicating where to store the data
+                        (e.g., "system.hostname" or "network.internal_ip").
+            value: The new value to set at the specified field.
+        """
+        # Split the dot-notated string into parts
+        field_parts = field.split(".")
+        target = self.data
+
+        # Traverse through the nested attributes except the last one
+        for part in field_parts[:-1]:
+            # If the attribute does not exist or is None, initialize it as a Munch object
+            if not hasattr(target, part) or getattr(target, part) is None:
+                setattr(target, part, munch.Munch())
+            target = getattr(target, part)
+
+        # Set the final attribute to the new value
+        setattr(target, field_parts[-1], value)
+        # Save (unload) the updated data to Redis
+        self.unload_data()
 
 
 ## command registry stuff

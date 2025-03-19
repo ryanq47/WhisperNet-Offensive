@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
         from waitress import serve
 
-        serve(app=app, port=8081, host="0.0.0.0")
+        serve(app=app, port=8081, host="0.0.0.0", connection_limit=5000, threads=20)
 
     except Exception as e:
         print(e)

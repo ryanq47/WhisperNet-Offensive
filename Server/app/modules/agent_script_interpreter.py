@@ -6,7 +6,7 @@ import os
 from modules.log import log
 import pathlib
 from modules.config import Config
-
+import concurrent.futures
 
 logger = log(__name__)
 
@@ -28,10 +28,7 @@ class BaseCommand(ABC):
 
 class CommandFactory:
     def __init__(self):
-        self.commands = {}
-
-    # def load_command_module(self, module):
-    #     self._register_commands_from_module(module)
+        self.commands = {}  # holds the registered commands FROM the agent script
 
     def register_commands_from_module(self, module):
         # Iterate through all classes defined in the module
@@ -42,9 +39,11 @@ class CommandFactory:
                 if hasattr(cls, "command_name"):
                     command_name = getattr(cls, "command_name")
                     self.commands[command_name] = cls
-                    print(f"Registered command: {command_name}")
+                    logger.debug(f"Registered command: {command_name}")
                 else:
-                    print(f"Warning: {name} does not define a command_name attribute")
+                    logger.warning(
+                        f"Warning: {name} does not define a command_name attribute"
+                    )
 
     # inits the class for us
     def create_command(self, command_name, args_list, agent_id):
@@ -54,7 +53,7 @@ class CommandFactory:
             # raise ValueError(f"Command '{command_name}' is not registered")
             # Allow the script to fail if a non-registered command exists, which
             # allows the default commands to be called (ex, shell, etc)
-            logger.info(
+            logger.debug(
                 f"Command {command_name} not registered, falling through to default command handling."
             )
             return False
@@ -74,7 +73,7 @@ class AgentScriptInterpreter:
 
         self.script_name = script_name
         self.agent_id = agent_id
-
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         # Load script path - replace me with a dynamic import
         self.root_project_path = pathlib.Path(Config().root_project_path)
         self.script_path = (
@@ -95,11 +94,11 @@ class AgentScriptInterpreter:
         self.command_factory = CommandFactory()
         self.command_factory.register_commands_from_module(module)
 
-    def process_command(self, inbound_command):
+    def _process_command(self, inbound_command) -> list:
         """
         Processes the given command from the script.
-        If found, returns a list of full command strings to enqueue.
-        If not found, logs an error and returns False.
+        If found, returns a list of full command ID's
+        If not found, logs an error and returns a blank list
 
         inbound_command: The FULL inbound command, ex "ping 127.0.0.1"
 
@@ -123,17 +122,29 @@ class AgentScriptInterpreter:
             if command_instance:
                 # run the command instance, which will queue up the needed commands based
                 # on inputs, etc. and so forth. Entirely up to the user to do
-                command_instance.run()
+                command_ids = command_instance.run()
+                # return command_ids
                 return True
 
             # if the command isn't registered here, return false
             else:
-                return False
+                return []
         except Exception as e:
             logger.debug(f"Error with processing command: {e}")
             # raise e
             return False
             # returning instead of raising, it's okay if the script fails/falls through
+
+    def process_command(self, inbound_command) -> concurrent.futures.Future:
+        """
+        Submits the command to a background thread and returns a Future.
+        The caller can check Future.result() later for the list of command IDs.
+
+        Used so the agent script can run on their own without blocking the main thread
+        """
+        future = self.executor.submit(self._process_command, inbound_command)
+        return []
+        # return future # commenting out for now
 
     def extract_help_info(self):
         """
@@ -158,7 +169,7 @@ class AgentScriptInterpreter:
             return "".join(help_info)
 
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error creating help menu: {e}")
             return "Error creating help dialogue from command classes"
 
 

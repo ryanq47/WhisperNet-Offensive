@@ -53,14 +53,13 @@ class MultiConsolePage:
         self.auto_scroll_enabled = True
         # Keep track of which command entries have been appended.
         self.known_command_ids = {}
-
         # and finally, render the script options
-        # self.render_scripts_options()
+        self.render_scripts_options()
 
-        def handle_keydown(e):
+        async def handle_keydown(e):
             # Trigger send_command on Enter key.
             if e.args.get("key") == "Enter":
-                send_command()
+                await send_command()
 
         # fix: get current script. If current script is none, put "no script selected" on selector.
         # additionally, break it out a bit, it's annoyingly duct taped together
@@ -69,22 +68,31 @@ class MultiConsolePage:
             # If the user scrolls away from the bottom, disable auto-scroll.
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
+        # kind of messy. But in a nutshell, tracks ONLY enqueud commands, and maps them back on screen.
         def update_shell_data():
-            # this is gonna be SLOOOOW
             responses_from_agents = []
-
-            # go get the data from these requests...
-            # this just POUNDS the server fyi...
-            for command_id in self.list_of_command_ids:
-                # ui.notify(
-                #     f"Getting results from request {command_id}", position="top-right"
-                # )
-                # send REQUEST id not client id... uhhhh
-                data = api_call(url=f"/agent/command/{command_id}").get("data", [])
-                responses_from_agents.append(data)
+            for queued_command_id in self.list_of_command_ids:
+                data = api_call(url=f"/agent/command/{queued_command_id}").get(
+                    "data", []
+                )
+                # If data is a list and its first element is a dict, then assume it's full command objects.
+                if data and isinstance(data, list):
+                    if isinstance(data[0], dict):
+                        responses_from_agents.extend(data)
+                    # otherwise, it's a list of ID's, so do a lookup for each
+                    elif isinstance(data[0], str):
+                        # data is a list of command IDs; perform an additional lookup for each one.
+                        for cmd_id in data:
+                            full_command = api_call(url=f"/agent/command/{cmd_id}").get(
+                                "data", {}
+                            )
+                            if full_command and isinstance(full_command, dict):
+                                responses_from_agents.append(full_command)
+                elif isinstance(data, dict):
+                    responses_from_agents.append(data)
 
             # Sort entries chronologically.
-            # responses_from_agents.sort(key=lambda entry: entry.get("timestamp", ""))
+            responses_from_agents.sort(key=lambda entry: entry.get("timestamp", ""))
             for entry in responses_from_agents:
                 # Use a unique identifier for the command.
                 cmd_id = entry.get("command_id", "")
@@ -92,7 +100,6 @@ class MultiConsolePage:
                     cmd_id = f"no_id_{entry.get('timestamp', '')}"
                 cmd = entry.get("command", "")
                 agent_id = entry.get("agent_id", "")
-
                 response_value = entry.get("response") or "Waiting on callback..."
 
                 if cmd_id not in self.known_command_ids:
@@ -108,21 +115,19 @@ class MultiConsolePage:
                     )
                     self.known_command_ids[cmd_id] = True
                 else:
-                    # ui.notify("olddata")
                     # Update an existing entry's response only if new response data is available.
                     if response_value:
-                        # Update using only text node modification if no selection is active.
                         js_code = f"""
-    (function() {{
-    var selection = window.getSelection();
-    if (!selection || selection.toString() === "") {{
-        var elem = document.getElementById('response_{cmd_id}');
-        if (elem && elem.firstChild) {{
-        elem.firstChild.nodeValue = {response_value!r};
-        }}
-    }}
-    }})();
-    """
+            (function() {{
+            var selection = window.getSelection();
+            if (!selection || selection.toString() === "") {{
+                var elem = document.getElementById('response_{cmd_id}');
+                if (elem && elem.firstChild) {{
+                    elem.firstChild.nodeValue = {response_value!r};
+                }}
+            }}
+            }})();
+            """
                         ui.run_javascript(js_code)
             # Auto-scroll if enabled.
             if self.auto_scroll_enabled:
@@ -130,7 +135,7 @@ class MultiConsolePage:
                     """
                     var el = document.getElementById('shell_output');
                     el.scrollTop = el.scrollHeight;
-                """
+                    """
                 )
 
         async def send_command():
@@ -157,7 +162,10 @@ class MultiConsolePage:
                 )
 
                 extracted_command_id = request_output.get("data", "")
-                self.list_of_command_ids.append(extracted_command_id)
+                if isinstance(extracted_command_id, list):  # if list/list of ID's
+                    self.list_of_command_ids.extend(extracted_command_id)
+                else:
+                    self.list_of_command_ids.append(extracted_command_id)
 
                 # gonna need to check each agent id as well for responses to this message. Switch from one id to a loop
                 """
@@ -202,63 +210,65 @@ class MultiConsolePage:
         update_shell_data()
         ui.timer(interval=1.0, callback=update_shell_data)
 
-    ## update me with selection of all scripts - need to think the scritps through
-    # def render_scripts_options(self):
-    #     """
-    #     Handles the script options.
+    def render_scripts_options(self):
+        """
+        Handles the script options.
 
-    #     Checks if an agent has a script. If so, sets that to the current script on the ui.select
-    #     If not, display's None.
+        Checks if an agent has a script. If so, sets that to the current script on the ui.select
+        If not, display's None.
 
-    #     When updating a script, it calls the _register_script to update the script for the agent.
+        When updating a script, it calls the _register_script to update the script for the agent.
 
-    #     """
-    #     # Get the list of available scripts.
-    #     response = api_call(url="/scripts/files")
-    #     scripts_data = (
-    #         [
-    #             script.get("filename", "Unknown Script")
-    #             for script in response.get("data", [])
-    #         ]
-    #         if response.get("data")
-    #         else ["No Scripts Available"]
-    #     )
 
-    #     # with agent id, get current script.
-    #     agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+        """
+        # Get the list of available scripts.
+        response = api_call(url="/scripts/files")
+        scripts_data = (
+            [
+                script.get("filename", "Unknown Script")
+                for script in response.get("data", [])
+            ]
+            if response.get("data")
+            else ["No Scripts Available"]
+        )
 
-    #     # Get the inner dictionary, which holds the actual agent info. Only one agent is returned from this call, so it'll just grab the first one
-    #     agent_info = next(iter(agent_data.values()), {})
+        # with agent id, get current script.
+        # agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
 
-    #     # Then navigate to the command_script inside the nested structure.
-    #     agent_script = (
-    #         agent_info.get("data", {}).get("config", {}).get("command_script")
-    #     )
+        # # Get the inner dictionary, which holds the actual agent info. Only one agent is returned from this call, so it'll just grab the first one
+        # agent_info = next(iter(agent_data.values()), {})
 
-    #     # Create the script selector dropdown.
-    #     ui.select(
-    #         options=scripts_data,
-    #         label="Extension Scripts",
-    #         on_change=lambda e: self._register_script(e.value),
-    #         value=agent_script,  # show the currently selected script if there is one
-    #     ).classes("w-full")
+        # # Then navigate to the command_script inside the nested structure.
+        # agent_script = (
+        #     agent_info.get("data", {}).get("config", {}).get("command_script")
+        # )
 
-    # def _register_script(self, script_name):
-    #     """
-    #     POST call to update the script for an agent on the server
+        # Create the script selector dropdown.
+        ui.select(
+            options=scripts_data,
+            label="Extension Scripts",
+            on_change=lambda e: self._register_script(e.value),
+        ).classes("w-full ")
 
-    #     script_name: The name of the script on the server
+    async def _register_script(self, script_name):
+        """
+        POST call to update the script for an agent on the server
 
-    #     Usually this would be under the render_scripts_options method, but ui.select needs a callback func to call on change
+        script_name: The name of the script on the server
 
-    #     Endpoint: /agent/{self.agent_id}/command-script/register
+        Usually this would be under the render_scripts_options method, but ui.select needs a callback func to call on change
 
-    #     """
-    #     api_post_call(
-    #         url=f"/agent/{self.agent_id}/command-script/register",
-    #         data={"command_script": script_name},
-    #     )
-    #     ui.notify(f"Updated script to {script_name} on agent", position="top-right")
+        Endpoint: /agent/{self.agent_id}/command-script/register
+
+        """
+        self.list_of_agent_ids = await self.mutliconsoleagentsview.get_selected_agents()
+        # need to get selected agents
+        for agent_id in self.list_of_agent_ids:
+            api_post_call(
+                url=f"/agent/{agent_id}/command-script/register",
+                data={"command_script": script_name},
+            )
+            ui.notify(f"Updated script to {script_name} on agent", position="top-right")
 
 
 # ---------------------------
@@ -286,18 +296,26 @@ class MultiConsoleAgentsView:
                 agent_id = agent_info.get("agent_id", "Unknown")
                 hostname = agent_info["data"]["system"].get("hostname", "Unknown")
                 os = agent_info["data"]["system"].get("os", "Unknown")
+                notes = agent_info["data"]["agent"].get("notes", "")
                 internal_ip = agent_info["data"]["network"].get(
                     "internal_ip", "Unknown"
                 )
+                external_ip = agent_info["data"]["network"].get(
+                    "external_ip", "Unknown"
+                )
                 last_seen = agent_info["data"]["agent"].get("last_seen", "Unknown")
+                new_agent = agent_info["data"]["agent"].get("new", False)
                 row_data.append(
                     {
                         "Link Agent ID": f"<u><a href='/agent/{agent_id}'>{agent_id}</a></u>",
                         "Raw Agent ID": agent_id,
                         "Hostname": hostname,
                         "OS": os,
+                        "Notes": notes,
                         "Internal IP": internal_ip,
+                        "External IP": external_ip,
                         "Last Seen": last_seen,
+                        "New": new_agent,  # used for cell highligthing, not currently shown in the grid itself
                     }
                 )
             with ui.column().classes("w-full h-full overflow-auto"):
@@ -307,6 +325,8 @@ class MultiConsoleAgentsView:
                     else "ag-theme-balham"
                 )
                 self.aggrid = ui.aggrid(
+                    # notes: Using per cell highlighting as it's a quick fix.
+                    # it's apparently possible to do it for the whole thing, I'll get to that later
                     {
                         "columnDefs": [
                             {
@@ -316,6 +336,9 @@ class MultiConsoleAgentsView:
                                 "width": 50,
                                 "pinned": "left",
                                 "floatingFilter": True,
+                                "cellClassRules": {
+                                    "bg-blue-500": "data.New"  # use the New field that is in the aggrid data
+                                },
                             },
                             {
                                 "headerName": "Link Agent ID",
@@ -323,6 +346,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {  # used for storing JUST the agent ID, without HTML stuff
                                 "headerName": "Raw Agent ID",
@@ -331,6 +355,7 @@ class MultiConsoleAgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "hide": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Hostname",
@@ -338,6 +363,7 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "OS",
@@ -345,6 +371,16 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 225,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "Notes (Editable)",
+                                "field": "Notes",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "editable": True,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Internal IP",
@@ -352,6 +388,15 @@ class MultiConsoleAgentsView:
                                 "filter": "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
+                            },
+                            {
+                                "headerName": "External IP",
+                                "field": "External IP",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                                "width": 150,
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                             {
                                 "headerName": "Last Seen",
@@ -360,6 +405,7 @@ class MultiConsoleAgentsView:
                                 "floatingFilter": True,
                                 "width": 225,
                                 "sort": "desc",
+                                "cellClassRules": {"bg-blue-500": "data.New"},
                             },
                         ],
                         "rowSelection": "multiple",
@@ -367,8 +413,36 @@ class MultiConsoleAgentsView:
                     },
                     html_columns=[1],
                 ).classes(f"{aggrid_theme} w-full h-full")
+
+            # on change handler
+            self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+
         except Exception as e:
             print(f"Error rendering grid: {e}")
+
+    def _on_cell_value_changed(self, event):
+        """
+        Handles cell value changes for the aggrid
+
+        """
+        # Access the event details via event.args, which is a dictionary.
+        event_data = event.args
+        """
+        {'value': 'test', 'newValue': 'test', 'rowIndex': 1, 'data': {'Agent ID': "<u><a href='/agent/df4adb60-1653-4fd0-821a-356f12642b53'>df4adb60-1653-4fd0-821a-356f12642b53</a></u>", 'Hostname': None, 'OS': None, 'Internal IP': None, 'Last Seen': '2025-03-18 13:22:52', 'Notes': 'test'}, 'source': 'edit', 'colId': 'Notes', 'selected': True, 'rowHeight': 28, 'rowId': '0'}
+        """
+        if event_data.get("colId", {}) == "Notes":
+            # send API request to /agents/{agent_id}/notes
+            # pull agent ID from hidden ID row (Raw Agent ID)
+
+            clicked_agent_id = event_data.get("data").get("Raw Agent ID")
+
+            # directly get new data from event.
+            note_data = {"notes": event_data.get("newValue")}
+            api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
+            ui.notify(
+                f"Updated notes for {clicked_agent_id} with: {event_data.get("newValue")}",
+                position="top-right",
+            )
 
     async def get_selected_agents(self):
         rows = await self.aggrid.get_selected_rows()

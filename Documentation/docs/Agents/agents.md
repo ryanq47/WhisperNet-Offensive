@@ -8,9 +8,9 @@ WhisperNet supports multiple Agent types, each tailored for different operationa
 
 | Agent Type       | Format  | Execution Method                               | Notes |
 |------------------|---------|-----------------------------------------------|-------|
-| Standard Agent   | `.EXE`  | `Agent.exe`                                   | Standalone execution |
-| DLL Agent       | `.DLL`  | `rundll32 Agent.dll, Start`                   | Loadable via `rundll32` |
-| Custom Agent    | `.EXE/.DLL` | Varies per configuration                    | Fully customizable/built it yourself |
+| Standard Agent   | `.EXE`  | `Agent.exe` | Standalone execution |
+| DLL Agent       | `.DLL`  | `rundll32 Agent.dll, Start` | Loadable via `rundll32` |
+| Custom Agent    | `.EXE/.DLL` | Varies per configuration | Fully customizable/built it yourself |
 
 
 ## Building Agents
