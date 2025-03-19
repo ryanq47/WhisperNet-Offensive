@@ -50,7 +50,7 @@ $UPDATE_CMD
 # Install dependencies
 install_package "cmake"
 install_package "gcc"
-install_package "docker"
+install_package "docker.io"
 install_package "python3"
 install_package "nano"
 
@@ -84,7 +84,7 @@ else
 fi
 
 echo -e "${CYAN} Creating .env...${RESET}"
-cp ./Server/app/example.env ./Server/app/.env
+cp ./Server/app/env_example ./Server/app/.env
 
 nano ./Server/app/.env
 

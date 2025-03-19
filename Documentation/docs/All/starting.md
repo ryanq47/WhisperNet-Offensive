@@ -36,7 +36,7 @@ Serve the documentation locally for reference.
 
 ```bash
 cd Documentation
-mkdocs serve
+python3 -m mkdocs serve
 ```
 
 ---
