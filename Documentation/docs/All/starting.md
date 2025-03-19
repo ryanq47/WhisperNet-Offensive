@@ -4,9 +4,13 @@ Before starting, ensure your **virtual environment is set up and activated**. Re
 
 ---
 
-## **1. Starting the Server**  
 
-Run the server to handle agent communications and command processing.  
+## **1. Starting the Server**  
+(assuming you are CD'd into the project directory)
+
+First, you will need to copy the `Server/app/env_example` to `Server/app/.env`, then edit the `.env` file with credentials
+
+Then, run the server to handle agent communications and command processing.  
 
 ```bash
 cd Server
@@ -14,6 +18,7 @@ python3 app/whispernet.py
 ```
 
 NOTE: Do not try to run `whispernet.py` if you are currently CD'd into the `app/` directory. There are some path related items that rely on the launch path being `Server/`
+
 
 ---
 
