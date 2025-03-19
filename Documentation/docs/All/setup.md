@@ -12,6 +12,9 @@ I promise setup is shorter than it looks :)
 
 ---
 
+## **0. Run `./install.sh`**
+ - If anything goes wrong with this, follow the below steps for a manual install
+
 ## **1. Install Dependencies**  
 
 ### **Python Requirements**  
