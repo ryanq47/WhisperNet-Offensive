@@ -50,9 +50,30 @@ $UPDATE_CMD
 # Install dependencies
 install_package "cmake"
 install_package "gcc"
-install_package "docker.io"
 install_package "python3"
 install_package "nano"
+
+# install docker cuz it's special
+echo -e "${CYAN}Installing Docker...${RESET}"
+if ! command -v docker &>/dev/null; then
+    if [[ "$PKG_MANAGER" == "apt-get" ]]; then
+        $INSTALL_CMD docker.io
+    elif [[ "$PKG_MANAGER" == "dnf" ]]; then
+        $INSTALL_CMD docker
+    elif [[ "$PKG_MANAGER" == "pacman" ]]; then
+        $INSTALL_CMD docker
+    fi
+
+    if command -v docker &>/dev/null; then
+        echo -e "${GREEN}Docker installed successfully.${RESET}"
+    else
+        echo -e "${RED}Failed to install Docker.${RESET}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}Docker is already installed.${RESET}"
+fi
+
 
 # Ensure Docker service is enabled and running
 echo -e "${CYAN}Ensuring Docker is running...${RESET}"
