@@ -8,14 +8,59 @@ Quick note, any Agent that can speak the JSON spec here, can communicate with th
 
 ---
 
-## **Communication Flow**  
+## **Communication Flow** 
+```
+           ┌───────────────────────────────────────────┐
+           │                 Agent                    │
+           └───────────────────────────┬──────────────┘
+                                       │ 1) GET /get/<agent_uuid>
+                                       │    (Requests a new command)
+                                       ▼
+           ┌───────────────────────────────────────────┐
+           │                C2 Server                 │
+           │  (Receives GET request, returns JSON)    │
+           └───────────────────────────┬──────────────┘
+                                       │ JSON response example:
+                                       │   {
+                                       │     "command_id": "550e8400-e29b-...",
+                                       │     "command": "shell",
+                                       │     "args": "whoami"
+                                       │   }
+                                       │ 
+                                       ▼
+           ┌───────────────────────────────────────────┐
+           │                 Agent                    │ 2) command gets run
+           │  (Executes the command locally)          │
+           └───────────────────────────┬──────────────┘
+                                       │ 3) POST /post/<agent_uuid>
+                                       │    (Sends execution results)
+                                       ▼
+           ┌───────────────────────────────────────────┐
+           │                C2 Server                 │
+           │  (Receives POST, stores command output)  │
+           └───────────────────────────┬──────────────┘
+                                       │ Example POST body:
+                                       │  {
+                                       │    "id": "a1b2c3d4-...",
+                                       │    "data": "desktop-123456\\Bob",
+                                       │    "command_id": "550e8400-e29b-..."
+                                       │  }
+                                       │ 4) Server stores this data
+                                       ▼
+           ┌───────────────────────────────────────────┐ 5) Agent sleeps
+           │                 Agent                    │
+           │ (Sleeps, then repeats the cycle)         │
+           └───────────────────────────────────────────┘
+
+
+``` 
 
 1. **Agent Requests a Command (GET Request)**  
    
     - The Agent sends an **HTTP GET request** to the C2 server, requesting a new command.  
     - The server responds with a structured **JSON object** containing the command and its parameters.  
 
-2. **Agent Executes the Command**  
+3. **Agent Executes the Command**  
    
     - The Agent processes the received instruction.  
     - It executes the requested task and captures any generated output.  
@@ -103,4 +148,3 @@ So, in a nutshell
 - Sends execution results via HTTP POST (`/post/<agent_uuid>`).  
 
 And does this all with structured JSON data for requests and responses.  
-
