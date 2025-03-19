@@ -175,6 +175,8 @@ cython_debug/
 *.key
 *.crt
 
+*.git*
+
 *snyk-linux*
 *.db
 
