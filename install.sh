@@ -74,6 +74,22 @@ else
     echo -e "${YELLOW}Docker is already installed.${RESET}"
 fi
 
+# Add current user to the docker group
+echo -e "${CYAN}Adding user to the docker group...${RESET}"
+sudo usermod -aG docker "$USER"
+
+# Refresh group membership without logging out
+echo -e "${CYAN}Refreshing group membership...${RESET}"
+newgrp docker <<EOF
+EOF
+
+# Verify docker access
+if docker ps &>/dev/null; then
+    echo -e "${GREEN}User successfully added to Docker group and Docker is accessible.${RESET}"
+else
+    echo -e "${YELLOW}You might need to log out and log back in to apply Docker permissions.${RESET}"
+fi
+
 
 # Ensure Docker service is enabled and running
 echo -e "${CYAN}Ensuring Docker is running...${RESET}"
@@ -98,7 +114,8 @@ echo -e "${GREEN}Virtual environment created at ./$VENV_DIR${RESET}"
 echo -e "${CYAN}Activating virtual environment and installing dependencies...${RESET}"
 source "$VENV_DIR/bin/activate"
 if [[ -f "requirements.txt" ]]; then
-    pip install -r requirements.txt
+	# have to use python in venv, which should just be `python`
+    python -m pip install -r requirements.txt
     echo -e "${GREEN}Dependencies installed from requirements.txt.${RESET}"
 else
     echo -e "${YELLOW}No requirements.txt found. Skipping...${RESET}"
@@ -113,7 +130,9 @@ nano ./Server/app/.env
 echo -e "${GREEN}Installation complete.${RESET}"
 
 echo -e "============================================================"
-echo -e "Cewl - run source ./venv/bin/activate to enter the venv"
-echo -e "Then, start the server: cd Server && python3 app/whispernet.py"
-echo -e "Finally, spin up the WebGui: cd Web && python3 main.py"
+echo -e "Cewl - run source ./whispernet_venv/bin/activate to enter the venv"
+echo -e "Then, start the server: cd Server && python app/whispernet.py"
+echo -e "Finally, spin up the WebGui: cd Web && python main.py"
+echo -e "You may need to log out, then log back in, and run the above commands again if you get docker permission errors"
+echo -e "Also, if you get a 'localhost:6379 : (104, 'Connection reset by peer')' error, re-run python app/whispernet.py, it should fix it"
 echo -e "============================================================"
