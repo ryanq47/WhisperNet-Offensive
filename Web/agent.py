@@ -3,7 +3,7 @@ import asyncio
 import requests
 from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
-from build import BuildView
+from build import BuildView, ShellcodeBuildView
 from navbar import *
 from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
@@ -594,6 +594,7 @@ class AgentsPage:
             with ui.tabs() as tabs:
                 ui.tab("Agents")
                 ui.tab("Binaries + Builder")
+                ui.tab("Shellcode Builder")
                 ui.tab("Scripts")
 
             # -- TAB PANELS --
@@ -603,6 +604,9 @@ class AgentsPage:
                     a.render()
                 with ui.tab_panel("Binaries + Builder"):
                     a = BuildView()
+                    a.render()
+                with ui.tab_panel("Shellcode Builder"):
+                    a = ShellcodeBuildView()
                     a.render()
                 with ui.tab_panel("Scripts"):
                     a = ScriptsView()
