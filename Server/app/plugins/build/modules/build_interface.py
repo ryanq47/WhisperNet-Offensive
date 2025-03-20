@@ -65,7 +65,7 @@ class HttpBuildInterface:
     def _run_build(self):
         try:
             self.copy_from_template_files()
-            self.macro_replace()  # Placeholder for macro replacement
+            self.pre_compilation_configuration()  # Placeholder for macro replacement
             self.custom_configure_script()
             self.compile()
             self.copy_to_output_folder()
@@ -121,7 +121,11 @@ class HttpBuildInterface:
             logger.error(f"Compilation failed: {e}")
             raise
 
-    def macro_replace(self):
+    def pre_compilation_configuration(self):
+        """
+        For pre-compile adjustments to the agent
+
+        """
         logger.debug("Performing macro replacements.")
 
         # Dictionary of macros to replace in corresponding files
