@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "whisper_dynamic_config.h": "c",
+        "cstdlib": "c"
+    }
+}
