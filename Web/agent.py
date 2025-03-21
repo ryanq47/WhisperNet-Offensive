@@ -77,24 +77,16 @@ class AgentView:
                 ui.tab("MAIN")
                 ui.tab("SHELL")
 
-                if current_settings.get("Dev Mode", False):
-                    ui.tab("STATS")
-                    ui.tab("NOTES")
-
             # Tab Panels Container – note the explicit h-full for proper expansion.
             with ui.tab_panels(tabs, value="MAIN").classes("w-full h-full border"):
                 with ui.tab_panel("MAIN").classes("h-full"):
                     self.render_main_tab()
                 with ui.tab_panel("SHELL").classes("h-full"):
                     self.render_shell_tab()
-                if current_settings.get("Dev Mode", False):
-                    with ui.tab_panel("STATS").classes("h-full"):
-                        self.render_stats_tab()
                 # if current_settings.get("Dev Mode", False):
-
-                if current_settings.get("Dev Mode", False):
-                    with ui.tab_panel("NOTES").classes("h-full"):
-                        self.render_notes_tab()
+                #     with ui.tab_panel("STATS").classes("h-full"):
+                #         self.render_stats_tab()
+                # if current_settings.get("Dev Mode", False):
 
     def render_main_tab(self):
         """
