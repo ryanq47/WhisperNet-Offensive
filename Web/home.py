@@ -92,4 +92,4 @@ class HomeView:
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
         help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
+        help_button.style("position: fixed; top: 170px; right: 24px; ")

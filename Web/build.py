@@ -87,10 +87,15 @@ class BuildView:
             else "ag-theme-balham"
         )
 
-        ui.button(
-            text="Build Agent",
-            on_click=lambda: self.render_build_agent_dialogue(),
-        ).classes("w-full")
+        with ui.row().classes("w-full flex-1"):
+            ui.button(
+                text="Build Agent",
+                on_click=lambda: self.render_build_agent_dialogue(),
+            ).classes("w-full flex-1")
+            ui.button(
+                text="Build Stager",
+                on_click=lambda: self.render_build_agent_dialogue(),
+            ).classes("w-full flex-1")
 
         with ui.column().classes("w-full h-full overflow-auto"):
             self.aggrid_element = ui.aggrid(
@@ -444,7 +449,7 @@ class BuildView:
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
         help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
+        help_button.style("position: fixed; top: 170px; right: 24px; ")
 
 
 class ShellcodeBuildView:
@@ -506,7 +511,7 @@ class ShellcodeBuildView:
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
         help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
+        help_button.style("position: fixed; top: 170px; right: 24px; ")
 
     def render(self) -> None:
         """Render the complete Shellcode Builder/Converter UI."""

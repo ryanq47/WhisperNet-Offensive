@@ -61,20 +61,21 @@ class MultiConsolePage:
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
         help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
+        help_button.style("position: fixed; top: 120px; right: 24px; ")
 
     def render(self):
         """
         Renders the complete agent view including header, tabs, and tab panels.
         """
         self.render_help_button()
-        with ui.element().classes("w-full h-full"):
+        with ui.column().classes("w-full h-full"):
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("computer")
+                ui.label("MultiConsole").classes("h-10")
 
-            ui.markdown(
-                "#### Select Agents on the left, and all commands typed into the console on the right will be sent to them!"
-            )
+            ui.separator()
 
-            with ui.splitter().classes("h-full") as splitter:
+            with ui.splitter().classes("h-full w-full") as splitter:
                 with splitter.before:
                     # maybe get a custom one in here with a select option?
                     self.mutliconsoleagentsview = MultiConsoleAgentsView()
