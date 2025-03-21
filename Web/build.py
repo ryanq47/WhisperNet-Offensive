@@ -462,7 +462,7 @@ class ShellcodeBuildView:
             ui.markdown("# Shellcode Converter Page:")
             ui.separator()
             ui.label(
-                "This module converts any .EXE, .DLL into shellcode using Donut Loader."
+                "This module converts any .EXE, .DLL, or .VBA into shellcode using Donut Loader."
             )
             ui.markdown(
                 """
@@ -473,7 +473,7 @@ class ShellcodeBuildView:
                 3. Click the 'Convert' button. The .bin shellcode should appear in the payload list shortly.
                 
                 If 'Auto Stage' is enabled, the .bin file will be auto staged at:
-                http://<ip_of_server>:<port_of_server>/<filename>.bin
+                http://\<ip\_of\_server\>:\<port\_of\_server\>/static/\<filename\>.bin
                 Manage staged files via the "Hosted Files" section.
                 """
             )
@@ -504,7 +504,7 @@ class ShellcodeBuildView:
                 with ui.row().classes("items-center justify-between w-full"):
                     ui.label("2. Select Donut options:").classes("h6")
                 ui.separator()
-                with ui.column().classes("flex-1 h-full w-full border"):
+                with ui.column().classes("flex-1 h-full w-full"):
                     self.render_shellcode_options_view()
                 ui.button("Convert", on_click=self.submit_payload_to_convert).classes(
                     "w-full"
@@ -531,7 +531,7 @@ class ShellcodeBuildView:
 
     def render_shellcode_options_view(self) -> None:
         """Render UI elements for configuring shellcode (Donut) options."""
-        ui.label("Donut Bypass Options")
+        ui.markdown("#### AMSI Bypass Options")
         radio_bypass_options = (
             ui.radio(
                 options={
@@ -548,6 +548,8 @@ class ShellcodeBuildView:
             .classes("w-full")
         )
         ui.separator()
+
+        ui.markdown("#### Payload Architecture")
         radio_architecture = (
             ui.radio(
                 options={
@@ -564,14 +566,14 @@ class ShellcodeBuildView:
             .classes("w-full")
         )
         ui.separator()
-        ui.label(".BIN output name (optional)")
+        ui.markdown("#### .BIN output name (optional)")
         input_bin_name = ui.input(
             on_change=lambda: self.shellcode_options.update(
                 {"output_filename": input_bin_name.value}
             )
         )
         ui.separator()
-        ui.label("Misc:")
+        ui.markdown("#### Misc:")
         checkbox_auto_stage = ui.checkbox(
             "Auto Stage in hosted files",
             value=True,
