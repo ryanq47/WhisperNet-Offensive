@@ -15,7 +15,49 @@ class CredentialStore:
         self.credential_data = []
         self.grid = None
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# The CredentialStore:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where you can store credentials in Whispernet
+
+                Additionally, you can export, and import creds from a .CSV
+
+                Note: You currently CANNOT copy out of the Aggrid, so you'll
+                need to download the .CSV then copy from there. I'm working on fixing this.
+
+                """
+            )
+            ui.separator()
+            ui.markdown(
+                """
+                #### Usage:
+                        
+                1. Add info to fields at the top
+                2. Click "ADD" to add to the Cred Store.
+
+
+                Pro Tip: The "Password" and "Notes" fields support newlines/multiline,
+                so you can paste an entire mimikatz dump, or other large password dumps in there.
+
+                NewLines will NOT render *in* the AgGrid, but they will when you download the .CSV
+
+                This does make the CSV look a little weird in raw text, but works well when in something such as Excel
+                        """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
+
     def render(self):
+        self.render_help_button()
         with ui.column().classes("w-full h-full p-4"):
             current_settings = app.storage.user.get("settings", {})
 
@@ -24,12 +66,20 @@ class CredentialStore:
             with ui.row().classes("gap-4 mb-4 items-center w-full"):
                 with ui.row().classes("flex-1 gap-4"):
                     self.username_input = ui.input(label="Username").classes("flex-1")
-                    self.password_input = ui.input(label="Password").classes("flex-1")
+                    self.password_input = (
+                        ui.textarea(label="Password")
+                        .classes("flex-1")
+                        .props("input-class=h-7")  # make height same as rest
+                    )
                     self.realm_input = ui.input(label="Realm/Domain").classes("flex-1")
-                    self.notes_input = ui.input(label="Notes").classes("flex-1")
-                ui.button("Add", on_click=self.add_credential).classes(
-                    "bg-green-500 text-white px-4 py-2 rounded"
-                )
+                    self.notes_input = (
+                        ui.textarea(label="Notes")
+                        .classes("flex-1")
+                        .props("input-class=h-7")  # make height same as rest
+                    )
+                    ui.button("Add", on_click=self.add_credential).classes(
+                        "bg-green-500 text-white px-4 py-2 rounded"
+                    )
 
             aggrid_theme = (
                 "ag-theme-balham-dark"

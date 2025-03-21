@@ -443,8 +443,8 @@ class BuildView:
 
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
-        help_button = ui.button("?", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
 
 
 class ShellcodeBuildView:
@@ -505,8 +505,8 @@ class ShellcodeBuildView:
 
     def render_help_button(self) -> None:
         """Render a help button pinned at the bottom-right of the screen."""
-        help_button = ui.button("?", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 23px; right: 24px; z-index: 10000;")
 
     def render(self) -> None:
         """Render the complete Shellcode Builder/Converter UI."""
