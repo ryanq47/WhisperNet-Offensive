@@ -10,7 +10,6 @@ class HomeView:
     @ui.page("/")
     def render(self):
         try:
-            self.render_help_button()
             with ui.element().classes(
                 "w-1/2 absolute-center items-center justify-center"
             ):
@@ -70,26 +69,3 @@ class HomeView:
         except Exception as e:
             print(e)
             raise e
-
-    async def open_help_dialog(self) -> None:
-        """Open a help dialog with instructions for the shellcode converter."""
-        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
-            ui.markdown("# HomePage:")
-            ui.separator()
-            ui.markdown(
-                """
-                The home page for WhisperNet. 
-
-                Click on "X Active Agents" to go to the agents page
-                Click on "X Listeners Online" to go to the agents page
-
-                Otherwise, navigate with either the top navbar, or the menu on the left (click the hamburger button)
-                """
-            )
-        dialog.open()
-        await dialog
-
-    def render_help_button(self) -> None:
-        """Render a help button pinned at the bottom-right of the screen."""
-        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 170px; right: 24px; ")
