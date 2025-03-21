@@ -50,6 +50,30 @@ class FileView:
         self.file_list = []
         self.aggrid_element = None
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Hosted Files Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where hosted files live. 
+
+                Any file you wish to host/retrieve from the server should go here. 
+
+                Additionally, this supports multi-select, so actions can be take on multiple files at once
+
+                To upload a file, click the `UPLOAD` tab and either drag & drop files in, or select the '+' for a file menu
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("?", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+
     def fetch_file_list(self):
         resp = api_call("static-serve/files")
         self.file_list = resp.get("data", [])
@@ -83,6 +107,7 @@ class FileView:
         """
         Main render method: sets up the page background, headers, and two tabs.
         """
+        self.render_help_button()
         self.render_files_tab()
         # Initial data load
         self.on_refresh()

@@ -69,6 +69,7 @@ class BuildView:
         """
         Main render method: sets up the page background, headers, and two tabs.
         """
+        self.render_help_button()
         # could combile this and render_files_tab prolly
         self.render_files_tab()
         # Initial data load
@@ -422,6 +423,28 @@ class BuildView:
             ui.notify(
                 "File uploaded successfully!", type="positive", position="top-right"
             )
+
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Binary Builder Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is the spot for all of your payloads to live. You can upload, donwload, and even generate new payloads on this page.
+                
+                To generate a payload, click the 'Build Agent' button, and fill in relevant details.
+
+                Additinally, this page supports multi-select, meaning you can do actions on multiple items at once. 
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("?", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
 
 
 class ShellcodeBuildView:

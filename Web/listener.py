@@ -199,7 +199,33 @@ class ListenersView:
         # get top level data key from response
         self.request_data = self.request_data.get("data", {})
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Listeners Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where your listeners live. 
+
+                Listeners are the things that the agents call back to. 
+
+                To spawn a new listener, click the `spawn listener` button
+
+                Additionally, you can click into each listener to get a detailed view of it.
+
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("?", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+
     def render(self):
+        self.render_help_button()
         ui.button(
             text="Spawn Listener",
             on_click=lambda: self.render_spawn_listener_dialogue(),

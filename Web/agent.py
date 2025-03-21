@@ -411,11 +411,38 @@ class AgentsView:
         self.request_data = api_call(url=f"/stats/agents")
         self.request_data = self.request_data.get("data", {})
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Agents Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where you will find all the agents that are checking in.
+
+                Go ahead and click on a UUID of an agent to interact with said agent.
+
+                Blue colored agents are agents that have not been interacted with yet. This makes it easy
+                to find newly connected agents.
+
+                Pro tip: The fields will not populate until the `system_recon` command is run
+                in each agent. This command is found in the `default.py` command script, in the agent shell.
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("?", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+
     def render(self):
         self.render_agents_grid()
 
     def render_agents_grid(self):
         try:
+            self.render_help_button()
             current_settings = app.storage.user.get("settings", {})
             agents = self.request_data
             row_data = []
