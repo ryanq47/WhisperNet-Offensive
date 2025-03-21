@@ -10,7 +10,6 @@ class HomeView:
     @ui.page("/")
     def render(self):
         try:
-
             with ui.element().classes(
                 "w-1/2 absolute-center items-center justify-center"
             ):

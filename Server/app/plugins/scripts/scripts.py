@@ -11,6 +11,7 @@ from modules.utils import api_response
 from modules.config import Config
 import hashlib
 import pathlib
+from werkzeug import secure_filename
 
 logger = log(__name__)
 
@@ -92,7 +93,7 @@ class StaticServeUploadResource(Resource):
             return api_response(status=400, data=None, message="No file provided")
 
         # Determine the final filename
-        original_filename = uploaded_file.filename
+        original_filename = secure_filename(uploaded_file.filename)
         final_filename = original_filename  # The thought was to maybe have the user be able to change the file name, but that's too much work rn. is a nice to have, don't need rn.
         # = requested_name if requested_name else original_filename
 
@@ -112,10 +113,6 @@ class StaticServeUploadResource(Resource):
         except Exception as e:
             logger.exception("Failed to save uploaded file.")
             return api_response(status=500, data=None, message=str(e))
-
-        # Construct public URL (assuming Flask serves static from "/static")
-        # If your Flask app is serving static at a different route, adjust accordingly.
-        # public_url = f"/static/{final_filename}"
 
         return api_response(status=200, message="File uploaded successfully")
 
@@ -217,7 +214,7 @@ class StaticServeListFilesResource(Resource):
                     {
                         "filename": item.name,
                         "filehash": file_hash,
-                        "filepath": f"/static/{item.name}",  # Webserver path
+                        "filepath": f"/{item.name}",  # Webserver path
                     }
                 )
 

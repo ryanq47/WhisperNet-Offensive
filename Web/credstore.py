@@ -15,7 +15,49 @@ class CredentialStore:
         self.credential_data = []
         self.grid = None
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# The CredentialStore:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where you can store credentials in Whispernet
+
+                Additionally, you can export, and import creds from a .CSV
+
+                Note: You currently CANNOT copy out of the Aggrid, so you'll
+                need to download the .CSV then copy from there. I'm working on fixing this.
+
+                """
+            )
+            ui.separator()
+            ui.markdown(
+                """
+                #### Usage:
+                        
+                1. Add info to fields at the top
+                2. Click "ADD" to add to the Cred Store.
+
+
+                Pro Tip: The "Password" and "Notes" fields support newlines/multiline,
+                so you can paste an entire mimikatz dump, or other large password dumps in there.
+
+                NewLines will NOT render *in* the AgGrid, but they will when you download the .CSV
+
+                This does make the CSV look a little weird in raw text, but works well when in something such as Excel
+                        """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 170px; right: 24px; ")
+
     def render(self):
+        self.render_help_button()
         with ui.column().classes("w-full h-full p-4"):
             current_settings = app.storage.user.get("settings", {})
 
@@ -24,12 +66,20 @@ class CredentialStore:
             with ui.row().classes("gap-4 mb-4 items-center w-full"):
                 with ui.row().classes("flex-1 gap-4"):
                     self.username_input = ui.input(label="Username").classes("flex-1")
-                    self.password_input = ui.input(label="Password").classes("flex-1")
+                    self.password_input = (
+                        ui.textarea(label="Password")
+                        .classes("flex-1")
+                        .props("input-class=h-7")  # make height same as rest
+                    )
                     self.realm_input = ui.input(label="Realm/Domain").classes("flex-1")
-                    self.notes_input = ui.input(label="Notes").classes("flex-1")
-                ui.button("Add", on_click=self.add_credential).classes(
-                    "bg-green-500 text-white px-4 py-2 rounded"
-                )
+                    self.notes_input = (
+                        ui.textarea(label="Notes")
+                        .classes("flex-1")
+                        .props("input-class=h-7")  # make height same as rest
+                    )
+                    ui.button("Add", on_click=self.add_credential).classes(
+                        "bg-green-500 text-white px-4 py-2 rounded"
+                    )
 
             aggrid_theme = (
                 "ag-theme-balham-dark"
@@ -88,20 +138,69 @@ class CredentialStore:
                     "rowData": self.credential_data,
                     "rowSelection": "multiple",
                     "suppressRowClickSelection": False,
+                    "enableRangeSelection": True,
+                    # Ensure that copying rows to clipboard is allowed (default is false, so we set it explicitly)
+                    "suppressCopyRowsToClipboard": False,
                 }
             ).classes(f"{aggrid_theme} h-full")
 
             # Toolbar
             with ui.row().classes("w-full justify-end gap-4 mt-4"):
-                ui.upload(
-                    label="Import CSV",
-                    on_upload=self.process_uploaded_file,
-                ).props("accept='.csv'")
 
                 ui.button("Export CSV", on_click=self.export_csv).props("outline")
                 ui.button("Delete Selected", on_click=self.delete_selected).props(
                     "outline"
                 )
+                ui.button(
+                    text="Upload CSV",
+                    on_click=self.render_upload_button_dialog,
+                ).props("accept='.csv' outline")
+
+    async def render_upload_button_dialog(self):
+        """ """
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+            ui.upload(
+                multiple=True, auto_upload=True, on_upload=self.process_uploaded_file
+            )
+            # with ui.element().classes("w-full"):  # Ensure full width
+            # ui.notify("open")
+            # ui.label("Upload files")
+            # ui.upload()
+            # with ui.row():
+            #     # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+            #     ui.button()
+
+        # Actually open dialog
+        dialog.open()
+        # and refresh on close
+        # self.on_refresh()
+
+        result = await dialog
+        if result is None:
+            """
+            Hacky way to on close, becasue we are not submitting anything, refresh grid.
+            """
+            #
+            self.on_refresh()
+
+    async def upload_file(self, upload_result):
+        """Send uploaded file(s) to POST /static-serve/upload."""
+        files = {
+            "file": (upload_result.name, upload_result.content),
+        }
+        data = {}
+        resp = api_post_call("static-serve/upload", data=data, files=files)
+        if not resp or resp.get("status") != 200:
+            ui.notify(
+                f"Upload failed: {resp.get('message', 'Unknown error')}",
+                type="negative",
+                position="top-right",
+            )
+        else:
+            ui.notify(
+                "File uploaded successfully!", type="positive", position="top-right"
+            )
 
     def add_credential(self):
         username = self.username_input.value

@@ -4,27 +4,41 @@
 #include <windows.h>
 
 // Struct to store global configuration
-typedef struct {
-    DWORD sleep_time;  // Sleep duration in milliseconds
-    DWORD jitter;      // Jitter percentage
+typedef struct
+{
+    DWORD sleep_time; // Sleep duration in milliseconds
+    DWORD jitter;     // Jitter percentage
 } AgentConfig;
 
-typedef enum {
+typedef enum
+{
     EXEC_MODE_ASYNC,
     EXEC_MODE_SYNC,
     // Add other modes as needed
 } ExecutionMode;
 
-// Declare a global pointer to the config struct
-extern AgentConfig g_agent_config;
-extern ExecutionMode g_execution_mode;
+typedef struct
+{
+    DWORD sleep_time;
+    ExecutionMode execution_mode;
+    // more values...
+    SRWLOCK agent_config_lock;
+
+} CONFIG;
+
+// Args for passing to each exec func cuz threads and we need it in one spot
+typedef struct
+{
+    char *agent_id;
+    CONFIG *config;
+} EXEC_ARGS;
 
 // Function prototypes
-void init_config(DWORD sleep_time, DWORD jitter);
-void set_sleep_time(DWORD new_time);
-DWORD get_sleep_time();
-void set_execution_mode(ExecutionMode mode);
-ExecutionMode get_execution_mode();
+CONFIG *init_config();
+void set_sleep_time(DWORD new_time, CONFIG *config);
+DWORD get_sleep_time(CONFIG *config);
+void set_execution_mode(ExecutionMode mode, CONFIG *config);
+ExecutionMode get_execution_mode(CONFIG *config);
 void initialize_critical_sections();
 
 #endif // CONFIG_H

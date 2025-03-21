@@ -27,14 +27,14 @@ class FilePage:
             # -- TABS --
             with ui.tabs() as tabs:
                 ui.tab("Files")
-                ui.tab("Upload")
+                # ui.tab("Upload")
 
             # -- TAB PANELS --
             with ui.tab_panels(tabs, value="Files").classes("w-full h-full border"):
                 with ui.tab_panel("Files").classes("h-full"):
                     a = FileView().render()
-                with ui.tab_panel("Upload"):
-                    a = FileUploadView().render()
+                # with ui.tab_panel("Upload"):
+                #     a = FileUploadView().render()
 
 
 ## Filevliew
@@ -49,6 +49,31 @@ class FileView:
     def __init__(self):
         self.file_list = []
         self.aggrid_element = None
+
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Hosted Files Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where hosted files live. 
+
+                Any file you wish to host/retrieve from the server should go here. 
+
+                Additionally, this supports multi-select, so actions can be take on multiple files at once
+
+                To upload a file, click the `UPLOAD` button and either drag & drop files in, or select the '+' for a file menu.
+                 - Note: The files will auto-upload when selected.
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 170px; right: 24px; ")
 
     def fetch_file_list(self):
         resp = api_call("static-serve/files")
@@ -83,6 +108,7 @@ class FileView:
         """
         Main render method: sets up the page background, headers, and two tabs.
         """
+        self.render_help_button()
         self.render_files_tab()
         # Initial data load
         self.on_refresh()
@@ -151,6 +177,11 @@ class FileView:
             ).props(
                 "outline"
             )
+            ui.button(  # later have an aggrid on click that runs the download_selected_rows
+                "Upload files", on_click=self.render_upload_button_dialog
+            ).props(
+                "outline"
+            )
 
     async def delete_selected_rows(self):
         rows = await self.aggrid_element.get_selected_rows()
@@ -178,28 +209,33 @@ class FileView:
         else:
             ui.notify("No rows selected.", position="top-right")
 
+    async def render_upload_button_dialog(self):
+        """ """
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+            ui.upload(multiple=True, auto_upload=True, on_upload=self.upload_file)
+            # with ui.element().classes("w-full"):  # Ensure full width
+            # ui.notify("open")
+            # ui.label("Upload files")
+            # ui.upload()
+            # with ui.row():
+            #     # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+            #     ui.button()
 
-class FileUploadView:
-    def __init__(self):
-        pass
+        # Actually open dialog
+        dialog.open()
+        # and refresh on close
+        # self.on_refresh()
 
-    def render(self):
-        """
-        The 'Upload' tab: a big area for uploading.
-        """
-        with ui.column().classes("w-full h-full items-center"):
-            ui.upload(
-                label="Upload File(s)",
-                on_upload=self.on_file_upload,
-                auto_upload=True,
-                multiple=True,
-            ).classes(
-                "w-full h-full"
-            )  # or "w-full" for an even bigger area
+        result = await dialog
+        if result is None:
+            """
+            Hacky way to on close, becasue we are not submitting anything, refresh grid.
+            """
+            #
+            self.on_refresh()
 
-            ui.label("Drag N Drop, or click the '+'")
-
-    def on_file_upload(self, upload_result):
+    async def upload_file(self, upload_result):
         """Send uploaded file(s) to POST /static-serve/upload."""
         files = {
             "file": (upload_result.name, upload_result.content),
@@ -216,6 +252,3 @@ class FileUploadView:
             ui.notify(
                 "File uploaded successfully!", type="positive", position="top-right"
             )
-
-        # Refresh after each file upload
-        # self.on_refresh()

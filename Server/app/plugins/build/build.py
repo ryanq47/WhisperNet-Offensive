@@ -13,9 +13,12 @@ from modules.instances import Instance
 from modules.listener import BaseListener
 from modules.log import log
 from plugins.build.modules.build_interface import HttpBuildInterface
+from plugins.build.modules.shellcode_converter import PayloadToShellcode
 import hashlib
 from modules.config import Config
 import pathlib
+import os
+from werkzeug.utils import secure_filename
 
 # from modules.redis_models import ActiveService
 from modules.utils import api_response
@@ -80,11 +83,7 @@ def compute_file_md5(file_path):
 
 @build_ns.route("/compiled")
 class StaticServeListFilesResource(Resource):
-    """
-    GET /plugin/static-serve/list_files
-    Returns a JSON list of all files currently stored in the static directory,
-    each with filename, filehash, and a webserver path (/static/filename).
-    """
+    """ """
 
     @build_ns.marshal_with(build_response, code=200)
     @jwt_required()
@@ -116,6 +115,103 @@ class StaticServeListFilesResource(Resource):
         return api_response(
             data=file_info_list, message="List of files in static directory."
         )
+
+
+@build_ns.route("/upload")
+class BuildUploadResource(Resource):
+    """
+    Allows an operator to upload a file to the server's build/payload directory.
+    """
+
+    @build_ns.doc(
+        responses={200: "Success", 400: "Bad Request", 500: "Server Error"},
+        description="Upload a file to the static serving directory",
+    )
+    @jwt_required()
+    def post(self):
+        # file = request.files["file"]
+        uploaded_file = request.files.get("file")
+        if not uploaded_file:
+            return api_response(message="No file provided"), 400
+
+        if not uploaded_file:
+            return api_response(status=400, data=None, message="No file provided")
+
+        # Determine the final filename
+        # use werkzeug secure_filename to make sure the file name is safe
+        original_filename = secure_filename(uploaded_file.filename)
+        final_filename = original_filename  # The thought was to maybe have the user be able to change the file name, but that's too much work rn. is a nice to have, don't need rn.
+        # Build absolute path to static folder
+        static_dir = os.path.join(Config().root_project_path, "data/compiled/")
+        if not os.path.exists(static_dir):
+            os.makedirs(static_dir, exist_ok=True)
+
+        file_path = os.path.join(static_dir, final_filename)
+
+        # Save file
+        try:
+            uploaded_file.save(file_path)
+            logger.debug(f"Saved uploaded file successfully at {file_path}")
+        except Exception as e:
+            logger.exception("Failed to save uploaded file.")
+            return api_response(status=500, data=None, message=str(e))
+
+        # Construct public URL (assuming Flask serves static from "/static")
+        # If your Flask app is serving static at a different route, adjust accordingly.
+        public_url = f"/compiled/{final_filename}"
+
+        return api_response(
+            status=200, data={"url": public_url}, message="File uploaded successfully"
+        )
+
+
+# ------------------------------------------------------------------------------------
+#   Convert to shellcode N stuff
+# ------------------------------------------------------------------------------------
+
+
+@build_ns.route("/convert-to-shellcode")
+class BuildUploadResource(Resource):
+    """
+    POST: Convert file to shellcode. File must be in payload directory
+    """
+
+    @build_ns.doc(
+        responses={200: "Success", 400: "Bad Request", 500: "Server Error"},
+        description="Convert file to shellcode. File must be in payload directory",
+    )
+    @jwt_required()
+    def post(self):
+        # get args
+
+        try:
+            options = request.get_json()
+
+            if not options:
+                return {"message": "No JSON data provided"}, 400
+
+            file_to_convert = options.get("file_to_convert")
+            shellcode_output_file_name = options.get("output_file_name")
+            architecture = options.get(
+                "architecture", 3
+            )  # set arch to amd+x86 on no supplied, default
+            bypass_options = options.get(
+                "bypass_options", 1
+            )  # set amsi bypass to none on none supplied
+            auto_stage = options.get("auto_stage")
+
+            convert_class = PayloadToShellcode(
+                file_to_convert=file_to_convert,
+                shellcode_output_file_name=shellcode_output_file_name,
+                architecture=3,
+                bypass_options=1,
+                auto_stage=auto_stage,
+            )
+            convert_class.convert()
+
+        except Exception as e:
+            logger.error(f"Error converting to shellcode: {e}")
+            return api_response(message="Error converting to shellcode"), 500
 
 
 # ------------------------------------------------------------------------------------

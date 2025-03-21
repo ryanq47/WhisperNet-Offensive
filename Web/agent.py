@@ -3,7 +3,7 @@ import asyncio
 import requests
 from cards import agent_card, unknown_card
 from config import Config, ThemeConfig
-from build import BuildView
+from build import BuildView, ShellcodeBuildView
 from navbar import *
 from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
@@ -77,24 +77,16 @@ class AgentView:
                 ui.tab("MAIN")
                 ui.tab("SHELL")
 
-                if current_settings.get("Dev Mode", False):
-                    ui.tab("STATS")
-                    ui.tab("NOTES")
-
             # Tab Panels Container – note the explicit h-full for proper expansion.
             with ui.tab_panels(tabs, value="MAIN").classes("w-full h-full border"):
                 with ui.tab_panel("MAIN").classes("h-full"):
                     self.render_main_tab()
                 with ui.tab_panel("SHELL").classes("h-full"):
                     self.render_shell_tab()
-                if current_settings.get("Dev Mode", False):
-                    with ui.tab_panel("STATS").classes("h-full"):
-                        self.render_stats_tab()
                 # if current_settings.get("Dev Mode", False):
-
-                if current_settings.get("Dev Mode", False):
-                    with ui.tab_panel("NOTES").classes("h-full"):
-                        self.render_notes_tab()
+                #     with ui.tab_panel("STATS").classes("h-full"):
+                #         self.render_stats_tab()
+                # if current_settings.get("Dev Mode", False):
 
     def render_main_tab(self):
         """
@@ -411,11 +403,38 @@ class AgentsView:
         self.request_data = api_call(url=f"/stats/agents")
         self.request_data = self.request_data.get("data", {})
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# Agents Tab:")
+            ui.separator()
+            ui.markdown(
+                """
+                This is where you will find all the agents that are checking in.
+
+                Go ahead and click on a UUID of an agent to interact with said agent.
+
+                Blue colored agents are agents that have not been interacted with yet. This makes it easy
+                to find newly connected agents.
+
+                Pro tip: The fields will not populate until the `system_recon` command is run
+                in each agent. This command is found in the `default.py` command script, in the agent shell.
+                """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 170px; right: 24px; ")
+
     def render(self):
         self.render_agents_grid()
 
     def render_agents_grid(self):
         try:
+            self.render_help_button()
             current_settings = app.storage.user.get("settings", {})
             agents = self.request_data
             row_data = []
@@ -594,6 +613,7 @@ class AgentsPage:
             with ui.tabs() as tabs:
                 ui.tab("Agents")
                 ui.tab("Binaries + Builder")
+                ui.tab("[BETA] Shellcode Converter")
                 ui.tab("Scripts")
 
             # -- TAB PANELS --
@@ -603,6 +623,9 @@ class AgentsPage:
                     a.render()
                 with ui.tab_panel("Binaries + Builder"):
                     a = BuildView()
+                    a.render()
+                with ui.tab_panel("[BETA] Shellcode Converter"):
+                    a = ShellcodeBuildView()
                     a.render()
                 with ui.tab_panel("Scripts"):
                     a = ScriptsView()

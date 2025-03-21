@@ -24,17 +24,58 @@ class MultiConsolePage:
             []
         )  # anda list to track the queued commands based on ID
 
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+            ui.markdown("# *the* MultiConsole:")
+            ui.separator()
+            ui.markdown(
+                """
+                One of whispernet's more powerful features, is the 
+
+                *MULTICONSOLE*
+
+                It allows you to send commands to whatever selection of clients you want.
+
+                Plus scripts are supported, so if you wanted to be a menace and run goose desktop
+                on every machine you have, you can!
+
+                """
+            )
+            ui.separator()
+            ui.markdown(
+                """
+                #### Usage:
+                        
+                1. Select the clients you want from the left side menu
+                2. Choose a script (clients need to be selected first, otherwise the script will not apply to them)
+                3. Start sending commands!
+
+                Each command has the agent UUID on it, so you can tell which response goes to which client.
+                Ex: `[734e1623-7ce3-4c67-80a6-93a1a8ef367f] > shell whoami`
+                        """
+            )
+        dialog.open()
+        await dialog
+
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+        help_button.style("position: fixed; top: 120px; right: 24px; ")
+
     def render(self):
         """
         Renders the complete agent view including header, tabs, and tab panels.
         """
-        with ui.element().classes("w-full h-full"):
+        self.render_help_button()
+        with ui.column().classes("w-full h-full"):
+            with ui.row().classes("w-full text-5xl"):
+                ui.icon("computer")
+                ui.label("MultiConsole").classes("h-10")
 
-            ui.markdown(
-                "#### Select Agents on the left, and all commands typed into the console on the right will be sent to them!"
-            )
+            ui.separator()
 
-            with ui.splitter().classes("h-full") as splitter:
+            with ui.splitter().classes("h-full w-full") as splitter:
                 with splitter.before:
                     # maybe get a custom one in here with a select option?
                     self.mutliconsoleagentsview = MultiConsoleAgentsView()
