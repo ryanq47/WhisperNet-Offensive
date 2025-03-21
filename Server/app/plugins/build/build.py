@@ -18,6 +18,7 @@ import hashlib
 from modules.config import Config
 import pathlib
 import os
+from werkzeug.utils import secure_filename
 
 # from modules.redis_models import ActiveService
 from modules.utils import api_response
@@ -119,8 +120,7 @@ class StaticServeListFilesResource(Resource):
 @build_ns.route("/upload")
 class BuildUploadResource(Resource):
     """
-    POST /plugin/static-serve/upload
-    Allows an operator to upload a file to the server's static directory.
+    Allows an operator to upload a file to the server's build/payload directory.
     """
 
     @build_ns.doc(
@@ -138,17 +138,14 @@ class BuildUploadResource(Resource):
             return api_response(status=400, data=None, message="No file provided")
 
         # Determine the final filename
-        original_filename = uploaded_file.filename
+        # use werkzeug secure_filename to make sure the file name is safe
+        original_filename = secure_filename(uploaded_file.filename)
         final_filename = original_filename  # The thought was to maybe have the user be able to change the file name, but that's too much work rn. is a nice to have, don't need rn.
-        # = requested_name if requested_name else original_filename
-
         # Build absolute path to static folder
         static_dir = os.path.join(Config().root_project_path, "data/compiled/")
         if not os.path.exists(static_dir):
             os.makedirs(static_dir, exist_ok=True)
 
-        # Potentially sanitize or randomize name if needed
-        # For example: final_filename = str(uuid.uuid4()) + "_" + final_filename
         file_path = os.path.join(static_dir, final_filename)
 
         # Save file

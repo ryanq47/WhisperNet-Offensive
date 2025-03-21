@@ -11,6 +11,7 @@ from modules.utils import api_response
 from modules.config import Config
 import hashlib
 import pathlib
+from werkzeug.utils import secure_filename
 
 logger = log(__name__)
 
@@ -100,7 +101,7 @@ class StaticServeUploadResource(Resource):
             return api_response(status=400, data=None, message="No file provided")
 
         # Determine the final filename
-        original_filename = uploaded_file.filename
+        original_filename = secure_filename(uploaded_file.filename)
         final_filename = original_filename  # The thought was to maybe have the user be able to change the file name, but that's too much work rn. is a nice to have, don't need rn.
         # = requested_name if requested_name else original_filename
 
