@@ -426,163 +426,129 @@ class BuildView:
 
 class ShellcodeBuildView:
     """
-    View for shellcode builder/converter
+    View for the Shellcode Builder/Converter.
 
-    Uses a slightly torn down/copied version of the binary builder aggrid.
-
+    This view allows users to select payload files (only .EXE, .DLL, .VBA supported),
+    configure Donut (shellcode) options, and perform operations such as conversion,
+    deletion, download, and file upload via an AG Grid.
     """
 
-    def __init__(self):
-        self.file_list = []
-        self.aggrid_element = None
-        # options for shellcode
-        self.shellcode_options = {
-            "bypass_options": 0,
-            "filename": "shellcode.bin",
+    def __init__(self) -> None:
+        # List of payload files fetched from the server.
+        self.payload_files: list = []
+        # Reference to the AG Grid element.
+        self.ag_grid = None
+        # Options for shellcode conversion.
+        self.shellcode_options: dict = {
+            "bypass_options": 1,  # 1: No Bypass, 2: Exit on Failed Bypass, 3: Continue on Failed Bypass
+            "output_filename": None,
             "auto_stage": True,
-            "architecture": 3,
+            "architecture": 3,  # 1: x86, 2: amd64, 3: x86/amd64 (default)
         }
 
-    def fetch_file_list(self):
-        resp = api_call("/build/compiled")
-        self.file_list = resp.get("data", [])
+    def fetch_payload_files(self) -> None:
+        """Fetch the list of compiled payload files from the server."""
+        response = api_call("/build/compiled")
+        self.payload_files = response.get("data", [])
 
-    def on_refresh(self):
-        self.fetch_file_list()
-        self.update_aggrid()
+    def refresh_view(self) -> None:
+        """Refresh the payload list and update the AG Grid."""
+        self.fetch_payload_files()
+        self.update_ag_grid()
 
-    async def open_help_dialogue(self):
-        # Create the dialog and its contents
-        with ui.dialog().classes("w-full").props(
-            "full-width"
-        ) as dialog, ui.card() as card:
+    async def open_help_dialog(self) -> None:
+        """Open a help dialog with instructions for the shellcode converter."""
+        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
             ui.markdown("# Shellcode Converter Page:")
             ui.separator()
             ui.label(
-                "This module converts any .EXE, .DLL into shellcode, using Donut Loader."
+                "This module converts any .EXE, .DLL into shellcode using Donut Loader."
             )
             ui.markdown(
                 """
-            There are 3 steps:
+                There are 3 steps:
                 
-                1. Upload, or Select which payload you want to convert, from the left side payload menu
+                1. Upload or select the payload you want to convert from the left side.
+                2. Select Donut options from the right side.
+                3. Click the 'Convert' button. The .bin shellcode should appear in the payload list shortly.
                 
-                2. Select donut options from the right side menu
-                
-                3. Click the 'convert' button. This will start the conversion process, and the .bin shellcode should show up in the payload menu in a few seconds
-            
-                If you selected the "auto stage" option, the .bin will be auto staged at http://<ip_of_server>:<port_of_server>/<filename>.bin
-                It can be managed via the "Hosted Files" section of the platform.
-            
-            """
+                If 'Auto Stage' is enabled, the .bin file will be auto staged at:
+                http://<ip_of_server>:<port_of_server>/<filename>.bin
+                Manage staged files via the "Hosted Files" section.
+                """
             )
-        # Actually open dialog
         dialog.open()
-        result = await dialog
+        await dialog
 
-    def render_help_button(self):
-        help_button = ui.button("?", on_click=self.open_help_dialogue)
+    def render_help_button(self) -> None:
+        """Render a help button pinned at the bottom-right of the screen."""
+        help_button = ui.button("?", on_click=self.open_help_dialog)
         help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
 
-    def render(self):
-        """
-        Render the UI elements for shellcode builder/converter
-        """
-        # self.render_payloads_aggrid()
-
-        # ui.label("EXE/VBA/DLL > Shellcode converter - Powered by Donut Loader")
-        # with ui.row().classes("w-full h-full flex"):
-        #     ui.label("2. Select Donut options:")
-
+    def render(self) -> None:
+        """Render the complete Shellcode Builder/Converter UI."""
         current_settings = app.storage.user.get("settings", {})
-
         with ui.row().classes("w-full h-full flex"):
             self.render_help_button()
-            # left side
+            # Left: Payload selection
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
                     ui.label(
                         "1. Select (or upload) payload to convert - only .EXE, .DLL, .VBA supported"
                     ).classes("h6")
-
                 ui.separator()
                 with ui.column().classes("flex-1 h-full w-full"):
-                    # with ui.row().classes("items-center justify-between w-full"):
-                    #     ui.label("Details").classes("h-6")
-                    # ui.separator()
-                    # custom one of these, with callbacks for
-                    # on select, etc
-                    self.render_payloads_aggrid()
-
-            # right side
+                    self.render_payloads_grid()
+            # Right: Shellcode options and conversion trigger
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
                     ui.label("2. Select Donut options:").classes("h6")
                 ui.separator()
                 with ui.column().classes("flex-1 h-full w-full border"):
-                    # with ui.row().classes("items-center justify-between w-full"):
-                    #     ui.label("Details").classes("h-6")
-                    # ui.separator()
-                    # custom one of these, with callbacks for
-                    # on select, etc
                     self.render_shellcode_options_view()
-
-                # make a callback func, on
                 ui.button("Convert", on_click=self.submit_payload_to_convert).classes(
                     "w-full"
                 )
+        self.refresh_view()
 
-        # run last - relies on self.aggrid_element not being none and it is not until rendered bt
-        # self.render_payloads_aggrid
-        self.on_refresh()
-
-    def update_aggrid(self):
-        """Convert self.file_list -> row data for AG Grid."""
+    def update_ag_grid(self) -> None:
+        """Update the AG Grid with the current payload files."""
         row_data = []
-        for f in self.file_list:
-            raw_name = f.get("filename", "")
-            filehash = f.get("filehash", "")
-            web_path = f.get("filepath", "")  # e.g. "/static/file.exe"
-            # clickable_link = (
-            #     f"<a href='{Config.API_HOST}/{web_path}' target='_blank'>{raw_name}</a>"
-            # )
+        for file_info in self.payload_files:
+            filename = file_info.get("filename", "")
+            file_hash = file_info.get("filehash", "")
+            web_path = file_info.get("filepath", "")  # e.g., "/static/file.exe"
             row_data.append(
                 {
-                    "Filename": raw_name,
-                    "Hash": filehash,
-                    # has a / in between the 2
+                    "Filename": filename,
+                    "Hash": file_hash,
                     "WebPath": f"{Config.API_HOST}{web_path}",
                 }
             )
-        self.aggrid_element.options["rowData"] = row_data
-        self.aggrid_element.update()
+        if self.ag_grid:
+            self.ag_grid.options["rowData"] = row_data
+            self.ag_grid.update()
 
-    def render_shellcode_options_view(self):
-        """
-        Renders the right side of the screen for shellcode options
-
-        """
-
+    def render_shellcode_options_view(self) -> None:
+        """Render UI elements for configuring shellcode (Donut) options."""
         ui.label("Donut Bypass Options")
-        bypass_radio = (
+        radio_bypass_options = (
             ui.radio(
                 options={
                     1: "No Bypass",
                     2: "AMSI Bypass - Exit on Failed Bypass",
-                    3: "AMSI Bypass - Continue on Failed bypass",
+                    3: "AMSI Bypass - Continue on Failed Bypass",
                 },
                 on_change=lambda: self.shellcode_options.update(
-                    {"bypass_options": bypass_radio.value}
+                    {"bypass_options": radio_bypass_options.value}
                 ),
                 value=1,
             )
             .props("inline")
             .classes("w-full")
         )
-
         ui.separator()
-
-        architecture_radio = (
+        radio_architecture = (
             ui.radio(
                 options={
                     1: "x86",
@@ -590,7 +556,7 @@ class ShellcodeBuildView:
                     3: "x86/amd64 (default)",
                 },
                 on_change=lambda: self.shellcode_options.update(
-                    {"architecture": architecture_radio.value}
+                    {"architecture": radio_architecture.value}
                 ),
                 value=3,
             )
@@ -598,33 +564,32 @@ class ShellcodeBuildView:
             .classes("w-full")
         )
         ui.separator()
-
         ui.label(".BIN output name (optional)")
-        bin_name = ui.input()
-
+        input_bin_name = ui.input(
+            on_change=lambda: self.shellcode_options.update(
+                {"output_filename": input_bin_name.value}
+            )
+        )
         ui.separator()
-
         ui.label("Misc:")
-        auto_stage = ui.checkbox(
+        checkbox_auto_stage = ui.checkbox(
             "Auto Stage in hosted files",
             value=True,
             on_change=lambda: self.shellcode_options.update(
-                {"auto_stage": auto_stage.value}
+                {"auto_stage": checkbox_auto_stage.value}
             ),
         )
 
-    def render_payloads_aggrid(self):
-        """
-        Aggrid of payloads
-        """
+    def render_payloads_grid(self) -> None:
+        """Render the AG Grid containing available payloads."""
         current_settings = app.storage.user.get("settings", {})
-        aggrid_theme = (
+        ag_grid_theme = (
             "ag-theme-balham-dark"
             if current_settings.get("Dark Mode", False)
             else "ag-theme-balham"
         )
         with ui.column().classes("w-full h-full overflow-auto"):
-            self.aggrid_element = ui.aggrid(
+            self.ag_grid = ui.aggrid(
                 {
                     "columnDefs": [
                         {
@@ -642,20 +607,6 @@ class ShellcodeBuildView:
                             "floatingFilter": True,
                             "width": 225,
                         },
-                        # { # would take extra tracking, just including in name of agent for now.
-                        #     "headerName": "Callback Address",
-                        #     "field": "CallbackAddress",
-                        #     "filter": "agTextColumnFilter",
-                        #     "floatingFilter": True,
-                        #     "width": 200,
-                        # },
-                        # {
-                        #     "headerName": "Callback Port",
-                        #     "field": "CallbackPort",
-                        #     "filter": "agTextColumnFilter",
-                        #     "floatingFilter": True,
-                        #     "width": 100,
-                        # },
                         {
                             "headerName": "Hash (MD5)",
                             "field": "Hash",
@@ -675,91 +626,66 @@ class ShellcodeBuildView:
                     "rowData": [],
                 },
                 html_columns=[1],
-            ).classes(f"{aggrid_theme} w-full h-full")
-            # ui.label(
-            #     "WARNING: This endpoint is currently unauth, due to a ui.download problem with nicegui, which does not allow adding headers to a request. TLDR: Anyone who can reach the server, can access any payload you generate/see above, if they know the filename"
-            # )
-
+            ).classes(f"{ag_grid_theme} w-full h-full")
         with ui.row().classes("w-full justify-end gap-4 mt-4"):
-            ui.button("Refresh", on_click=self.on_refresh).props("outline")
+            ui.button("Refresh", on_click=self.refresh_view).props("outline")
             ui.button("Delete Selected", on_click=self.delete_selected_rows).props(
                 "outline"
             )
-
-            ui.button(  # later have an aggrid on click that runs the download_selected_rows
-                "Download Selected", on_click=self.download_selected_rows
-            ).props(
+            ui.button("Download Selected", on_click=self.download_selected_rows).props(
                 "outline"
             )
-            ui.button(  # later have an aggrid on click that runs the download_selected_rows
-                "Upload files", on_click=self.render_upload_button_dialog
-            ).props(
+            ui.button("Upload Files", on_click=self.render_upload_dialog).props(
                 "outline"
             )
 
-    async def delete_selected_rows(self):
-        rows = await self.aggrid_element.get_selected_rows()
-        if rows:
-            for row in rows:
+    async def delete_selected_rows(self) -> None:
+        """Delete selected rows from the AG Grid and refresh the view."""
+        selected_rows = await self.ag_grid.get_selected_rows()
+        if selected_rows:
+            for row in selected_rows:
                 filename = row.get("Filename", "")
                 ui.notify(f"Deleted: {filename}", position="top-right")
-                url = f"/build/delete/{filename}"
-                api_delete_call(url=url)
-                # trigger refresh
-                self.on_refresh()
+                api_delete_call(url=f"/build/delete/{filename}")
+            self.refresh_view()
         else:
             ui.notify("No rows selected.", position="top-right")
 
-    async def download_selected_rows(self):
-        rows = await self.aggrid_element.get_selected_rows()
-        if rows:
-            for row in rows:
+    async def download_selected_rows(self) -> None:
+        """Download selected payload files and refresh the view."""
+        selected_rows = await self.ag_grid.get_selected_rows()
+        if selected_rows:
+            for row in selected_rows:
                 filename = row.get("Filename", "")
                 ui.notify(f"Downloading: {filename}", position="top-right")
-                url = f"{Config.API_HOST}/build/{filename}"
-                ui.download(url)
-                # trigger refresh
-                self.on_refresh()
+                download_url = f"{Config.API_HOST}/build/{filename}"
+                ui.download(download_url)
+            self.refresh_view()
         else:
             ui.notify("No rows selected.", position="top-right")
 
-    async def render_upload_button_dialog(self):
-        """ """
-        # Create the dialog and its contents
+    async def render_upload_dialog(self) -> None:
+        """Render a dialog to upload payload files."""
         with ui.dialog() as dialog, ui.card():
             ui.upload(multiple=True, auto_upload=True, on_upload=self.upload_file)
-            # with ui.element().classes("w-full"):  # Ensure full width
-            # ui.notify("open")
-            # ui.label("Upload files")
-            # ui.upload()
-            # with ui.row():
-            #     # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
-            #     ui.button()
-
-        # Actually open dialog
         dialog.open()
-        # and refresh on close
-        # self.on_refresh()
-
         result = await dialog
         if result is None:
-            """
-            Hacky way to on close, becasue we are not submitting anything, refresh grid.
-            """
-            #
-            self.on_refresh()
+            self.refresh_view()
 
-    def upload_file(self, upload_result):
-        """Send uploaded file(s) to POST /build/upload."""
-        files = {
-            "file": (upload_result.name, upload_result.content),
-        }
+    def upload_file(self, upload_result) -> None:
+        """
+        Upload a file to the server.
+
+        Args:
+            upload_result: An object with 'name' and 'content' attributes for the uploaded file.
+        """
+        files = {"file": (upload_result.name, upload_result.content)}
         data = {}
-        # replace with payload upload
-        resp = api_post_call("/build/upload", data=data, files=files)
-        if not resp or resp.get("status") != 200:
+        response = api_post_call("/build/upload", data=data, files=files)
+        if not response or response.get("status") != 200:
             ui.notify(
-                f"Upload failed: {resp.get('message', 'Unknown error')}",
+                f"Upload failed: {response.get('message', 'Unknown error')}",
                 type="negative",
                 position="top-right",
             )
@@ -768,42 +694,32 @@ class ShellcodeBuildView:
                 "File uploaded successfully!", type="positive", position="top-right"
             )
 
-    async def submit_payload_to_convert(self):
+    async def submit_payload_to_convert(self) -> None:
         """
-        Submit a payload to convert into shellcode
+        Submit selected payload(s) for conversion into shellcode.
 
-        endpoint: /build/convert-to-shellcode
+        Uses the /build/convert-to-shellcode endpoint with the options specified in shellcode_options.
         """
-        # use self.shellcode_options to send data to server
-
-        # for each seleccted file...
-        rows = await self.aggrid_element.get_selected_rows()
-        if rows:
-            for row in rows:
+        selected_rows = await self.ag_grid.get_selected_rows()
+        if selected_rows:
+            for row in selected_rows:
                 filename = row.get("Filename", "")
                 auto_stage = self.shellcode_options.get("auto_stage", False)
-                data = {
+                output_name = self.shellcode_options.get("output_filename")
+                conversion_data = {
                     "file_to_convert": filename,
-                    "output_file_name": filename.split(".")[
-                        0
-                    ],  # get filename, split on ., get first part rem#self.shellcode_options.get(),
+                    "output_file_name": (
+                        output_name if output_name else filename.split(".")[0]
+                    ),
                     "architecture": self.shellcode_options.get("architecture"),
                     "bypass_options": self.shellcode_options.get("bypass_options"),
                     "auto_stage": auto_stage,
                 }
-
-                api_post_call("/build/convert-to-shellcode", data=data)
-
-                # api_post_call("/build/convert-to-shellcode", data={})
+                api_post_call("/build/convert-to-shellcode", data=conversion_data)
                 ui.notify("Submitted to convert", position="top-right", type="positive")
-
-                # if auto_stage:
                 if auto_stage:
                     ui.notify(
                         "Staged file at ...", position="top-right", type="positive"
                     )
-
-                # file_to_convert = options.get("file_to_convert")
-                # shellcode_output_file_name = options.get("output_file_name")
-                # architecture = options.get("architecture")
-                # bypass_options = options.get("bypass_options")
+        else:
+            ui.notify("No payload selected for conversion.", position="top-right")
