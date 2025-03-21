@@ -160,6 +160,11 @@ class BuildView:
             ).props(
                 "outline"
             )
+            ui.button(  # later have an aggrid on click that runs the download_selected_rows
+                "Upload files", on_click=self.render_upload_button_dialog
+            ).props(
+                "outline"
+            )
 
     async def delete_selected_rows(self):
         rows = await self.aggrid_element.get_selected_rows()
@@ -373,6 +378,51 @@ class BuildView:
             return api_call(url=f"/build/{agent_type}/scripts").get("data", [])
         return []
 
+    async def render_upload_button_dialog(self):
+        """ """
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+            ui.upload(multiple=True, auto_upload=True, on_upload=self.upload_file)
+            # with ui.element().classes("w-full"):  # Ensure full width
+            # ui.notify("open")
+            # ui.label("Upload files")
+            # ui.upload()
+            # with ui.row():
+            #     # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+            #     ui.button()
+
+        # Actually open dialog
+        dialog.open()
+        # and refresh on close
+        # self.on_refresh()
+
+        result = await dialog
+        if result is None:
+            """
+            Hacky way to on close, becasue we are not submitting anything, refresh grid.
+            """
+            #
+            self.on_refresh()
+
+    def upload_file(self, upload_result):
+        """Send uploaded file(s) to POST /build/upload."""
+        files = {
+            "file": (upload_result.name, upload_result.content),
+        }
+        data = {}
+        # replace with payload upload
+        resp = api_post_call("/build/upload", data=data, files=files)
+        if not resp or resp.get("status") != 200:
+            ui.notify(
+                f"Upload failed: {resp.get('message', 'Unknown error')}",
+                type="negative",
+                position="top-right",
+            )
+        else:
+            ui.notify(
+                "File uploaded successfully!", type="positive", position="top-right"
+            )
+
 
 class ShellcodeBuildView:
     """
@@ -385,6 +435,12 @@ class ShellcodeBuildView:
     def __init__(self):
         self.file_list = []
         self.aggrid_element = None
+        # options for shellcode
+        self.shellcode_options = {
+            "bypass_level": "0",
+            "filename": "shellcode.bin",
+            "auto_stage": True,
+        }
 
     def fetch_file_list(self):
         resp = api_call("/build/compiled")
@@ -394,29 +450,86 @@ class ShellcodeBuildView:
         self.fetch_file_list()
         self.update_aggrid()
 
+    async def open_help_dialogue(self):
+        # Create the dialog and its contents
+        with ui.dialog().classes("w-full").props(
+            "full-width"
+        ) as dialog, ui.card() as card:
+            ui.markdown("# Shellcode Converter Page:")
+            ui.separator()
+            ui.label(
+                "This module converts any .EXE, .DLL into shellcode, using Donut Loader."
+            )
+            ui.markdown(
+                """
+            There are 3 steps:
+                
+                1. Upload, or Select which payload you want to convert, from the left side payload menu
+                
+                2. Select donut options from the right side menu
+                
+                3. Click the 'convert' button. This will start the conversion process, and the .bin shellcode should show up in the payload menu in a few seconds
+            
+                If you selected the "auto stage" option, the .bin will be auto staged at http://<ip_of_server>:<port_of_server>/<filename>.bin
+                It can be managed via the "Hosted Files" section of the platform.
+            
+            """
+            )
+        # Actually open dialog
+        dialog.open()
+        result = await dialog
+
+    def render_help_button(self):
+        help_button = ui.button("?", on_click=self.open_help_dialogue)
+        help_button.style("position: fixed; bottom: 10px; right: 10px; z-index: 1000;")
+
     def render(self):
         """
         Render the UI elements for shellcode builder/converter
         """
         # self.render_payloads_aggrid()
 
-        ui.label("EXE/VBA/DLL > Shellcode converter - Powered by Donut Loader")
+        # ui.label("EXE/VBA/DLL > Shellcode converter - Powered by Donut Loader")
+        # with ui.row().classes("w-full h-full flex"):
+        #     ui.label("2. Select Donut options:")
+
         current_settings = app.storage.user.get("settings", {})
 
         with ui.row().classes("w-full h-full flex"):
-            # Left: Agent details.
-
+            self.render_help_button()
+            # left side
             with ui.column().classes("flex-1 h-full"):
-                # with ui.row().classes("items-center justify-between w-full"):
-                #     ui.label("Details").classes("h-6")
-                # ui.separator()
-                # custom one of these, with callbacks for
-                # on select, etc
-                self.render_payloads_aggrid()
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(
+                        "1. Select (or upload) payload to convert - only .EXE, .DLL, .VBA supported"
+                    ).classes("h6")
 
-            # Right: Command history grid.
-            with ui.column().classes("flex-1 h-full border"):
-                self.render_shellcode_options_view()
+                ui.separator()
+                with ui.column().classes("flex-1 h-full w-full"):
+                    # with ui.row().classes("items-center justify-between w-full"):
+                    #     ui.label("Details").classes("h-6")
+                    # ui.separator()
+                    # custom one of these, with callbacks for
+                    # on select, etc
+                    self.render_payloads_aggrid()
+
+            # right side
+            with ui.column().classes("flex-1 h-full"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label("2. Select Donut options: [not implemented]").classes("h6")
+                ui.separator()
+                with ui.column().classes("flex-1 h-full w-full border"):
+                    # with ui.row().classes("items-center justify-between w-full"):
+                    #     ui.label("Details").classes("h-6")
+                    # ui.separator()
+                    # custom one of these, with callbacks for
+                    # on select, etc
+                    self.render_shellcode_options_view()
+
+                # make a callback func, on
+                ui.button("Convert", on_click=self.submit_payload_to_convert).classes(
+                    "w-full"
+                )
 
         # run last - relies on self.aggrid_element not being none and it is not until rendered bt
         # self.render_payloads_aggrid
@@ -448,7 +561,29 @@ class ShellcodeBuildView:
         Renders the right side of the screen for shellcode options
 
         """
-        ui.label("Shellcode Options")
+
+        ui.label("Donut Bypass Options")
+        radio2 = (
+            ui.radio({1: "AMSI", 2: "Something", 3: "No Bypass"})
+            .props("inline")
+            .classes("w-full")
+        )
+
+        ui.separator()
+
+        ui.label(".BIN output name")
+        bin_name = ui.input()
+
+        ui.separator()
+
+        ui.label("somelabel")
+        auto_stage = ui.checkbox(
+            "Auto Stage in hosted files",
+            value=True,
+            on_change=lambda: self.shellcode_options.update(
+                {"auto_stage": auto_stage.value}
+            ),
+        )
 
     def render_payloads_aggrid(self):
         """
@@ -517,8 +652,6 @@ class ShellcodeBuildView:
             #     "WARNING: This endpoint is currently unauth, due to a ui.download problem with nicegui, which does not allow adding headers to a request. TLDR: Anyone who can reach the server, can access any payload you generate/see above, if they know the filename"
             # )
 
-        ui.upload(multiple=True, label="Upload to payload storage").classes("w-full")
-
         with ui.row().classes("w-full justify-end gap-4 mt-4"):
             ui.button("Refresh", on_click=self.on_refresh).props("outline")
             ui.button("Delete Selected", on_click=self.delete_selected_rows).props(
@@ -527,6 +660,11 @@ class ShellcodeBuildView:
 
             ui.button(  # later have an aggrid on click that runs the download_selected_rows
                 "Download Selected", on_click=self.download_selected_rows
+            ).props(
+                "outline"
+            )
+            ui.button(  # later have an aggrid on click that runs the download_selected_rows
+                "Upload files", on_click=self.render_upload_button_dialog
             ).props(
                 "outline"
             )
@@ -556,3 +694,63 @@ class ShellcodeBuildView:
                 self.on_refresh()
         else:
             ui.notify("No rows selected.", position="top-right")
+
+    async def render_upload_button_dialog(self):
+        """ """
+        # Create the dialog and its contents
+        with ui.dialog() as dialog, ui.card():
+            ui.upload(multiple=True, auto_upload=True, on_upload=self.upload_file)
+            # with ui.element().classes("w-full"):  # Ensure full width
+            # ui.notify("open")
+            # ui.label("Upload files")
+            # ui.upload()
+            # with ui.row():
+            #     # When "Submit" is clicked, the dialog is closed and returns a dict of values. kinda weird
+            #     ui.button()
+
+        # Actually open dialog
+        dialog.open()
+        # and refresh on close
+        # self.on_refresh()
+
+        result = await dialog
+        if result is None:
+            """
+            Hacky way to on close, becasue we are not submitting anything, refresh grid.
+            """
+            #
+            self.on_refresh()
+
+    def upload_file(self, upload_result):
+        """Send uploaded file(s) to POST /build/upload."""
+        files = {
+            "file": (upload_result.name, upload_result.content),
+        }
+        data = {}
+        # replace with payload upload
+        resp = api_post_call("/build/upload", data=data, files=files)
+        if not resp or resp.get("status") != 200:
+            ui.notify(
+                f"Upload failed: {resp.get('message', 'Unknown error')}",
+                type="negative",
+                position="top-right",
+            )
+        else:
+            ui.notify(
+                "File uploaded successfully!", type="positive", position="top-right"
+            )
+
+    def submit_payload_to_convert(self):
+        """
+        Submit a payload to convert into shellcode
+
+        endpoint: /build/convert-to-shellcode
+        """
+        # use self.shellcode_options to send data to server
+
+        # api_post_call("/build/convert-to-shellcode", data={})
+        ui.notify("Submitted to convert", position="top-right", type="positive")
+
+        # if auto_stage:
+        if self.shellcode_options.get("auto_stage", False):
+            ui.notify("Staged file at ...", position="top-right", type="positive")

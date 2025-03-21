@@ -16,6 +16,7 @@ from plugins.build.modules.build_interface import HttpBuildInterface
 import hashlib
 from modules.config import Config
 import pathlib
+import os
 
 # from modules.redis_models import ActiveService
 from modules.utils import api_response
@@ -115,6 +116,58 @@ class StaticServeListFilesResource(Resource):
 
         return api_response(
             data=file_info_list, message="List of files in static directory."
+        )
+
+
+@build_ns.route("/upload")
+class BuildUploadResource(Resource):
+    """
+    POST /plugin/static-serve/upload
+    Allows an operator to upload a file to the server's static directory.
+    """
+
+    @build_ns.doc(
+        responses={200: "Success", 400: "Bad Request", 500: "Server Error"},
+        description="Upload a file to the static serving directory",
+    )
+    @jwt_required()
+    def post(self):
+        # file = request.files["file"]
+        uploaded_file = request.files.get("file")
+        if not uploaded_file:
+            return api_response(message="No file provided"), 400
+
+        if not uploaded_file:
+            return api_response(status=400, data=None, message="No file provided")
+
+        # Determine the final filename
+        original_filename = uploaded_file.filename
+        final_filename = original_filename  # The thought was to maybe have the user be able to change the file name, but that's too much work rn. is a nice to have, don't need rn.
+        # = requested_name if requested_name else original_filename
+
+        # Build absolute path to static folder
+        static_dir = os.path.join(Config().root_project_path, "data/compiled/")
+        if not os.path.exists(static_dir):
+            os.makedirs(static_dir, exist_ok=True)
+
+        # Potentially sanitize or randomize name if needed
+        # For example: final_filename = str(uuid.uuid4()) + "_" + final_filename
+        file_path = os.path.join(static_dir, final_filename)
+
+        # Save file
+        try:
+            uploaded_file.save(file_path)
+            logger.debug(f"Saved uploaded file successfully at {file_path}")
+        except Exception as e:
+            logger.exception("Failed to save uploaded file.")
+            return api_response(status=500, data=None, message=str(e))
+
+        # Construct public URL (assuming Flask serves static from "/static")
+        # If your Flask app is serving static at a different route, adjust accordingly.
+        public_url = f"/compiled/{final_filename}"
+
+        return api_response(
+            status=200, data={"url": public_url}, message="File uploaded successfully"
         )
 
 
