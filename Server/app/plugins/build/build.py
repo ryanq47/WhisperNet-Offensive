@@ -13,6 +13,7 @@ from modules.instances import Instance
 from modules.listener import BaseListener
 from modules.log import log
 from plugins.build.modules.build_interface import HttpBuildInterface
+from plugins.build.modules.shellcode_converter import PayloadToShellcode
 import hashlib
 from modules.config import Config
 import pathlib
@@ -169,6 +170,55 @@ class BuildUploadResource(Resource):
         return api_response(
             status=200, data={"url": public_url}, message="File uploaded successfully"
         )
+
+
+# ------------------------------------------------------------------------------------
+#   Convert to shellcode N stuff
+# ------------------------------------------------------------------------------------
+
+
+@build_ns.route("/convert-to-shellcode")
+class BuildUploadResource(Resource):
+    """
+    POST: Convert file to shellcode. File must be in payload directory
+    """
+
+    @build_ns.doc(
+        responses={200: "Success", 400: "Bad Request", 500: "Server Error"},
+        description="Convert file to shellcode. File must be in payload directory",
+    )
+    @jwt_required()
+    def post(self):
+        # get args
+
+        try:
+            options = request.get_json()
+
+            if not options:
+                return {"message": "No JSON data provided"}, 400
+
+            file_to_convert = options.get("file_to_convert")
+            shellcode_output_file_name = options.get("output_file_name")
+            architecture = options.get(
+                "architecture", 3
+            )  # set arch to amd+x86 on no supplied, default
+            bypass_options = options.get(
+                "bypass_options", 1
+            )  # set amsi bypass to none on none supplied
+            auto_stage = options.get("auto_stage")
+
+            convert_class = PayloadToShellcode(
+                file_to_convert=file_to_convert,
+                shellcode_output_file_name=shellcode_output_file_name,
+                architecture=3,
+                bypass_options=1,
+                auto_stage=auto_stage,
+            )
+            convert_class.convert()
+
+        except Exception as e:
+            logger.error(f"Error converting to shellcode: {e}")
+            return api_response(message="Error converting to shellcode"), 500
 
 
 # ------------------------------------------------------------------------------------

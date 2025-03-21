@@ -740,7 +740,7 @@ class ShellcodeBuildView:
                 "File uploaded successfully!", type="positive", position="top-right"
             )
 
-    def submit_payload_to_convert(self):
+    async def submit_payload_to_convert(self):
         """
         Submit a payload to convert into shellcode
 
@@ -748,9 +748,34 @@ class ShellcodeBuildView:
         """
         # use self.shellcode_options to send data to server
 
-        # api_post_call("/build/convert-to-shellcode", data={})
-        ui.notify("Submitted to convert", position="top-right", type="positive")
+        # for each seleccted file...
+        rows = await self.aggrid_element.get_selected_rows()
+        if rows:
+            for row in rows:
+                filename = row.get("Filename", "")
+                auto_stage = self.shellcode_options.get("auto_stage", False)
+                data = {
+                    "file_to_convert": filename,
+                    "output_file_name": filename.split(".")[
+                        0
+                    ],  # get filename, split on ., get first part rem#self.shellcode_options.get(),
+                    "architecture": self.shellcode_options.get("architecture"),
+                    "bypass_options": self.shellcode_options.get("bypass_options"),
+                    "auto_stage": auto_stage,
+                }
 
-        # if auto_stage:
-        if self.shellcode_options.get("auto_stage", False):
-            ui.notify("Staged file at ...", position="top-right", type="positive")
+                api_post_call("/build/convert-to-shellcode", data=data)
+
+                # api_post_call("/build/convert-to-shellcode", data={})
+                ui.notify("Submitted to convert", position="top-right", type="positive")
+
+                # if auto_stage:
+                if auto_stage:
+                    ui.notify(
+                        "Staged file at ...", position="top-right", type="positive"
+                    )
+
+                # file_to_convert = options.get("file_to_convert")
+                # shellcode_output_file_name = options.get("output_file_name")
+                # architecture = options.get("architecture")
+                # bypass_options = options.get("bypass_options")
