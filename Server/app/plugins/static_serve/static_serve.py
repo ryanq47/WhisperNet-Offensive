@@ -123,7 +123,7 @@ class StaticServeUploadResource(Resource):
 
         # Construct public URL (assuming Flask serves static from "/static")
         # If your Flask app is serving static at a different route, adjust accordingly.
-        public_url = f"/static/{final_filename}"
+        public_url = f"/{final_filename}"
 
         return api_response(
             status=200, data={"url": public_url}, message="File uploaded successfully"
@@ -185,7 +185,6 @@ class StaticServeFileResource(Resource):
 
     """
 
-    @jwt_required()
     def get(self, filename):
         static_dir = os.path.join(Config().root_project_path, "data/static/")
         return send_from_directory(static_dir, filename)
@@ -216,9 +215,7 @@ def compute_file_md5(filepath, block_size=65536):
 @static_serve_ns.route("/files")
 class StaticServeListFilesResource(Resource):
     """
-    GET /plugin/static-serve/list_files
-    Returns a JSON list of all files currently stored in the static directory,
-    each with filename, filehash, and a webserver path (/static/filename).
+    List all files that are beingstaticlaly served
     """
 
     @static_serve_ns.marshal_with(static_serve_response, code=200)
@@ -244,7 +241,7 @@ class StaticServeListFilesResource(Resource):
                     {
                         "filename": item.name,
                         "filehash": file_hash,
-                        "filepath": f"/static/{item.name}",  # Webserver path
+                        "filepath": f"/{item.name}",  # Webserver path
                     }
                 )
 

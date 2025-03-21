@@ -113,10 +113,6 @@ class StaticServeUploadResource(Resource):
             logger.exception("Failed to save uploaded file.")
             return api_response(status=500, data=None, message=str(e))
 
-        # Construct public URL (assuming Flask serves static from "/static")
-        # If your Flask app is serving static at a different route, adjust accordingly.
-        # public_url = f"/static/{final_filename}"
-
         return api_response(status=200, message="File uploaded successfully")
 
 
@@ -217,7 +213,7 @@ class StaticServeListFilesResource(Resource):
                     {
                         "filename": item.name,
                         "filehash": file_hash,
-                        "filepath": f"/static/{item.name}",  # Webserver path
+                        "filepath": f"/{item.name}",  # Webserver path
                     }
                 )
 

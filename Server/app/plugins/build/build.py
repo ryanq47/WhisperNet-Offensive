@@ -82,11 +82,7 @@ def compute_file_md5(file_path):
 
 @build_ns.route("/compiled")
 class StaticServeListFilesResource(Resource):
-    """
-    GET /plugin/static-serve/list_files
-    Returns a JSON list of all files currently stored in the static directory,
-    each with filename, filehash, and a webserver path (/static/filename).
-    """
+    """ """
 
     @build_ns.marshal_with(build_response, code=200)
     @jwt_required()

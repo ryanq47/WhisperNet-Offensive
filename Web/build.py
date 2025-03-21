@@ -496,7 +496,7 @@ class ShellcodeBuildView:
                 3. Click the 'Convert' button. The .bin shellcode should appear in the payload list shortly.
                 
                 If 'Auto Stage' is enabled, the .bin file will be auto staged at:
-                http://\<ip\_of\_server\>:\<port\_of\_server\>/static/\<filename\>.bin
+                http://\<ip\_of\_server\>:\<port\_of\_server\>/\<filename\>.bin
                 Manage staged files via the "Hosted Files" section.
                 """
             )
@@ -540,7 +540,7 @@ class ShellcodeBuildView:
         for file_info in self.payload_files:
             filename = file_info.get("filename", "")
             file_hash = file_info.get("filehash", "")
-            web_path = file_info.get("filepath", "")  # e.g., "/static/file.exe"
+            web_path = file_info.get("filepath", "")  # e.g., "/file.exe"
             row_data.append(
                 {
                     "Filename": filename,
