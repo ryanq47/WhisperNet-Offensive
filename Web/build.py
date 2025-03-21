@@ -94,8 +94,10 @@ class BuildView:
             ).classes("w-full flex-1")
             ui.button(
                 text="Build Stager",
-                on_click=lambda: self.render_build_agent_dialogue(),
-            ).classes("w-full flex-1")
+                on_click=lambda: ui.notify(
+                    "Not Implemented", position="top-right", type="warning"
+                ),  # self.render_build_agent_dialogue(),
+            ).classes("w-full flex-1 disabled")
 
         with ui.column().classes("w-full h-full overflow-auto"):
             self.aggrid_element = ui.aggrid(
