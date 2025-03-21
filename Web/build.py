@@ -561,7 +561,7 @@ class ShellcodeBuildView:
 
     def render_shellcode_options_view(self) -> None:
         """Render UI elements for configuring shellcode (Donut) options."""
-        ui.markdown("#### AMSI Bypass Options")
+        ui.markdown("###### AMSI Bypass Options")
         radio_bypass_options = (
             ui.radio(
                 options={
@@ -579,7 +579,7 @@ class ShellcodeBuildView:
         )
         ui.separator()
 
-        ui.markdown("#### Payload Architecture")
+        ui.markdown("###### Payload Architecture")
         radio_architecture = (
             ui.radio(
                 options={
@@ -596,14 +596,14 @@ class ShellcodeBuildView:
             .classes("w-full")
         )
         ui.separator()
-        ui.markdown("#### .BIN output name (optional)")
+        ui.markdown("###### .BIN output name (optional)")
         input_bin_name = ui.input(
             on_change=lambda: self.shellcode_options.update(
                 {"output_filename": input_bin_name.value}
             )
         )
         ui.separator()
-        ui.markdown("#### Misc:")
+        ui.markdown("###### Misc:")
         checkbox_auto_stage = ui.checkbox(
             "Auto Stage in hosted files",
             value=True,
