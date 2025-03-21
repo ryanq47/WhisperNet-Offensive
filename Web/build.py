@@ -437,9 +437,10 @@ class ShellcodeBuildView:
         self.aggrid_element = None
         # options for shellcode
         self.shellcode_options = {
-            "bypass_level": "0",
+            "bypass_options": 0,
             "filename": "shellcode.bin",
             "auto_stage": True,
+            "architecture": 3,
         }
 
     def fetch_file_list(self):
@@ -516,7 +517,7 @@ class ShellcodeBuildView:
             # right side
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("2. Select Donut options: [not implemented]").classes("h6")
+                    ui.label("2. Select Donut options:").classes("h6")
                 ui.separator()
                 with ui.column().classes("flex-1 h-full w-full border"):
                     # with ui.row().classes("items-center justify-between w-full"):
@@ -563,20 +564,47 @@ class ShellcodeBuildView:
         """
 
         ui.label("Donut Bypass Options")
-        radio2 = (
-            ui.radio({1: "AMSI", 2: "Something", 3: "No Bypass"})
+        bypass_radio = (
+            ui.radio(
+                options={
+                    1: "No Bypass",
+                    2: "AMSI Bypass - Exit on Failed Bypass",
+                    3: "AMSI Bypass - Continue on Failed bypass",
+                },
+                on_change=lambda: self.shellcode_options.update(
+                    {"bypass_options": bypass_radio.value}
+                ),
+                value=1,
+            )
             .props("inline")
             .classes("w-full")
         )
 
         ui.separator()
 
-        ui.label(".BIN output name")
+        architecture_radio = (
+            ui.radio(
+                options={
+                    1: "x86",
+                    2: "amd64",
+                    3: "x86/amd64 (default)",
+                },
+                on_change=lambda: self.shellcode_options.update(
+                    {"architecture": architecture_radio.value}
+                ),
+                value=3,
+            )
+            .props("inline")
+            .classes("w-full")
+        )
+        ui.separator()
+
+        ui.label(".BIN output name (optional)")
         bin_name = ui.input()
 
         ui.separator()
 
-        ui.label("somelabel")
+        ui.label("Misc:")
         auto_stage = ui.checkbox(
             "Auto Stage in hosted files",
             value=True,

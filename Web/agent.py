@@ -594,7 +594,7 @@ class AgentsPage:
             with ui.tabs() as tabs:
                 ui.tab("Agents")
                 ui.tab("Binaries + Builder")
-                ui.tab("Shellcode Converter")
+                ui.tab("[BETA] Shellcode Converter")
                 ui.tab("Scripts")
 
             # -- TAB PANELS --
@@ -605,7 +605,7 @@ class AgentsPage:
                 with ui.tab_panel("Binaries + Builder"):
                     a = BuildView()
                     a.render()
-                with ui.tab_panel("Shellcode Converter"):
+                with ui.tab_panel("[BETA] Shellcode Converter"):
                     a = ShellcodeBuildView()
                     a.render()
                 with ui.tab_panel("Scripts"):
