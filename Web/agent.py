@@ -412,6 +412,8 @@ class Shell:
         )
         with self.data_bar:
             self.latency_text = ui.label("1234")
+            with self.latency_text:
+                ui.tooltip("Latency between Shell & Server")
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
@@ -482,7 +484,7 @@ class Shell:
     # Events
     # ----------------------
     async def update_latency_text(self, data):
-        self.latency_text.set_text(f"Latency: {data:.2f}")
+        self.latency_text.set_text(f"Latency: {data:.2f} ms")
 
     async def handle_keydown(self, e):
         if e.args.get("key") == "Enter":
