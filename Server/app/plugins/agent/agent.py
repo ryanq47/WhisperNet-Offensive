@@ -505,7 +505,7 @@ def handle_response(data):
         # Optionally, further processing or storage of response_data goes here.
         # For example, emitting to the room associated with this agent:
         emit(
-            "local_notif",
+            "response",
             # f"Response received for command {command_id}",
             response_data,
             room=agent_uuid,

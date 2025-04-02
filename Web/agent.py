@@ -403,7 +403,7 @@ class Shell:
 
     async def socket_local_notif(self, data):
         # print("Data from soket:", data)
-        await self._update_log(data)
+        await self._update_log(f"[NOTIF] {data}")
 
     async def socket_set_agent_response(self, data):
         # print("Data from soket:", data)
@@ -535,7 +535,8 @@ class Shell:
 
     async def _update_log(self, data, sender=""):
         """Update the log with the message."""
-        self.display_log.push(f"[TIME {sender}]: {data}")
+
+        self.display_log.push(f"{data}")
 
     async def measure_latency(self):
         # Record the time before sending the ping
