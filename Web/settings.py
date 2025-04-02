@@ -207,6 +207,14 @@ class LocalSettings:
                 "value": False,
                 "description": "Enable features under development",
             },
+            "Display API Call Times": {
+                "value": False,
+                "description": "Show how long each API call is taking",
+            },
+            "Display Function Call Times": {
+                "value": False,
+                "description": "Show how long each function call is taking",
+            },
         }
 
     def render(self):
@@ -234,7 +242,8 @@ class LocalSettings:
                                     "text-sm text-gray-500"
                                 )
                             ui.switch(value=setting_data["value"]).bind_value(
-                                current_settings[setting_name], "value"
+                                current_settings[setting_name],
+                                "value",
                             )
 
                     # Save and Clear Buttons

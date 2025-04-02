@@ -1,10 +1,12 @@
 import requests
 from config import Config
 from nicegui import app, ui
+from perf_testing import api_call_time
 
 ## Add in 401 handling here for re-token?
 
 
+@api_call_time
 def api_call(url, timeout=20, return_dict_from_json=True):
     """
     Makes a synchronous GET request to the specified URL and returns the JSON response.

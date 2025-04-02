@@ -8,6 +8,7 @@ from navbar import *
 from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
 from nicegui.events import KeyEventArguments
+from perf_testing import *
 
 # ---------------------------
 #   Easy Settings
@@ -43,63 +44,98 @@ def create_ui_from_json(json_data, parent=None):
 class AgentView:
     """
     Displays detailed information about an individual agent.
+
+    This class handles:
+      - Loading agent details from the /stats/agent/{agent_id} endpoint.
+      - Checking and updating the agent "new" status.
+      - Rendering a multi-tab view with the agent's main details and shell command history.
+      - Providing a refresh mechanism to update the displayed data.
     """
 
     def __init__(self, agent_id: str = None):
         self.agent_id = str(agent_id)
-        self.request_data = api_call(url=f"/stats/agent/{self.agent_id}")
-        data = self.request_data.get("data", {})
-        first_key = next(iter(data))
-        self.agent_data = data.get(first_key, {})
+        self.agent_data = {}  # To be populated via load_data()
+        self.command_grid = None  # Reference to the AG Grid for commands
+        self.known_command_ids = {}  # Tracks rendered shell entries
+        self.auto_scroll_enabled = True
+
+    def load_data(self):
+        """
+        Loads agent data synchronously from the /stats/agent/{agent_id} endpoint.
+
+        Processes the response and stores the relevant data in self.agent_data.
+        Also checks and updates the 'new' status of the agent.
+        """
+        response = api_call(url=f"/stats/agent/{self.agent_id}")
+        data = response.get("data", {})
+        if data:
+            first_key = next(iter(data))
+            self.agent_data = data.get(first_key, {})
+        else:
+            self.agent_data = {}
         self.check_new_status()
 
     def check_new_status(self):
-        # On click of agent, if not new, send a "not new" to the server
-        if self.agent_data.get("data", {}).get("agent").get("new"):
+        """
+        Checks if the agent is marked as 'new' and, if so, sends a POST request to update its status.
+        Notifies the user that the agent is no longer considered new.
+        """
+        if self.agent_data.get("data", {}).get("agent", {}).get("new"):
             ui.notify(
                 "Agent clicked into, no longer considered new", position="top-right"
             )
             data = {"new": False}
-            # async this?
-            # api_post_call(f"/agent/{self.agent_id}/new", data=data)
             api_post_call(f"/agent/{self.agent_id}/new", data=data)
+
+    def refresh(self):
+        """
+        Refreshes the agent view by reloading data and re-rendering the view.
+        """
+        self.load_data()
+        self.render()  # For a complete re-render; alternatively, update specific UI parts
+
+    # --------------------
+    # Rendering Funcs
+    # --------------------
 
     def render(self):
         """
         Renders the complete agent view including header, tabs, and tab panels.
-        """
-        with ui.element().classes("w-full h-full"):
 
+        Calls load_data() to ensure that the latest data is available before rendering.
+        """
+        # Load or refresh data first
+        self.load_data()
+        with ui.element().classes("w-full h-full"):
             current_settings = app.storage.user.get("settings", {})
 
-            # Tabs Section
+            # Create tabs for MAIN and SHELL views
             with ui.tabs() as tabs:
                 ui.tab("MAIN")
                 ui.tab("SHELL")
 
-            # Tab Panels Container – note the explicit h-full for proper expansion.
+            # Render the content for each tab
             with ui.tab_panels(tabs, value="MAIN").classes("w-full h-full border"):
                 with ui.tab_panel("MAIN").classes("h-full"):
                     self.render_main_tab()
                 with ui.tab_panel("SHELL").classes("h-full"):
                     self.render_shell_tab()
-                # if current_settings.get("Dev Mode", False):
-                #     with ui.tab_panel("STATS").classes("h-full"):
-                #         self.render_stats_tab()
-                # if current_settings.get("Dev Mode", False):
+
+            # Add a refresh button
+            ui.button("Refresh", on_click=self.refresh).classes("mt-4")
 
     def render_main_tab(self):
         """
-        Renders the MAIN tab with agent details and command history grid.
+        Renders the MAIN tab containing the agent details and the command history grid.
         """
-
-        # Agent Header Section
         hostname = (
             self.agent_data.get("data", {})
             .get("system", {})
             .get("hostname", "Unknown Hostname")
         )
-        last_seen = self.agent_data["data"]["agent"].get("last_seen", "Unknown")
+        last_seen = (
+            self.agent_data.get("data", {}).get("agent", {}).get("last_seen", "Unknown")
+        )
 
         with ui.row().classes("text-5xl"):
             ui.icon("computer")
@@ -109,36 +145,29 @@ class AgentView:
             ui.label(self.agent_id).classes("h-6")
             ui.space()
             ui.icon("timer")
-
             ui.label(f"Last Seen: {last_seen}").classes("h-6")
         ui.separator()
 
-        current_settings = app.storage.user.get("settings", {})
         with ui.row().classes("w-full h-full flex"):
-            # Left: Agent details.
-
+            # Left side: Display agent details
             with ui.column().classes("flex-1 h-full"):
                 with ui.row().classes("items-center justify-between w-full"):
                     ui.label("Details").classes("h-6")
                 ui.separator()
                 with ui.scroll_area().classes("h-full"):
                     create_ui_from_json(self.agent_data)
-
-            # Right: Command history grid.
+            # Right side: Command history grid
             with ui.column().classes("flex-1 h-full"):
                 aggrid_theme = (
                     "ag-theme-balham-dark"
-                    if current_settings.get("Dark Mode", False)
+                    if app.storage.user.get("settings", {}).get("Dark Mode", False)
                     else "ag-theme-balham"
                 )
-                ui.label("Command History - refresh page to refresh me").classes("h-6")
+                ui.label("Command History").classes("h-6")
                 ui.separator()
-
-                # Get the data
                 data_list = api_call(url=f"/agent/{self.agent_id}/command/all").get(
                     "data", []
                 )
-
                 self.command_grid = ui.aggrid(
                     {
                         "columnDefs": [
@@ -164,7 +193,6 @@ class AgentView:
                         "rowData": data_list,
                     }
                 ).classes(f"{aggrid_theme} h-full")
-
                 ui.button(
                     "Export",
                     on_click=lambda: self.command_grid.run_grid_method(
@@ -173,116 +201,68 @@ class AgentView:
                     ),
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
-    def render_stats_tab(self):
-        """
-        Renders the STATS tab with sample graphs.
-        """
-        with ui.row().classes("w-full h-full flex"):
-            with ui.row().classes("flex-1 h-full"):
-                ui.label("Test Graph - Average Checkin Times").classes("h-6")
-                fig = {
-                    "data": [
-                        {
-                            "type": "scatter",
-                            "name": "Trace 1",
-                            "x": [1, 2, 3, 4],
-                            "y": [1, 2, 3, 2.5],
-                        },
-                        {
-                            "type": "scatter",
-                            "name": "Trace 2",
-                            "x": [1, 2, 3, 4],
-                            "y": [1.4, 1.8, 3.8, 3.2],
-                            "line": {"dash": "dot", "width": 3},
-                        },
-                    ],
-                    "layout": {
-                        "margin": {"l": 15, "r": 0, "t": 0, "b": 15},
-                        "plot_bgcolor": "#E5ECF6",
-                        "xaxis": {"gridcolor": "white"},
-                        "yaxis": {"gridcolor": "white"},
-                    },
-                }
-                # Render multiple plots.
-                for _ in range(4):
-                    ui.plotly(fig).classes("w-full h-40")
-
     def render_shell_tab(self):
         """
         Renders the SHELL tab with a scrollable command history and an input area.
-        Auto-refresh occurs every second.
-        """
-        # Enable auto-scroll when near the bottom.
-        self.auto_scroll_enabled = True
-        # Keep track of which command entries have been appended.
-        self.known_command_ids = {}
 
-        # and finally, render the script options
-        self.render_scripts_options()
+        Auto-refresh is set up to update the shell output every second.
+        """
+        self.auto_scroll_enabled = True
+        self.known_command_ids = {}
+        self.render_scripts_options()  # Render the dropdown for script selection
 
         async def handle_keydown(e):
-            # Trigger send_command on Enter key.
             if e.args.get("key") == "Enter":
                 await send_command()
 
-        # fix: get current script. If current script is none, put "no script selected" on selector.
-        # additionally, break it out a bit, it's annoyingly duct taped together
-
         def on_scroll(e):
-            # If the user scrolls away from the bottom, disable auto-scroll.
             self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
+        shell_container = ui.column()
+
+        # Dictionary to keep track of pending commands: {command_uuid: label_widget}
+        pending_commands = {}
+
         def update_shell_data():
-            data = api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
+            data = api_call(url=f"/agent/{self.agent_id}/command/latest").get(
+                "data", []
+            )
             if not data:
                 return
 
-            # Sort entries chronologically.
-            data.sort(key=lambda entry: entry.get("timestamp", ""))
-            for entry in data:
-                # Use a unique identifier for the command.
-                cmd_id = entry.get("command_id", "")
-                if not cmd_id:
-                    cmd_id = f"no_id_{entry.get('timestamp', '')}"
-                cmd = entry.get("command", "")
-                response_value = entry.get("response") or "Waiting on callback..."
+            ui.notify(data)
 
-                if cmd_id not in self.known_command_ids:
-                    # Append new entry HTML to the output element.
-                    html = (
-                        f"<div id='shell_entry_{cmd_id}' style='margin-bottom: 10px;'>"
-                        f"<div style='font-family: monospace;'>&gt; {cmd}</div>"
-                        f"<div id='response_{cmd_id}' style='white-space: pre; font-family: monospace;'>{response_value}</div>"
-                        "<hr/></div>"
-                    )
-                    ui.run_javascript(
-                        f"document.getElementById('shell_output').insertAdjacentHTML('beforeend', {html!r});"
-                    )
-                    self.known_command_ids[cmd_id] = True
+            # data.sort(key=lambda entry: entry.get("timestamp", ""))
+            for command in data:
+                uuid = command.get("uuid")
+                response = command.get("response", "")
+
+                # If this is a new command that hasn't been displayed yet:
+                if uuid not in pending_commands:
+                    if response:
+                        # If there's already a response, display it directly
+                        with shell_container:
+                            ui.label(
+                                response,
+                            )  # style="user-select: text;")
+                    else:
+                        # Display a placeholder and add it to pending_commands
+                        with shell_container:
+                            label = ui.label(
+                                "waiting on command",
+                                # style="user-select: text;",
+                            )
+                            pending_commands[uuid] = label
                 else:
-                    # Update an existing entry's response only if new response data is available.
-                    if response_value:
-                        # Update using only text node modification if no selection is active.
-                        js_code = f"""
-    (function() {{
-    var selection = window.getSelection();
-    if (!selection || selection.toString() === "") {{
-        var elem = document.getElementById('response_{cmd_id}');
-        if (elem && elem.firstChild) {{
-        elem.firstChild.nodeValue = {response_value!r};
-        }}
-    }}
-    }})();
-    """
-                        ui.run_javascript(js_code)
-            # Auto-scroll if enabled.
-            if self.auto_scroll_enabled:
-                ui.run_javascript(
-                    """
-                    var el = document.getElementById('shell_output');
-                    el.scrollTop = el.scrollHeight;
-                """
-                )
+                    # If this command was pending, check if the response is now available
+                    if response and pending_commands[uuid].text == "waiting on command":
+                        # Update the label text with the new response
+                        pending_commands[uuid].text = response
+                        # Optionally, remove it from pending_commands if you no longer need to update it
+                        del pending_commands[uuid]
+
+        # You can then use a timer to poll this function every few seconds:
+        ui.timer(interval=5, callback=update_shell_data)
 
         def send_command():
             api_post_call(
@@ -292,25 +272,14 @@ class AgentView:
             command_input.value = ""
             update_shell_data()
 
-        # Initialize the script options.
-        # render_scripts_options()
-        # on load, load "default.py", the default scirpt
-        # ducttape bug fix, if this is not called, no script is rendered, and if there's only one script, you can't select a script
-        # update_script("default.py")
-        # FUCK this doesn't work, script forces default.py on refresh...
-
-        # Shell tab layout.
         with ui.column().classes("h-full w-full flex flex-col"):
-            # Command History Area.
             with ui.row().classes("grow w-full p-4"):
                 with ui.scroll_area(on_scroll=on_scroll).classes(
                     "w-full h-full border rounded-lg p-2"
                 ):
-                    # Create a single HTML element to hold the shell output.
                     ui.html(
                         "<div id='shell_output' style='white-space: pre-wrap; font-family: monospace;'>Shell Output:</div>"
                     )
-            # Command Input Area.
             with ui.row().classes("w-full items-center p-4"):
                 command_input = (
                     ui.textarea(placeholder="Type a command...")
@@ -319,23 +288,20 @@ class AgentView:
                     .on("keydown", handle_keydown)
                 )
                 ui.button("Send Command", on_click=send_command).classes("w-32")
-
-        # Load the initial shell data and set up the auto-refresh timer.
         update_shell_data()
         ui.timer(interval=1.0, callback=update_shell_data)
 
+    # --------------------
+    # Scripts funcs
+    # --------------------
+
     def render_scripts_options(self):
         """
-        Handles the script options.
+        Renders the script options dropdown.
 
-        Checks if an agent has a script. If so, sets that to the current script on the ui.select
-        If not, display's None.
-
-        When updating a script, it calls the _register_script to update the script for the agent.
-
-
+        Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
+        then creates a dropdown. Changing the selection triggers _register_script.
         """
-        # Get the list of available scripts.
         response = api_call(url="/scripts/files")
         scripts_data = (
             [
@@ -345,50 +311,30 @@ class AgentView:
             if response.get("data")
             else ["No Scripts Available"]
         )
-
-        # with agent id, get current script.
         agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
-
-        # Get the inner dictionary, which holds the actual agent info. Only one agent is returned from this call, so it'll just grab the first one
         agent_info = next(iter(agent_data.values()), {})
-
-        # Then navigate to the command_script inside the nested structure.
         agent_script = (
             agent_info.get("data", {}).get("config", {}).get("command_script")
         )
-
-        # Create the script selector dropdown.
         ui.select(
             options=scripts_data,
             label="Extension Scripts",
             on_change=lambda e: self._register_script(e.value),
-            value=agent_script,  # show the currently selected script if there is one
+            value=agent_script,
         ).classes("w-full")
 
     def _register_script(self, script_name):
         """
-        POST call to update the script for an agent on the server
+        Sends a POST request to update the agent's command script.
 
-        script_name: The name of the script on the server
-
-        Usually this would be under the render_scripts_options method, but ui.select needs a callback func to call on change
-
-        Endpoint: /agent/{self.agent_id}/command-script/register
-
+        Args:
+            script_name (str): The new command script name.
         """
         api_post_call(
             url=f"/agent/{self.agent_id}/command-script/register",
             data={"command_script": script_name},
         )
         ui.notify(f"Updated script to {script_name} on agent", position="top-right")
-
-    def render_notes_tab(self):
-        """
-        Renders the NOTES tab (placeholder for user notes).
-        """
-        ui.textarea(
-            "User notes. NOTE: These are stored in your session and will disappear on a new browser session."
-        ).classes("w-full").bind_value(app.storage.user, "note")
 
 
 # ---------------------------
@@ -483,7 +429,7 @@ class AgentsView:
     # --------------------
     # Aggrid
     # --------------------
-
+    @func_call_time
     def render_grid(self):
         """Renders the AG Grid with agent data."""
         self.render_help_button()
