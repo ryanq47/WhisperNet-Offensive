@@ -11,7 +11,7 @@ from modules.utils import api_response
 from modules.config import Config
 import hashlib
 import pathlib
-from werkzeug import secure_filename
+from werkzeug.utils import secure_filename
 
 logger = log(__name__)
 
