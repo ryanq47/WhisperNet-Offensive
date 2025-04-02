@@ -1,6 +1,6 @@
 import pathlib
 import time
-
+from flask_socketio import SocketIO
 import bcrypt
 from flask import Flask, jsonify, redirect, request, session, url_for
 from flask_jwt_extended import (
@@ -42,7 +42,6 @@ instance_path = launch_path / "instance"
 # Gunicorn wants the app to be globally accessible.
 app = Flask(__name__, instance_path=instance_path)
 api = Api(app)
-
 # the rest of the crap
 # DOC THESE
 # Config Singleton
@@ -86,6 +85,17 @@ logger.debug("Setting up instances")
 
 # JWT Manager Instance
 Instance().jwt_manager = JWTManager(app)
+# Socket instance
+socketio = SocketIO(app)
+Instance().socketio = socketio
+
+
+# test
+@socketio.on("connect", namespace="/notify")
+def notify_connect():
+    print("Client connected to /notify namespace.")
+    socketio.emit("notification", "HI CLIENT", namespace="/notify")
+
 
 # Database Instance
 db = SQLAlchemy(app)
@@ -157,9 +167,11 @@ if __name__ == "__main__":
         ## CANNOT have debug mode on for multiple instances/http listeners. yay
         # app.run(debug=False, port=8081, host="0.0.0.0", threaded=True)
 
-        from waitress import serve
+        # from waitress import serve
 
-        serve(app=app, port=8081, host="0.0.0.0", connection_limit=5000, threads=20)
+        # serve(app=app, port=8081, host="0.0.0.0", connection_limit=5000, threads=20)
+
+        socketio.run(app, port=8081, host="0.0.0.0")
 
     except Exception as e:
         print(e)
