@@ -380,7 +380,7 @@ class Shell:
 
         self.send_button = None
         self.latency_text = None
-
+        self.data_bar = None
         self.current_settings = app.storage.user.get("settings", {})
 
         # register socket things for class
@@ -407,7 +407,10 @@ class Shell:
         # render FIRST
         self._render_log()  # Ensure display_log is ready
 
-        with ui.row().classes("w-full h-[12px] text-grey m-0 p-0 items-center"):
+        self.data_bar = ui.row().classes(
+            "w-full h-[12px] text-grey m-0 p-0 items-center"
+        )
+        with self.data_bar:
             self.latency_text = ui.label("1234")
 
         with ui.element().classes("flex w-full gap-2"):
