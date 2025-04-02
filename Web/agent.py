@@ -13,18 +13,18 @@ import socketio
 
 socketio = socketio.AsyncClient()
 
-# ---------------------------
+# -----------------------------------------------
 #   Easy Settings
-# ---------------------------
+# -----------------------------------------------
 
 SHELL_SCROLL_DURATION = (
     0.25  # really just speed, how long it takes for the "scroll animation" to complete
 )
 
 
-# ---------------------------
+# -----------------------------------------------
 #   UI Helper Function
-# ---------------------------
+# -----------------------------------------------
 def create_ui_from_json(json_data, parent=None):
     """
     Recursively creates UI elements from a JSON/dict structure.
@@ -41,9 +41,9 @@ def create_ui_from_json(json_data, parent=None):
                 ui.label(f"• {key}: {value}").style("font-size: 1em;")
 
 
-# ---------------------------
+# -----------------------------------------------
 #   Agent View
-# ---------------------------
+# -----------------------------------------------
 class AgentView:
     """
     Displays detailed information about an individual agent.
@@ -209,165 +209,10 @@ class AgentView:
         await shell.render()
         # maybe make the shell its own class
 
-    # def render_shell_tab(self):
-    #     """
-    #     Renders the SHELL tab with a scrollable command history and an input area.
 
-    #     Auto-refresh is set up to update the shell output every second.
-    #     """
-    #     self.auto_scroll_enabled = True
-    #     self.known_command_ids = {}
-    #     self.render_scripts_options()  # Render the dropdown for script selection
-
-    #     async def handle_keydown(e):
-    #         if e.args.get("key") == "Enter":
-    #             await send_command()
-
-    #     def on_scroll(e):
-    #         self.auto_scroll_enabled = e.vertical_percentage >= 0.95
-
-    #     shell_container = ui.column()
-
-    #     # Dictionary to keep track of pending commands: {command_uuid: label_widget}
-    #     pending_commands = {}
-
-    #     def update_shell_data():
-    #         data = api_call(url=f"/agent/{self.agent_id}/command/latest").get(
-    #             "data", []
-    #         )
-    #         if not data:
-    #             return
-
-    #         ui.notify(data)
-
-    #         # data.sort(key=lambda entry: entry.get("timestamp", ""))
-    #         for command in data:
-    #             uuid = command.get("uuid")
-    #             response = command.get("response", "")
-
-    #             # If this is a new command that hasn't been displayed yet:
-    #             if uuid not in pending_commands:
-    #                 if response:
-    #                     # If there's already a response, display it directly
-    #                     with shell_container:
-    #                         ui.label(
-    #                             response,
-    #                         )  # style="user-select: text;")
-    #                 else:
-    #                     # Display a placeholder and add it to pending_commands
-    #                     with shell_container:
-    #                         label = ui.label(
-    #                             "waiting on command",
-    #                             # style="user-select: text;",
-    #                         )
-    #                         pending_commands[uuid] = label
-    #             else:
-    #                 # If this command was pending, check if the response is now available
-    #                 if response and pending_commands[uuid].text == "waiting on command":
-    #                     # Update the label text with the new response
-    #                     pending_commands[uuid].text = response
-    #                     # Optionally, remove it from pending_commands if you no longer need to update it
-    #                     del pending_commands[uuid]
-
-    #     # You can then use a timer to poll this function every few seconds:
-    #     ui.timer(interval=5, callback=update_shell_data)
-
-    #     def send_command():
-    #         api_post_call(
-    #             url=f"/agent/{self.agent_id}/command/enqueue",
-    #             data={"command": command_input.value},
-    #         )
-    #         command_input.value = ""
-    #         update_shell_data()
-
-    #     with ui.column().classes("h-full w-full flex flex-col"):
-    #         with ui.row().classes("grow w-full p-4"):
-    #             with ui.scroll_area(on_scroll=on_scroll).classes(
-    #                 "w-full h-full border rounded-lg p-2"
-    #             ):
-    #                 ui.html(
-    #                     "<div id='shell_output' style='white-space: pre-wrap; font-family: monospace;'>Shell Output:</div>"
-    #                 )
-    #         with ui.row().classes("w-full items-center p-4"):
-    #             command_input = (
-    #                 ui.textarea(placeholder="Type a command...")
-    #                 .props('autofocus outlined input-class="ml-3" input-class="h-12"')
-    #                 .classes("text-black grow mr-4")
-    #                 .on("keydown", handle_keydown)
-    #             )
-    #             ui.button("Send Command", on_click=send_command).classes("w-32")
-    #     update_shell_data()
-    #     ui.timer(interval=1.0, callback=update_shell_data)
-
-    # --------------------
-    # Scripts funcs
-    # --------------------
-
-    def render_scripts_options(self):
-        """
-        Renders the script options dropdown.
-
-        Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
-        then creates a dropdown. Changing the selection triggers _register_script.
-        """
-        response = api_call(url="/scripts/files")
-        scripts_data = (
-            [
-                script.get("filename", "Unknown Script")
-                for script in response.get("data", [])
-            ]
-            if response.get("data")
-            else ["No Scripts Available"]
-        )
-        agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
-        agent_info = next(iter(agent_data.values()), {})
-        agent_script = (
-            agent_info.get("data", {}).get("config", {}).get("command_script")
-        )
-        ui.select(
-            options=scripts_data,
-            label="Extension Scripts",
-            on_change=lambda e: self._register_script(e.value),
-            value=agent_script,
-        ).classes("w-full")
-
-    def _register_script(self, script_name):
-        """
-        Sends a POST request to update the agent's command script.
-
-        Args:
-            script_name (str): The new command script name.
-        """
-        api_post_call(
-            url=f"/agent/{self.agent_id}/command-script/register",
-            data={"command_script": script_name},
-        )
-        ui.notify(f"Updated script to {script_name} on agent", position="top-right")
-
-
-# class Shell:
-#     def __init__(self, agent_id):
-#         self.display_log = None
-#         self.command_input = None
-
-#     def render(self):
-#         self.display_log = ui.log(max_lines=100).classes("w-full h-full")
-
-#         self.render_command_input()
-#         ui.button(on_click=self.update_log)
-
-#     def render_command_input(self):
-#         self.command_input = (
-#             ui.textarea(placeholder="Type a command...")
-#             .props('autofocus outlined input-class="ml-3" input-class="h-12"')
-#             .classes("text-black grow mr-4")
-#             # .on("keydown", handle_keydown)
-#         )
-
-#     def update_log(self):
-#         self.display_log.push("SomeText")
-
-
+# -----------------------------------------------
+# Shell Class
+# -----------------------------------------------
 # lots of async here, better safe than sorry to have it for future things
 class Shell:
     def __init__(self, agent_id):
@@ -393,17 +238,19 @@ class Shell:
     # Socket Ops
     # ----------------------
     async def connect_to_agent_room(self):
-        await self._update_log(f"Attempting to connect to {self.agent_id} room...")
+        await self._update_log(
+            f"[SYSTEM] Attempting to connect to {self.agent_id} room..."
+        )
         agent_data = {"agent_id": self.agent_id}
         await Config.socketio.emit("join", agent_data, namespace="/shell")
 
-    async def socket_local_notif(self, data):
+    async def socket_global_notif(self, data):
         # print("Data from soket:", data)
-        await self._update_log(data)
+        await self._update_log(f"[GLOBAL_NOTIF] {data}")
 
     async def socket_local_notif(self, data):
         # print("Data from soket:", data)
-        await self._update_log(f"[NOTIF] {data}")
+        await self._update_log(f"[LOCAL_NOTIF] {data}")
 
     async def socket_set_agent_response(self, data):
         # print("Data from soket:", data)
@@ -433,7 +280,7 @@ class Shell:
                 self._render_toolbox_button()
 
         if Config.socketio.connected:
-            await self._update_log("Socket connected...")
+            await self._update_log("[SYSTEM] Socket connected...")
             # And connect to agent room after ensuring connection is established.
             await self.connect_to_agent_room()
             ui.timer(1, self.measure_latency)
@@ -484,12 +331,42 @@ class Shell:
             with ui.button(icon="menu"):
                 ui.tooltip("More Buttons").classes("bg-green")
                 with ui.menu() as menu:
+                    self.render_scripts_options()
                     ui.button(
                         ">broken< Toggle Fullscreen", on_click="fullscreen.toggle"
                     ).classes("h-16")
+
                     # # ui.button('response inspector', on_click=fullscreen.toggle) # pops all json commands in the json editor
                     # ui.separator()
                     # ui.menu_item("Close", menu.close)
+
+    def render_scripts_options(self):
+        """
+        Renders the script options dropdown.
+
+        Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
+        then creates a dropdown. Changing the selection triggers _register_script.
+        """
+        response = api_call(url="/scripts/files")
+        scripts_data = (
+            [
+                script.get("filename", "Unknown Script")
+                for script in response.get("data", [])
+            ]
+            if response.get("data")
+            else ["No Scripts Available"]
+        )
+        agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+        agent_info = next(iter(agent_data.values()), {})
+        agent_script = (
+            agent_info.get("data", {}).get("config", {}).get("command_script")
+        )
+        ui.select(
+            options=scripts_data,
+            label="Extension Scripts",
+            on_change=lambda e: self._register_script(e.value),
+            value=agent_script,
+        ).classes("w-full")
 
     # ----------------------
     # Events
@@ -511,6 +388,20 @@ class Shell:
             await self._process_command(command)
             self.command_input.value = ""
 
+    async def _register_script(self, script_name):
+        """
+        Sends a POST request to update the agent's command script.
+
+        Args:
+            script_name (str): The new command script name.
+        """
+        api_post_call(
+            url=f"/agent/{self.agent_id}/command-script/register",
+            data={"command_script": script_name},
+        )
+        await self._update_log(f"[SYSTEM] Updated script to {script_name}")
+        ui.notify(f"Updated script to {script_name} on agent", position="top-right")
+
     async def _process_command(self, command):
         """Process the command and update the log with response."""
         api_post_call(
@@ -518,20 +409,8 @@ class Shell:
             data={"command": command},
         )
         # This is where you could easily extend the system by adding more commands.
-        # response = self._get_fake_response(command)
         await self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
         # await self._update_log(f"Response: SOMERESPONSE")
-
-    def _get_fake_response(self, command):
-        """Simulate fake responses for specific commands."""
-        fake_responses = {
-            "whoami": "user1",
-            "ipconfig": "IPv4: 192.168.1.100\nMask: 255.255.255.0",
-            "hostname": "WIN-TEST-BOX",
-            "ls": "Documents\nDownloads\nPictures\nMusic\n",
-            "pwd": "/home/user1",
-        }
-        return fake_responses.get(command, f"Unknown command: {command}")
 
     async def _update_log(self, data, sender=""):
         """Update the log with the message."""
@@ -550,18 +429,10 @@ class Shell:
         # ui.notify(f"Round-trip latency: {latency:.2f} ms")
         await self.update_latency_text(latency)
 
-    # async def send_command(self):
-    #     api_post_call(
-    #         url=f"/agent/{self.agent_id}/command/enqueue",
-    #         data={"command": self.command_input.value},
-    #     )
-    #     await self._update_log(self.command_input.value)
-    #     self.command_input.value = ""
 
-
-# ---------------------------
+# -----------------------------------------------
 #   Agents List View
-# ---------------------------
+# -----------------------------------------------
 # Cleaned-up
 class AgentsView:
     """
