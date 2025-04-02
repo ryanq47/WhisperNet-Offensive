@@ -98,7 +98,7 @@ class AgentView:
     # Rendering Funcs
     # --------------------
 
-    def render(self):
+    async def render(self):
         """
         Renders the complete agent view including header, tabs, and tab panels.
 
@@ -119,7 +119,7 @@ class AgentView:
                 with ui.tab_panel("MAIN").classes("h-full"):
                     self.render_main_tab()
                 with ui.tab_panel("SHELL").classes("h-full"):
-                    self.render_shell_tab()
+                    await self.render_shell_tab()
 
             # Add a refresh button
             # ui.button("Refresh", on_click=self.refresh).classes("mt-4")
@@ -201,9 +201,9 @@ class AgentView:
                     ),
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
-    def render_shell_tab(self):
+    async def render_shell_tab(self):
         shell = Shell(self.agent_id)
-        shell.render()
+        await shell.render()
         # maybe make the shell its own class
 
     # def render_shell_tab(self):
@@ -365,6 +365,7 @@ class AgentView:
 #         self.display_log.push("SomeText")
 
 
+# lots of async here, better safe than sorry to have it for future things
 class Shell:
     def __init__(self, agent_id):
         self.agent_id = agent_id
@@ -378,7 +379,7 @@ class Shell:
 
         self.current_settings = app.storage.user.get("settings", {})
 
-    def render(self):
+    async def render(self):
         """Main render method to create the shell interface."""
         self._render_log()
 
@@ -386,6 +387,22 @@ class Shell:
             self._render_command_input()
             self._render_send_button()
             self._render_toolbox_button()
+
+        ui.timer(1, self.load_fake_messages)
+        # await self.load_fake_messages()
+
+    async def load_fake_messages(self):
+        # Imitate a websocket laod here that on new data, would load into the shell
+        await self._update_log("SomeMessageFromAFakeWebSocket")
+
+    #     data = api_call(f"/agent/{self.agent_id}/command/all")
+
+    # for i in data:
+    #     # time.sleep()
+    #     self._update_log(i)
+    # while 1:
+    #     await self._update_log("SomeMessage")
+    #     await asyncio.sleep(1)  # Sleep for 1 second to allow other tasks to run
 
     def _render_log(self):
         """Create the log display area."""
@@ -434,18 +451,18 @@ class Shell:
                     # ui.separator()
                     # ui.menu_item("Close", menu.close)
 
-    def handle_keydown(self, e):
+    async def handle_keydown(self, e):
         if e.args.get("key") == "Enter":
-            self.handle_send()
+            await self.handle_send()
 
-    def handle_send(self):
+    async def handle_send(self):
         """Handle the logic for sending a command."""
         command = self.command_input.value.strip()
         if command == "clear":
             self.display_log.clear()
         if command:
             self.command_history.append(command)
-            self._update_log(f"Command: {command}")
+            await self._update_log(f"Command: {command}")
             self._process_command(command)
             self.command_input.value = ""
 
@@ -467,7 +484,7 @@ class Shell:
         }
         return fake_responses.get(command, f"Unknown command: {command}")
 
-    def _update_log(self, message):
+    async def _update_log(self, message):
         """Update the log with the message."""
         self.display_log.push(f"{message} - some:time:1234")
 

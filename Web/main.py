@@ -108,12 +108,12 @@ def about():
 
 
 @ui.page("/agent/{uuid}")
-def agent_view_page(uuid: str):
+async def agent_view_page(uuid: str):
     check_login()
     main_container = navbar()
     with main_container:
         a = AgentView(agent_id=uuid)
-        a.render()
+        await a.render()
 
 
 @ui.page("/agents")
