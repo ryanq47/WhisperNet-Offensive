@@ -215,6 +215,10 @@ class LocalSettings:
                 "value": False,
                 "description": "Show how long each function call is taking",
             },
+            # "Client: Disarm/ReadOnly": {
+            #     "value": False,
+            #     "description": "(Client Side Only) Disable commands from being sent",
+            # },
         }
 
     def render(self):

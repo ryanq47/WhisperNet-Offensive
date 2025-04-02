@@ -122,7 +122,7 @@ class AgentView:
                     self.render_shell_tab()
 
             # Add a refresh button
-            ui.button("Refresh", on_click=self.refresh).classes("mt-4")
+            # ui.button("Refresh", on_click=self.refresh).classes("mt-4")
 
     def render_main_tab(self):
         """
@@ -374,11 +374,18 @@ class Shell:
             []
         )  # Store previous commands to allow for history navigation
 
+        self.send_button = None
+
+        self.current_settings = app.storage.user.get("settings", {})
+
     def render(self):
         """Main render method to create the shell interface."""
         self._render_log()
-        self._render_command_input()
-        self._render_send_button()
+
+        with ui.element().classes("flex w-full gap-2"):
+            self._render_command_input()
+            self._render_send_button()
+            self._render_toolbox_button()
 
     def _render_log(self):
         """Create the log display area."""
@@ -387,24 +394,55 @@ class Shell:
     def _render_command_input(self):
         """Create the input field for the user to type commands."""
         self.command_input = (
-            ui.textarea(placeholder="Type a command...")
+            ui.input(placeholder="Type a command...")
             .props('autofocus outlined input-class="ml-3" input-class="h-12"')
-            .classes("text-black grow mr-4")
-            .on("keydown", self.handle_keydown)
+            .classes("text-black w-full flex-1")
+            .on("keydown", self.handle_keydown)  # Listening for the keydown event
         )
 
     def _render_send_button(self):
         """Create the send button to process the input."""
-        ui.button("Send", on_click=self.handle_send).classes("w-1/4")
+        self.send_button = ui.button("Send", on_click=self.handle_send).classes(
+            "flex-none bg-red"
+        )
 
-    def handle_keydown(self, event):
-        """Optional: Handle keydown events like entering commands with the Enter key."""
-        if event.key == "Enter":
+        with self.send_button:
+            ui.tooltip("The scary button").classes("bg-red")
+
+        # if self.current_settings.get("Client: Disarm/ReadOnly", False):
+        #     with self.send_button.props("disable").classes("bg-grey"):
+        #         ui.tooltip("Button disabled - Read Only Mode").classes("bg-red")
+
+        # else:
+        #     with self.send_button:
+        #         ui.tooltip("The scary button").classes("bg-red")
+
+    def _render_toolbox_button(self):
+        """
+        Toolbox button
+        """
+        # fullscreen = ui.fullscreen()
+        with ui.row().classes(""):
+            result = ui.label().classes("mr-auto")
+            with ui.button(icon="menu"):
+                ui.tooltip("More Buttons").classes("bg-green")
+                with ui.menu() as menu:
+                    ui.button(
+                        ">broken< Toggle Fullscreen", on_click="fullscreen.toggle"
+                    ).classes("h-16")
+                    # # ui.button('response inspector', on_click=fullscreen.toggle) # pops all json commands in the json editor
+                    # ui.separator()
+                    # ui.menu_item("Close", menu.close)
+
+    def handle_keydown(self, e):
+        if e.args.get("key") == "Enter":
             self.handle_send()
 
     def handle_send(self):
         """Handle the logic for sending a command."""
         command = self.command_input.value.strip()
+        if command == "clear":
+            self.display_log.clear()
         if command:
             self.command_history.append(command)
             self._update_log(f"Command: {command}")
@@ -415,12 +453,13 @@ class Shell:
         """Process the command and update the log with response."""
         # This is where you could easily extend the system by adding more commands.
         response = self._get_fake_response(command)
+        self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
         self._update_log(f"Response: {response}")
 
     def _get_fake_response(self, command):
         """Simulate fake responses for specific commands."""
         fake_responses = {
-            "whoami": output,
+            "whoami": "user1",
             "ipconfig": "IPv4: 192.168.1.100\nMask: 255.255.255.0",
             "hostname": "WIN-TEST-BOX",
             "ls": "Documents\nDownloads\nPictures\nMusic\n",
