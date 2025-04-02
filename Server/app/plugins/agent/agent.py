@@ -223,12 +223,12 @@ class AgentEnqueueCommandResource(Resource):
             # need to find a way, that on checkin, to dump data from response into shell
             # *may* be able to do this from a listener, but I'd have to get the
             # socket instance over to it.... hmmmmmmmmm
-            Instance().socketio.emit(
-                "local_notif",
-                "SomeOutputThisiSFromServer",
-                room=agent_uuid,
-                namespace="/shell",
-            )
+            # Instance().socketio.emit(
+            #     "local_notif",
+            #     "SomeOutputThisiSFromServer",
+            #     room=agent_uuid,
+            #     namespace="/shell",
+            # )
 
             # print(api_response)
             return api_response(data=command_id), 200
@@ -468,51 +468,78 @@ class AgentUpdateNewFieldResource(Resource):
 # ------------------------------------------------------------------------
 
 
-# on connect
 @socketio.event(namespace="/shell")
 def connect():
     logger.debug("Connected to /shell namespace.")
-    # Send a command after connecting.
-    socketio.emit("local_notif", "Connection Established", namespace="/shell")
-    socketio.emit(
-        "local_notif", "Please send your room UUID to join.", namespace="/shell"
-    )
+    # Inform the client that the connection is established.
+    emit("local_notif", "Connection Established", namespace="/shell")
+    # Request the client to send its agent id so it can join the corresponding room.
+    emit("local_notif", "Please send your agent id to join a room.", namespace="/shell")
+    # emit("response", "Test Response", namespace="/shell")
 
 
 @socketio.on("ping", namespace="/shell")
 def handle_ping(data):
-    # Immediately return the data back to the client
+    # Immediately echo back the data for latency measurement.
     return data
 
 
-# Listen for a "join" event where the client supplies their room UUID.
+@socketio.on("response", namespace="/shell")
+def handle_response(data):
+    """
+    Expected data:
+    {
+        "agent_uuid": <agent_uuid>,
+        "command_id": <command_id>,
+        "data": <command_response_data>
+    }
+    """
+    agent_uuid = data.get("agent_uuid")
+    command_id = data.get("command_id")
+    response_data = data.get("data")
+
+    if agent_uuid and command_id and response_data is not None:
+        logger.debug(
+            f"Received response from agent {agent_uuid} for command {command_id}: {response_data}"
+        )
+        # Optionally, further processing or storage of response_data goes here.
+        # For example, emitting to the room associated with this agent:
+        emit(
+            "local_notif",
+            # f"Response received for command {command_id}",
+            response_data,
+            room=agent_uuid,
+            namespace="/shell",
+        )
+    else:
+        logger.error("Invalid response data received: %s", data)
+
+
 @socketio.on("join", namespace="/shell")
 def on_join(data):
     """
-    data:
+    Expecting data:
     {
-        agent_id: agent_id
+        "agent_id": <agent_id>
     }
-
     """
     agent_id = data.get("agent_id")
     if agent_id:
-        # check if valid UUID here/valid agent id
+        # Optionally, validate the agent_id here (e.g., check if it's a valid UUID)
         join_room(agent_id)
-        logger.debug(f"Client connected to: {agent_id}")
+        logger.debug(f"Client joined room: {agent_id}")
         # Confirm to the client that they've joined the room.
         emit(
-            "local_notif", f"Connected to {agent_id}", room=agent_id, namespace="/shell"
+            "local_notif", f"Joined room {agent_id}", room=agent_id, namespace="/shell"
         )
     else:
         logger.error("No agent id provided by client on join event.")
         emit("local_notif", "Error: No agent id provided.", namespace="/shell")
 
 
-@socketio.on("commands", namespace="/shell")
-def get_commands(data):
-    agent_id = data.get("agent_id")
-    emit("local_notif", f"SOME_COMMAND_OUTPUT", room=agent_id, namespace="/shell")
+@socketio.event(namespace="/shell")
+def disconnect():
+    logger.debug("Client disconnected from /shell namespace.")
 
 
 # 2) Register the namespaces with paths

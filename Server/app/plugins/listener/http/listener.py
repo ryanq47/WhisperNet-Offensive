@@ -8,14 +8,18 @@ import os, signal
 from modules.agent import BaseAgent
 from modules.instances import Instance
 from modules.listener import BaseListener
-from modules.log import log
 from plugins.listener.http.http_server import run_app
+import sys
 
 import multiprocessing
+import logging
 
-
-logger = log(__name__)
-
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
 
 """
 Plan: 

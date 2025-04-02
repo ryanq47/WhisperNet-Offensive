@@ -385,6 +385,9 @@ class Shell:
 
         # register socket things for class
         Config.socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
+        Config.socketio.on(
+            "response", self.socket_set_agent_response, namespace="/shell"
+        )
 
     # ----------------------
     # Socket Ops
@@ -395,6 +398,14 @@ class Shell:
         await Config.socketio.emit("join", agent_data, namespace="/shell")
 
     async def socket_local_notif(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(data)
+
+    async def socket_local_notif(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(data)
+
+    async def socket_set_agent_response(self, data):
         # print("Data from soket:", data)
         await self._update_log(data)
 
@@ -509,7 +520,7 @@ class Shell:
         # This is where you could easily extend the system by adding more commands.
         # response = self._get_fake_response(command)
         await self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
-        await self._update_log(f"Response: SOMERESPONSE")
+        # await self._update_log(f"Response: SOMERESPONSE")
 
     def _get_fake_response(self, command):
         """Simulate fake responses for specific commands."""
