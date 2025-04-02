@@ -220,6 +220,16 @@ class AgentEnqueueCommandResource(Resource):
             a = Agent(agent_id=agent_uuid)
             command_id = a.enqueue_command(command=command)
 
+            # need to find a way, that on checkin, to dump data from response into shell
+            # *may* be able to do this from a listener, but I'd have to get the
+            # socket instance over to it.... hmmmmmmmmm
+            Instance().socketio.emit(
+                "local_notif",
+                "SomeOutputThisiSFromServer",
+                room=agent_uuid,
+                namespace="/shell",
+            )
+
             # print(api_response)
             return api_response(data=command_id), 200
 
@@ -497,6 +507,12 @@ def on_join(data):
     else:
         logger.error("No agent id provided by client on join event.")
         emit("local_notif", "Error: No agent id provided.", namespace="/shell")
+
+
+@socketio.on("commands", namespace="/shell")
+def get_commands(data):
+    agent_id = data.get("agent_id")
+    emit("local_notif", f"SOME_COMMAND_OUTPUT", room=agent_id, namespace="/shell")
 
 
 # 2) Register the namespaces with paths

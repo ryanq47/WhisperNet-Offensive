@@ -497,16 +497,19 @@ class Shell:
             self.display_log.clear()
         if command:
             self.command_history.append(command)
-            await self._update_log(f"Command: {command}")
-            self._process_command(command)
+            await self._process_command(command)
             self.command_input.value = ""
 
-    def _process_command(self, command):
+    async def _process_command(self, command):
         """Process the command and update the log with response."""
+        api_post_call(
+            url=f"/agent/{self.agent_id}/command/enqueue",
+            data={"command": command},
+        )
         # This is where you could easily extend the system by adding more commands.
-        response = self._get_fake_response(command)
-        self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
-        self._update_log(f"Response: {response}")
+        # response = self._get_fake_response(command)
+        await self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
+        await self._update_log(f"Response: SOMERESPONSE")
 
     def _get_fake_response(self, command):
         """Simulate fake responses for specific commands."""
@@ -534,6 +537,14 @@ class Shell:
         latency = (end_time - start_time) * 1000  # in milliseconds
         # ui.notify(f"Round-trip latency: {latency:.2f} ms")
         await self.update_latency_text(latency)
+
+    # async def send_command(self):
+    #     api_post_call(
+    #         url=f"/agent/{self.agent_id}/command/enqueue",
+    #         data={"command": self.command_input.value},
+    #     )
+    #     await self._update_log(self.command_input.value)
+    #     self.command_input.value = ""
 
 
 # ---------------------------
