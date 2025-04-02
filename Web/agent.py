@@ -383,15 +383,15 @@ class Shell:
         self.current_settings = app.storage.user.get("settings", {})
 
         # register socket things for class
-        socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
+        Config.socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
 
     # ----------------------
     # Socket Ops
     # ----------------------
     async def connect_to_agent_room(self):
         await self._update_log(f"Attempting to connect to {self.agent_id} room...")
-        agent_data = {"agent_id": "1234-1234-1234-1234"}
-        await socketio.emit("join", agent_data, namespace="/shell")
+        agent_data = {"agent_id": self.agent_id}
+        await Config.socketio.emit("join", agent_data, namespace="/shell")
 
     async def socket_local_notif(self, data):
         # print("Data from soket:", data)
@@ -410,16 +410,14 @@ class Shell:
             self._render_send_button()
             self._render_toolbox_button()
 
-        # CONNECT 2nd or else it stops the rendering for some reason
-        # Schedule the connection in the background
-        asyncio.create_task(connect_to_client_socket())
-        await asyncio.sleep(0.5)  # Use asyncio.sleep instead of time.sleep
+        if Config.socketio.connected:
+            await self._update_log("Socket connected...")
+            # And connect to agent room after ensuring connection is established.
+            await self.connect_to_agent_room()
 
-        if socketio.connected:
-            ui.notify("Connected to socket")
-
-        # And connect to agent room after ensuring connection is established.
-        await self.connect_to_agent_room()
+        else:
+            ui.notify("Socket not connected", position="top-right", type="warning")
+            await self._update_log("Socket not connected...")
 
     def _render_log(self):
         """Create the log display area."""
@@ -505,53 +503,9 @@ class Shell:
         }
         return fake_responses.get(command, f"Unknown command: {command}")
 
-    async def _update_log(self, data):
+    async def _update_log(self, data, sender=""):
         """Update the log with the message."""
-        self.display_log.push(f"[TIME]: {data}")
-
-
-# do the connect on init. Disconnect on close.
-# Just have the socketio.on wthatever in each namespace for the agents
-async def connect_to_client_socket():
-    await socketio.connect("http://127.0.0.1:8081", namespaces=["/shell"])
-    asyncio.create_task(socketio.wait())
-
-
-async def disconnect_from_client_socket():
-    if socketio.connected:
-        await socketio.disconnect()
-        print("SocketIO connection closed.")
-
-
-output = """
-04/01/2024  02:22 AM            40,960 wsock32.dll
-03/18/2025  10:31 PM            69,632 wsplib.dll
-03/18/2025  10:31 PM         1,738,184 wsp_fs.dll
-03/18/2025  10:31 PM         1,512,904 wsp_health.dll
-03/18/2025  10:31 PM           902,576 wsp_sr.dll
-04/01/2024  02:22 AM            86,016 wsqmcons.exe
-03/18/2025  10:31 PM           139,264 WSReset.exe
-03/18/2025  10:31 PM           124,208 WSTPager.ax
-12/14/2023  05:20 PM           230,112 WTabletSettingsAPI.dll
-03/18/2025  10:31 PM            79,280 wtdccm.dll
-03/18/2025  10:31 PM            54,704 wtdhost.dll
-03/18/2025  10:31 PM            54,688 wtdsensor.dll
-03/18/2025  10:31 PM           100,672 wtsapi32.dll
-03/18/2025  10:31 PM           237,472 wuapi.dll
-03/18/2025  10:31 PM            45,984 wuapihost.exe
-03/18/2025  10:32 PM           152,480 wuauclt.exe
-03/18/2025  10:32 PM           181,168 wuaueng.dll
-03/18/2025  10:31 PM           360,448 wuceffects.dll
-03/18/2025  10:31 PM            77,824 WUDFCoinstaller.dll
-03/18/2025  10:31 PM           228,792 WUDFCompanionHost.exe
-03/18/2025  10:31 PM           382,408 WUDFHost.exe
-03/18/2025  10:31 PM           294,864 WUDFPlatform.dll
-03/18/2025  10:31 PM            77,824 WudfSMCClassExt.dll
-07/05/2023  09:46 AM         2,163,016 WudfUpdate_01009.dll
-03/18/2025  10:31 PM           663,552 WUDFx.dll
-03/18/2025  10:31 PM           836,184 WUDFx02000.dllThe system cannot write to the specified device.
-
-"""
+        self.display_log.push(f"[TIME {sender}]: {data}")
 
 
 # ---------------------------

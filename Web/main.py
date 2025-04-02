@@ -14,54 +14,53 @@ from multi_console import MultiConsolePage
 from files import FilePage
 import argparse
 import logging
+import socketio
+import asyncio
 
 logging.getLogger("niceGUI").setLevel(logging.CRITICAL)
 
 
+# Command-line parsing (unchanged)
 parser = argparse.ArgumentParser(description="Set the API host for the application.")
-
-# Add the API host argument
 parser.add_argument(
     "--api-host",
     type=str,
     required=True,
     help="The API host URL (e.g., http://localhost:8080).",
 )
-
-# Parse the arguments
 args = parser.parse_args()
-
-# Access the API host value
 api_host = args.api_host
 print(f"API Host set to: {api_host}")
+# Set the config accordingly (example)
+Config.API_HOST = api_host
 
-# yarl this
-Config.API_HOST = api_host  # "http://192.168.23.128:8081/"
+
+# ----------------
+# Socket stuff
+# ----------------
+
+sio = socketio.AsyncClient()
+Config.socketio = sio
 
 
-# @ui.page("/animation")
-# def animation_page():
-#     # Initial position of the walking element
-#     position = {"left": 0}
+async def connect_to_client_socket():
+    # Connect to the sio server and join the /shell namespace.
+    await sio.connect("http://127.0.0.1:8081", namespaces=["/shell"])
+    # Instead of blocking forever, run sio.wait() as a background task.
+    # asyncio.create_task(sio.wait())
 
-#     # Function to update position
-#     def move():
-#         position["left"] += 10  # Move 10 pixels to the right
-#         if position["left"] > 500:  # Reset position after reaching the end
-#             position["left"] = 0
-#         walking_element.style(f"position: absolute; left: {position['left']}px;")
 
-#     # Create the walking element
-#     with ui.row().style("position: relative; height: 100px;"):
-#         walking_element = ui.label("========>").style("position: absolute; left: 0px;")
-
-#     # Timer to trigger the move function
-#     ui.timer(interval=0.1, callback=move)  # Update position every 100ms
+async def disconnect_from_client_socket():
+    if sio.connected:
+        await sio.disconnect()
+        print("sio connection closed.")
 
 
 @ui.page("/")
-def index():
+async def index():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     navbar()
     # little hack to set hieght to full here. Makes it so it is the full page, and not have a scrollbar
     # with ui.element().classes():
@@ -72,8 +71,10 @@ def index():
 
 
 @ui.page("/settings")
-def settings():
+async def settings():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         s = Settings()
@@ -81,8 +82,10 @@ def settings():
 
 
 @ui.page("/credstore")
-def settings():
+async def settings():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         c = CredentialStorePage()
@@ -90,8 +93,10 @@ def settings():
 
 
 @ui.page("/multi-console")
-def settings():
+async def settings():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         mc = MultiConsolePage()
@@ -99,8 +104,10 @@ def settings():
 
 
 @ui.page("/about")
-def about():
+async def about():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         a = AboutView()
@@ -110,6 +117,8 @@ def about():
 @ui.page("/agent/{uuid}")
 async def agent_view_page(uuid: str):
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         a = AgentView(agent_id=uuid)
@@ -117,8 +126,10 @@ async def agent_view_page(uuid: str):
 
 
 @ui.page("/agents")
-def agent_view_page():
+async def agent_view_page():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         # needs to be renamed, prolly re-factored too
@@ -127,8 +138,10 @@ def agent_view_page():
 
 
 @ui.page("/listener/{uuid}")
-def listener_view_page(uuid: str):
+async def listener_view_page(uuid: str):
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         a = ListenerView(listener_id=uuid)
@@ -136,8 +149,10 @@ def listener_view_page(uuid: str):
 
 
 @ui.page("/listeners")
-def agent_view_page():
+async def agent_view_page():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         a = ListenersPage()
@@ -154,8 +169,10 @@ def agent_view_page():
 
 
 @ui.page("/files")
-def agent_view_page():
+async def agent_view_page():
     check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
     main_container = navbar()
     with main_container:
         a = FilePage()
@@ -163,7 +180,9 @@ def agent_view_page():
 
 
 @ui.page("/auth")
-def auth_view_page():
+async def auth_view_page():
+    if not sio.connected:
+        await connect_to_client_socket()
     # navbar()
     a = AuthView()
     a.render()
