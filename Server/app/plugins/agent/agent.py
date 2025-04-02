@@ -469,6 +469,12 @@ def connect():
     )
 
 
+@socketio.on("ping", namespace="/shell")
+def handle_ping(data):
+    # Immediately return the data back to the client
+    return data
+
+
 # Listen for a "join" event where the client supplies their room UUID.
 @socketio.on("join", namespace="/shell")
 def on_join(data):

@@ -379,6 +379,7 @@ class Shell:
         )  # Store previous commands to allow for history navigation
 
         self.send_button = None
+        self.latency_text = None
 
         self.current_settings = app.storage.user.get("settings", {})
 
@@ -402,18 +403,24 @@ class Shell:
     # ----------------------
 
     async def render(self):
+        # with ui.element().classes("m-0 p-0 w-full"):
         # render FIRST
         self._render_log()  # Ensure display_log is ready
+
+        with ui.row().classes("w-full h-[12px] text-grey m-0 p-0 items-center"):
+            self.latency_text = ui.label("1234")
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
             self._render_send_button()
-            self._render_toolbox_button()
+            with ui.column().classes("items-center justify-center"):
+                self._render_toolbox_button()
 
         if Config.socketio.connected:
             await self._update_log("Socket connected...")
             # And connect to agent room after ensuring connection is established.
             await self.connect_to_agent_room()
+            ui.timer(1, self.measure_latency)
 
         else:
             ui.notify("Socket not connected", position="top-right", type="warning")
@@ -421,7 +428,9 @@ class Shell:
 
     def _render_log(self):
         """Create the log display area."""
-        self.display_log = ui.log(max_lines=100).classes("w-full h-full monospace-font")
+        self.display_log = ui.log(max_lines=100).classes(
+            "w-full h-full monospace-font "
+        )
 
     def _render_command_input(self):
         """Create the input field for the user to type commands."""
@@ -469,6 +478,8 @@ class Shell:
     # ----------------------
     # Events
     # ----------------------
+    async def update_latency_text(self, data):
+        self.latency_text.set_text(f"Latency: {data:.2f}")
 
     async def handle_keydown(self, e):
         if e.args.get("key") == "Enter":
@@ -506,6 +517,18 @@ class Shell:
     async def _update_log(self, data, sender=""):
         """Update the log with the message."""
         self.display_log.push(f"[TIME {sender}]: {data}")
+
+    async def measure_latency(self):
+        # Record the time before sending the ping
+        start_time = time.time()
+        # Use sio.call to send the ping and wait for the pong response
+        response = await Config.socketio.call(
+            "ping", {"time": start_time}, namespace="/shell"
+        )
+        end_time = time.time()
+        latency = (end_time - start_time) * 1000  # in milliseconds
+        # ui.notify(f"Round-trip latency: {latency:.2f} ms")
+        await self.update_latency_text(latency)
 
 
 # ---------------------------
