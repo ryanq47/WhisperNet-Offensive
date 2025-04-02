@@ -1,6 +1,5 @@
 import json
 
-import redis
 from flask import Response, request
 from flask_jwt_extended import jwt_required
 from flask_restx import Api, Namespace, Resource, fields
@@ -11,15 +10,17 @@ from modules.instances import Instance
 from modules.log import log
 from modules.utils import api_response
 from redis_om import get_redis_connection
-import re
 from modules.agent_script_interpreter import AgentScriptInterpreter
 from modules.redis_models import AgentCommand
 from redis_om.model.model import NotFoundError
+from flask_socketio import SocketIO, join_room, emit
+
 
 logger = log(__name__)
 
 # Get your Flask instance (instead of "app = Flask(__name__)")
 app = Instance().app
+socketio = Instance().socketio
 
 logger.warning("Stats is broken until redis keys are adjusted")
 
@@ -450,6 +451,46 @@ class AgentUpdateNewFieldResource(Resource):
         except Exception as e:
             logger.error(f"Error occured setting the new status for an agent: {e}")
             return api_response(message="An error occured"), 500
+
+
+# ------------------------------------------------------------------------
+#                      Web Socket Items
+# ------------------------------------------------------------------------
+
+
+# on connect
+@socketio.event(namespace="/shell")
+def connect():
+    logger.debug("Connected to /shell namespace.")
+    # Send a command after connecting.
+    socketio.emit("local_notif", "Connection Established", namespace="/shell")
+    socketio.emit(
+        "local_notif", "Please send your room UUID to join.", namespace="/shell"
+    )
+
+
+# Listen for a "join" event where the client supplies their room UUID.
+@socketio.on("join", namespace="/shell")
+def on_join(data):
+    """
+    data:
+    {
+        agent_id: agent_id
+    }
+
+    """
+    agent_id = data.get("agent_id")
+    if agent_id:
+        # check if valid UUID here/valid agent id
+        join_room(agent_id)
+        logger.debug(f"Client connected to: {agent_id}")
+        # Confirm to the client that they've joined the room.
+        emit(
+            "local_notif", f"Connected to {agent_id}", room=agent_id, namespace="/shell"
+        )
+    else:
+        logger.error("No agent id provided by client on join event.")
+        emit("local_notif", "Error: No agent id provided.", namespace="/shell")
 
 
 # 2) Register the namespaces with paths

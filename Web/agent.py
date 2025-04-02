@@ -9,6 +9,9 @@ from networking import api_call, api_post_call, api_delete_call
 from scripts import ScriptsView
 from nicegui.events import KeyEventArguments
 from perf_testing import *
+import socketio
+
+socketio = socketio.AsyncClient()
 
 # ---------------------------
 #   Easy Settings
@@ -379,30 +382,44 @@ class Shell:
 
         self.current_settings = app.storage.user.get("settings", {})
 
+        # register socket things for class
+        socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
+
+    # ----------------------
+    # Socket Ops
+    # ----------------------
+    async def connect_to_agent_room(self):
+        await self._update_log(f"Attempting to connect to {self.agent_id} room...")
+        agent_data = {"agent_id": "1234-1234-1234-1234"}
+        await socketio.emit("join", agent_data, namespace="/shell")
+
+    async def socket_local_notif(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(data)
+
+    # ----------------------
+    # Render
+    # ----------------------
+
     async def render(self):
-        """Main render method to create the shell interface."""
-        self._render_log()
+        # render FIRST
+        self._render_log()  # Ensure display_log is ready
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
             self._render_send_button()
             self._render_toolbox_button()
 
-        ui.timer(1, self.load_fake_messages)
-        # await self.load_fake_messages()
+        # CONNECT 2nd or else it stops the rendering for some reason
+        # Schedule the connection in the background
+        asyncio.create_task(connect_to_client_socket())
+        await asyncio.sleep(0.5)  # Use asyncio.sleep instead of time.sleep
 
-    async def load_fake_messages(self):
-        # Imitate a websocket laod here that on new data, would load into the shell
-        await self._update_log("SomeMessageFromAFakeWebSocket")
+        if socketio.connected:
+            ui.notify("Connected to socket")
 
-    #     data = api_call(f"/agent/{self.agent_id}/command/all")
-
-    # for i in data:
-    #     # time.sleep()
-    #     self._update_log(i)
-    # while 1:
-    #     await self._update_log("SomeMessage")
-    #     await asyncio.sleep(1)  # Sleep for 1 second to allow other tasks to run
+        # And connect to agent room after ensuring connection is established.
+        await self.connect_to_agent_room()
 
     def _render_log(self):
         """Create the log display area."""
@@ -451,6 +468,10 @@ class Shell:
                     # ui.separator()
                     # ui.menu_item("Close", menu.close)
 
+    # ----------------------
+    # Events
+    # ----------------------
+
     async def handle_keydown(self, e):
         if e.args.get("key") == "Enter":
             await self.handle_send()
@@ -484,9 +505,22 @@ class Shell:
         }
         return fake_responses.get(command, f"Unknown command: {command}")
 
-    async def _update_log(self, message):
+    async def _update_log(self, data):
         """Update the log with the message."""
-        self.display_log.push(f"{message} - some:time:1234")
+        self.display_log.push(f"[TIME]: {data}")
+
+
+# do the connect on init. Disconnect on close.
+# Just have the socketio.on wthatever in each namespace for the agents
+async def connect_to_client_socket():
+    await socketio.connect("http://127.0.0.1:8081", namespaces=["/shell"])
+    asyncio.create_task(socketio.wait())
+
+
+async def disconnect_from_client_socket():
+    if socketio.connected:
+        await socketio.disconnect()
+        print("SocketIO connection closed.")
 
 
 output = """

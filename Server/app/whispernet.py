@@ -90,11 +90,11 @@ socketio = SocketIO(app)
 Instance().socketio = socketio
 
 
-# test
+#
 @socketio.on("connect", namespace="/notify")
 def notify_connect():
-    print("Client connected to /notify namespace.")
-    socketio.emit("notification", "HI CLIENT", namespace="/notify")
+    print("Connecttion Established")
+    # socketio.emit("notification", "Connectino", namespace="/notify")
 
 
 # Database Instance
