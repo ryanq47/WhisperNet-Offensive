@@ -51,7 +51,7 @@ $UPDATE_CMD
 install_package "cmake"
 install_package "gcc"
 install_package "python3"
-install_package "python3-dev"
+#install_package "python3-dev"
 install_package "nano"
 
 # install docker cuz it's special

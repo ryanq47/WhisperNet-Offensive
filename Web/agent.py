@@ -202,94 +202,99 @@ class AgentView:
                 ).props("auto flat").classes("w-full py-2 mt-2")
 
     def render_shell_tab(self):
-        """
-        Renders the SHELL tab with a scrollable command history and an input area.
+        shell = Shell(self.agent_id)
+        shell.render()
+        # maybe make the shell its own class
 
-        Auto-refresh is set up to update the shell output every second.
-        """
-        self.auto_scroll_enabled = True
-        self.known_command_ids = {}
-        self.render_scripts_options()  # Render the dropdown for script selection
+    # def render_shell_tab(self):
+    #     """
+    #     Renders the SHELL tab with a scrollable command history and an input area.
 
-        async def handle_keydown(e):
-            if e.args.get("key") == "Enter":
-                await send_command()
+    #     Auto-refresh is set up to update the shell output every second.
+    #     """
+    #     self.auto_scroll_enabled = True
+    #     self.known_command_ids = {}
+    #     self.render_scripts_options()  # Render the dropdown for script selection
 
-        def on_scroll(e):
-            self.auto_scroll_enabled = e.vertical_percentage >= 0.95
+    #     async def handle_keydown(e):
+    #         if e.args.get("key") == "Enter":
+    #             await send_command()
 
-        shell_container = ui.column()
+    #     def on_scroll(e):
+    #         self.auto_scroll_enabled = e.vertical_percentage >= 0.95
 
-        # Dictionary to keep track of pending commands: {command_uuid: label_widget}
-        pending_commands = {}
+    #     shell_container = ui.column()
 
-        def update_shell_data():
-            data = api_call(url=f"/agent/{self.agent_id}/command/latest").get(
-                "data", []
-            )
-            if not data:
-                return
+    #     # Dictionary to keep track of pending commands: {command_uuid: label_widget}
+    #     pending_commands = {}
 
-            ui.notify(data)
+    #     def update_shell_data():
+    #         data = api_call(url=f"/agent/{self.agent_id}/command/latest").get(
+    #             "data", []
+    #         )
+    #         if not data:
+    #             return
 
-            # data.sort(key=lambda entry: entry.get("timestamp", ""))
-            for command in data:
-                uuid = command.get("uuid")
-                response = command.get("response", "")
+    #         ui.notify(data)
 
-                # If this is a new command that hasn't been displayed yet:
-                if uuid not in pending_commands:
-                    if response:
-                        # If there's already a response, display it directly
-                        with shell_container:
-                            ui.label(
-                                response,
-                            )  # style="user-select: text;")
-                    else:
-                        # Display a placeholder and add it to pending_commands
-                        with shell_container:
-                            label = ui.label(
-                                "waiting on command",
-                                # style="user-select: text;",
-                            )
-                            pending_commands[uuid] = label
-                else:
-                    # If this command was pending, check if the response is now available
-                    if response and pending_commands[uuid].text == "waiting on command":
-                        # Update the label text with the new response
-                        pending_commands[uuid].text = response
-                        # Optionally, remove it from pending_commands if you no longer need to update it
-                        del pending_commands[uuid]
+    #         # data.sort(key=lambda entry: entry.get("timestamp", ""))
+    #         for command in data:
+    #             uuid = command.get("uuid")
+    #             response = command.get("response", "")
 
-        # You can then use a timer to poll this function every few seconds:
-        ui.timer(interval=5, callback=update_shell_data)
+    #             # If this is a new command that hasn't been displayed yet:
+    #             if uuid not in pending_commands:
+    #                 if response:
+    #                     # If there's already a response, display it directly
+    #                     with shell_container:
+    #                         ui.label(
+    #                             response,
+    #                         )  # style="user-select: text;")
+    #                 else:
+    #                     # Display a placeholder and add it to pending_commands
+    #                     with shell_container:
+    #                         label = ui.label(
+    #                             "waiting on command",
+    #                             # style="user-select: text;",
+    #                         )
+    #                         pending_commands[uuid] = label
+    #             else:
+    #                 # If this command was pending, check if the response is now available
+    #                 if response and pending_commands[uuid].text == "waiting on command":
+    #                     # Update the label text with the new response
+    #                     pending_commands[uuid].text = response
+    #                     # Optionally, remove it from pending_commands if you no longer need to update it
+    #                     del pending_commands[uuid]
 
-        def send_command():
-            api_post_call(
-                url=f"/agent/{self.agent_id}/command/enqueue",
-                data={"command": command_input.value},
-            )
-            command_input.value = ""
-            update_shell_data()
+    #     # You can then use a timer to poll this function every few seconds:
+    #     ui.timer(interval=5, callback=update_shell_data)
 
-        with ui.column().classes("h-full w-full flex flex-col"):
-            with ui.row().classes("grow w-full p-4"):
-                with ui.scroll_area(on_scroll=on_scroll).classes(
-                    "w-full h-full border rounded-lg p-2"
-                ):
-                    ui.html(
-                        "<div id='shell_output' style='white-space: pre-wrap; font-family: monospace;'>Shell Output:</div>"
-                    )
-            with ui.row().classes("w-full items-center p-4"):
-                command_input = (
-                    ui.textarea(placeholder="Type a command...")
-                    .props('autofocus outlined input-class="ml-3" input-class="h-12"')
-                    .classes("text-black grow mr-4")
-                    .on("keydown", handle_keydown)
-                )
-                ui.button("Send Command", on_click=send_command).classes("w-32")
-        update_shell_data()
-        ui.timer(interval=1.0, callback=update_shell_data)
+    #     def send_command():
+    #         api_post_call(
+    #             url=f"/agent/{self.agent_id}/command/enqueue",
+    #             data={"command": command_input.value},
+    #         )
+    #         command_input.value = ""
+    #         update_shell_data()
+
+    #     with ui.column().classes("h-full w-full flex flex-col"):
+    #         with ui.row().classes("grow w-full p-4"):
+    #             with ui.scroll_area(on_scroll=on_scroll).classes(
+    #                 "w-full h-full border rounded-lg p-2"
+    #             ):
+    #                 ui.html(
+    #                     "<div id='shell_output' style='white-space: pre-wrap; font-family: monospace;'>Shell Output:</div>"
+    #                 )
+    #         with ui.row().classes("w-full items-center p-4"):
+    #             command_input = (
+    #                 ui.textarea(placeholder="Type a command...")
+    #                 .props('autofocus outlined input-class="ml-3" input-class="h-12"')
+    #                 .classes("text-black grow mr-4")
+    #                 .on("keydown", handle_keydown)
+    #             )
+    #             ui.button("Send Command", on_click=send_command).classes("w-32")
+    #     update_shell_data()
+    #     ui.timer(interval=1.0, callback=update_shell_data)
 
     # --------------------
     # Scripts funcs
@@ -335,6 +340,128 @@ class AgentView:
             data={"command_script": script_name},
         )
         ui.notify(f"Updated script to {script_name} on agent", position="top-right")
+
+
+# class Shell:
+#     def __init__(self, agent_id):
+#         self.display_log = None
+#         self.command_input = None
+
+#     def render(self):
+#         self.display_log = ui.log(max_lines=100).classes("w-full h-full")
+
+#         self.render_command_input()
+#         ui.button(on_click=self.update_log)
+
+#     def render_command_input(self):
+#         self.command_input = (
+#             ui.textarea(placeholder="Type a command...")
+#             .props('autofocus outlined input-class="ml-3" input-class="h-12"')
+#             .classes("text-black grow mr-4")
+#             # .on("keydown", handle_keydown)
+#         )
+
+#     def update_log(self):
+#         self.display_log.push("SomeText")
+
+
+class Shell:
+    def __init__(self, agent_id):
+        self.agent_id = agent_id
+        self.display_log = None
+        self.command_input = None
+        self.command_history = (
+            []
+        )  # Store previous commands to allow for history navigation
+
+    def render(self):
+        """Main render method to create the shell interface."""
+        self._render_log()
+        self._render_command_input()
+        self._render_send_button()
+
+    def _render_log(self):
+        """Create the log display area."""
+        self.display_log = ui.log(max_lines=100).classes("w-full h-full monospace-font")
+
+    def _render_command_input(self):
+        """Create the input field for the user to type commands."""
+        self.command_input = (
+            ui.textarea(placeholder="Type a command...")
+            .props('autofocus outlined input-class="ml-3" input-class="h-12"')
+            .classes("text-black grow mr-4")
+            .on("keydown", self.handle_keydown)
+        )
+
+    def _render_send_button(self):
+        """Create the send button to process the input."""
+        ui.button("Send", on_click=self.handle_send).classes("w-1/4")
+
+    def handle_keydown(self, event):
+        """Optional: Handle keydown events like entering commands with the Enter key."""
+        if event.key == "Enter":
+            self.handle_send()
+
+    def handle_send(self):
+        """Handle the logic for sending a command."""
+        command = self.command_input.value.strip()
+        if command:
+            self.command_history.append(command)
+            self._update_log(f"Command: {command}")
+            self._process_command(command)
+            self.command_input.value = ""
+
+    def _process_command(self, command):
+        """Process the command and update the log with response."""
+        # This is where you could easily extend the system by adding more commands.
+        response = self._get_fake_response(command)
+        self._update_log(f"Response: {response}")
+
+    def _get_fake_response(self, command):
+        """Simulate fake responses for specific commands."""
+        fake_responses = {
+            "whoami": output,
+            "ipconfig": "IPv4: 192.168.1.100\nMask: 255.255.255.0",
+            "hostname": "WIN-TEST-BOX",
+            "ls": "Documents\nDownloads\nPictures\nMusic\n",
+            "pwd": "/home/user1",
+        }
+        return fake_responses.get(command, f"Unknown command: {command}")
+
+    def _update_log(self, message):
+        """Update the log with the message."""
+        self.display_log.push(f"{message} - some:time:1234")
+
+
+output = """
+04/01/2024  02:22 AM            40,960 wsock32.dll
+03/18/2025  10:31 PM            69,632 wsplib.dll
+03/18/2025  10:31 PM         1,738,184 wsp_fs.dll
+03/18/2025  10:31 PM         1,512,904 wsp_health.dll
+03/18/2025  10:31 PM           902,576 wsp_sr.dll
+04/01/2024  02:22 AM            86,016 wsqmcons.exe
+03/18/2025  10:31 PM           139,264 WSReset.exe
+03/18/2025  10:31 PM           124,208 WSTPager.ax
+12/14/2023  05:20 PM           230,112 WTabletSettingsAPI.dll
+03/18/2025  10:31 PM            79,280 wtdccm.dll
+03/18/2025  10:31 PM            54,704 wtdhost.dll
+03/18/2025  10:31 PM            54,688 wtdsensor.dll
+03/18/2025  10:31 PM           100,672 wtsapi32.dll
+03/18/2025  10:31 PM           237,472 wuapi.dll
+03/18/2025  10:31 PM            45,984 wuapihost.exe
+03/18/2025  10:32 PM           152,480 wuauclt.exe
+03/18/2025  10:32 PM           181,168 wuaueng.dll
+03/18/2025  10:31 PM           360,448 wuceffects.dll
+03/18/2025  10:31 PM            77,824 WUDFCoinstaller.dll
+03/18/2025  10:31 PM           228,792 WUDFCompanionHost.exe
+03/18/2025  10:31 PM           382,408 WUDFHost.exe
+03/18/2025  10:31 PM           294,864 WUDFPlatform.dll
+03/18/2025  10:31 PM            77,824 WudfSMCClassExt.dll
+07/05/2023  09:46 AM         2,163,016 WudfUpdate_01009.dll
+03/18/2025  10:31 PM           663,552 WUDFx.dll
+03/18/2025  10:31 PM           836,184 WUDFx02000.dllThe system cannot write to the specified device.
+
+"""
 
 
 # ---------------------------
