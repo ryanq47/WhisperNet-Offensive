@@ -254,7 +254,7 @@ class Shell:
 
     async def socket_set_agent_response(self, data):
         # print("Data from soket:", data)
-        await self._update_log(data)
+        await self._update_log(f"[04/02 19:22:48] >> received output:\n{data}")
 
     # ----------------------
     # Render
@@ -409,7 +409,7 @@ class Shell:
             data={"command": command},
         )
         # This is where you could easily extend the system by adding more commands.
-        await self._update_log(f"[00:00:00 @ HOSTNAME\\User] >> {command}")
+        await self._update_log(f"[04/02 19:22:14] >> Tasked agent to run: {command}")
         # await self._update_log(f"Response: SOMERESPONSE")
 
     async def _update_log(self, data, sender=""):
@@ -694,6 +694,12 @@ class AgentsView:
         self.load_data()
         self.render_grid()
         ui.button("dev - Refresh Data", on_click=self.refresh_data).classes("mt-4")
+
+        ui.timer(5, self.update_aggrid_times)
+
+    async def update_aggrid_times(self):
+        self.aggrid.options["rowData"][0]["Last Seen"] = "HI THERE"
+        self.aggrid.update()
 
 
 class AgentsPage:
