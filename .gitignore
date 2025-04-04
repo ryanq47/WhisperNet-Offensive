@@ -200,3 +200,5 @@ Server/app/ftp/test.txt
 *Server/data/compiled*
 *whispernet_venv*
 Web/test.py
+
+*.vs*

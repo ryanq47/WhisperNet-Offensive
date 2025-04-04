@@ -7,6 +7,7 @@
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
 #include "whisper_credmanager.h"
+#include "whisper_heapconfig.h"
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -56,6 +57,18 @@ int main()
     char agent_id[37];
     generate_uuid4(agent_id);
     CONFIG *config = init_config();
+
+    //init heap config
+    HeapStore* heapStorePointer = malloc(sizeof(HeapStore));
+    if (heapStorePointer == NULL) {
+        fprintf(stderr, "Memory allocation failed for HeapStore\n");
+        return 1;
+    }
+    // Initialize the subsystems; if it fails, free memory and exit
+    if (initStructs(heapStorePointer) != 0) {
+        free(heapStorePointer);
+        return 1;
+    }
 
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, config); // Initially run synchronously
