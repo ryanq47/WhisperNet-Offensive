@@ -7,7 +7,6 @@
 #include "whisper_config.h"
 #include "whisper_json.h"
 #include "whisper_winapi.h"
-#include "whisper_dynamic_config.h"
 #include "whisper_structs.h"
 // function command related items
 
