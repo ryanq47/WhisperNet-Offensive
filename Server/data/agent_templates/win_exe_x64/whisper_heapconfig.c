@@ -9,8 +9,8 @@
 *
 * Structures:
 *   HeapStore:
-        ONE heap store should exist per execution. This is immediatlet set up in main
-
+*        ONE heap store should exist per execution. This is immediatlet set up in main
+*
 *     - tokenStore:         Pointer to the token subsystem (reserved for future use).
 *     - configStore:        Pointer to the configuration subsystem (reserved for future use).
 *     - securityStore:      Pointer to SecurityStoreStruct, which holds security-related data (e.g., xor_key).

