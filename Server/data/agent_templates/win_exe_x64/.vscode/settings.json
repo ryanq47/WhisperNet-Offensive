@@ -1,6 +1,9 @@
 {
     "files.associations": {
         "whisper_dynamic_config.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "whisper_structs.h": "c",
+        "whisper_json.h": "c",
+        "whisper_config.h": "c"
     }
 }

