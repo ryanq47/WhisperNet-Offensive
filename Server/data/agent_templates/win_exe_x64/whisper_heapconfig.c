@@ -1,17 +1,84 @@
 /*
 *******************************************************************************************
-* File: StructOfStuff.cpp
+* Module: whisper_heapconfig.c
 *
 * Description:
-*   This application demonstrates the creation, initialization, and cleanup of a modular data
-*   structure in C, designed for expandability. The primary structure, HeapStore, contains pointers
-*   to various subsystem structures (e.g., SecurityStoreStruct) that can be extended as needed.
-*   This design allows easier development and maintenance by centralizing related data and providing
-*   robust initialization and deinitialization routines.
+*   This module implements a modular, expandable data storage system for an agent application.
+*   The primary container is the HeapStore struct, which aggregates pointers to various subsystem
+*   structures that hold configuration and runtime state for the agent.
+*
+* Structures:
+*   HeapStore:
+        ONE heap store should exist per execution. This is immediatlet set up in main
+
+*     - tokenStore:         Pointer to the token subsystem (reserved for future use).
+*     - configStore:        Pointer to the configuration subsystem (reserved for future use).
+*     - securityStore:      Pointer to SecurityStoreStruct, which holds security-related data (e.g., xor_key).
+*     - currentUserStore:   Pointer to CurrentUserStoreStruct, which holds current user information.
+*     - agentStore:         Pointer to AgentStoreStruct, which contains agent-specific data (e.g., agent_id).
+*     - agentBehaviorStore: Pointer to AgentBehaviorStruct, which holds runtime behavior settings such as
+*                           execution mode and sleep time, and includes a synchronization lock.
+*
+*   SecurityStoreStruct:
+*     - xor_key: A hardcoded XOR key used for simple security operations or obfuscation.
+*
+*   CurrentUserStoreStruct:
+*     - username:               Pointer to a string containing the current user's name.
+*     - password:               Pointer to a string containing the current user's password.
+*     - domain:                 Pointer to a string containing the current user's domain.
+*     - userSid:                Pointer to the current user's security identifier (SID).
+*     - token:                  Handle to the current user's access token.
+*     - logonId:                Locally unique identifier (LUID) for the user's logon session.
+*     - sessionId:              Identifier for the user's session (DWORD).
+*     - profilePath:            Pointer to a wide-character string (LPWSTR) containing the path to
+*                               the user's profile.
+*
+*
+*   AgentStoreStruct:
+*     - agent_id: A character array (typically storing a unique identifier such as a UUID) for the agent.
+*
+*   AgentBehaviorStruct:
+*     - sleep_time:         The delay (in seconds) between agent execution cycles.
+*     - execution_mode:     Indicates the agent's operating mode (e.g., synchronous or asynchronous).
+*     - agent_config_lock:  An SRWLock used to protect access to configuration and runtime settings.
+*
+* Connections:
+*   The HeapStore struct is the central repository that aggregates all subsystem structures.
+*   Each subsystem is dynamically allocated and linked within HeapStore via its pointers.
+*   The getters and setters operate on the agentBehaviorStore to ensure thread-safe modification and
+*   retrieval of runtime configuration values.
+*
+* Function Information:
+*
+*   int initStructs(HeapStore *heapStore)
+*     - Initializes all subsystem pointers in the HeapStore structure.
+*     - Dynamically allocates memory for SecurityStoreStruct, CurrentUserStoreStruct, AgentStoreStruct, and
+*       AgentBehaviorStruct.
+*     - Sets initial values, such as the XOR key for the security store and default values for the
+*       agent behavior (sleep time, execution mode, etc.).
+*     - Returns 0 on success or -1 if any memory allocation fails.
+*
+*   void deinitStructs(HeapStore *heapStore)
+*     - Deallocates all memory allocated for subsystem structures within HeapStore.
+*     - Resets pointers to NULL to prevent dangling references.
+*
+*   void set_execution_mode(ExecutionMode mode, HeapStore *heapStorePointer)
+*     - Sets the agent's execution mode (e.g., synchronous/asynchronous) in a thread-safe manner.
+*     - Uses an SRWLock to ensure exclusive access during modification.
+*
+*   ExecutionMode get_execution_mode(HeapStore *heapStorePointer)
+*     - Retrieves the current agent execution mode in a thread-safe manner.
+*     - Uses an SRWLock to ensure safe access to the configuration.
+*
+*   void set_sleep_time(DWORD new_time, HeapStore *heapStorePointer)
+*     - Updates the sleep time value in the agent behavior configuration in a thread-safe manner.
+*
+*   DWORD get_sleep_time(HeapStore *heapStorePointer)
+*     - Retrieves the current sleep time value from the agent behavior configuration in a thread-safe manner.
 *
 * Goal:
-*   To provide a clean, modular design for managing different components in an application, ensuring
-*   proper memory management and making it straightforward to add or remove subsystems.
+*   To provide a clear, modular, and expandable system for managing an agent's various subsystems,
+*   enabling easy development and maintenance while ensuring proper synchronization and memory management.
 *******************************************************************************************
 */
 
