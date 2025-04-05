@@ -133,15 +133,24 @@ class PostResource(Resource):
             command_id = response.get("command_id")
             data = response.get("command_result_data")
 
+            # if command id is none, do NOT store in redis
+            # no matter what, still emit the output.
+            # this is to allow non-command id/out of sync messages to come through
+            # to the agent/to the shell. Hacky work around, but will work for now
+
+            # maybe to more robust this, still include in redis, just as a unique message ID from this agent
+
             if command_id is None or data is None:
+                # this is fine, but still erroring it for now
                 logger.error(
                     "Missing 'command_id' or 'command_result_data' in payload."
                 )
-                return {"error": "Missing required fields."}, 400
+                # return {"error": "Missing required fields."}, 400
 
-            # Store the response
-            agent = Agent(agent_uuid)
-            agent.store_response(command_id, data)
+            else:
+                # Store the response
+                agent = Agent(agent_uuid)
+                agent.store_response(command_id, data)
 
             # Check connection status
             logger.debug("BEFORE WEBSOCKET")

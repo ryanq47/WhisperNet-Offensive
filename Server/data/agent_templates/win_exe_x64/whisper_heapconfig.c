@@ -87,7 +87,6 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "whisper_config.h"
-#include "whisper_config.h"
 
 /* put in structs or soemthign .c*/
 // Initialize structures and assign values to their members
