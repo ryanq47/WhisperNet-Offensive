@@ -131,6 +131,17 @@ void execution_setup(HeapStore *heapStorePointer)
 DWORD WINAPI execute(HeapStore *heapStorePointer)
 {
 
+    /*
+    Thread Stuff
+
+    */
+
+    // add a get token func here
+    if (!set_thread_token(heapStorePointer->currentUserStore->token))
+    {
+        DEBUG_LOG("Could not set token!");
+    }
+
     // agentid = heapStorePointer->agentStore->agent_id
 
     // bug somewhere in here. yay

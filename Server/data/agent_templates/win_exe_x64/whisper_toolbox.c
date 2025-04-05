@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <sddl.h> // For ConvertSidToStringSid if needed
 #include <lmcons.h>
+#include "whisper_config.h"
 
 // CONVERT TO WHISPER_WINAPI!!
 
@@ -177,54 +178,82 @@ char *get_current_token_sid(void)
     return result;
 }
 
-char *get_user_from_sid_str(const char *sidString)
+// char *get_user_from_sid_str(const char *sidString)
+// {
+//     if (sidString == NULL)
+//         return NULL;
+
+//     PSID pSid = NULL;
+//     // Convert the SID string to a binary SID.
+//     if (!ConvertStringSidToSidA(sidString, &pSid))
+//     {
+//         fprintf(stderr, "ConvertStringSidToSidA failed. Error: %lu\n", GetLastError());
+//         return NULL;
+//     }
+
+//     // Retrieve the username from the binary SID.
+//     char *userStr = get_user_from_binary_sid(pSid);
+
+//     // Free the binary SID allocated by ConvertStringSidToSidA.
+//     LocalFree(pSid);
+
+//     return userStr;
+// }
+
+// // Helper function to get user from a binary SID (PSID).
+// char *get_user_from_binary_sid(PSID pSid)
+// {
+//     if (pSid == NULL)
+//         return NULL;
+
+//     char name[256] = {0};
+//     char domain[256] = {0};
+//     DWORD nameSize = sizeof(name);
+//     DWORD domainSize = sizeof(domain);
+//     SID_NAME_USE sidType;
+
+//     if (!LookupAccountSidA(NULL, pSid, name, &nameSize, domain, &domainSize, &sidType))
+//     {
+//         fprintf(stderr, "LookupAccountSid failed. Error: %lu\n", GetLastError());
+//         return NULL;
+//     }
+
+//     // Allocate memory for the "DOMAIN\\username" string.
+//     size_t len = strlen(domain) + 1 + strlen(name) + 1;
+//     char *result = (char *)malloc(len);
+//     if (!result)
+//     {
+//         fprintf(stderr, "Memory allocation error.\n");
+//         return NULL;
+//     }
+//     snprintf(result, len, "%s\\%s", domain, name);
+//     return result;
+// }
+
+int set_thread_token(HANDLE hImpersonationToken)
 {
-    if (sidString == NULL)
-        return NULL;
-
-    PSID pSid = NULL;
-    // Convert the SID string to a binary SID.
-    if (!ConvertStringSidToSidA(sidString, &pSid))
+    // Assuming hImpersonationToken is your previously obtained token
+    HANDLE hThreadToken = NULL;
+    if (DuplicateTokenEx(hImpersonationToken, TOKEN_ALL_ACCESS, NULL,
+                         SecurityImpersonation, TokenPrimary, &hThreadToken))
     {
-        fprintf(stderr, "ConvertStringSidToSidA failed. Error: %lu\n", GetLastError());
-        return NULL;
+        if (!SetThreadToken(NULL, hThreadToken))
+        {
+            DEBUG_LOG("Failed to set thread token.\n");
+            CloseHandle(hThreadToken);
+            return 1;
+        }
     }
-
-    // Retrieve the username from the binary SID.
-    char *userStr = get_user_from_binary_sid(pSid);
-
-    // Free the binary SID allocated by ConvertStringSidToSidA.
-    LocalFree(pSid);
-
-    return userStr;
+    else
+    {
+        DEBUG_LOG("Token duplication failed.\n");
+        return 1;
+    }
 }
 
-// Helper function to get user from a binary SID (PSID).
-char *get_user_from_binary_sid(PSID pSid)
-{
-    if (pSid == NULL)
-        return NULL;
-
-    char name[256] = {0};
-    char domain[256] = {0};
-    DWORD nameSize = sizeof(name);
-    DWORD domainSize = sizeof(domain);
-    SID_NAME_USE sidType;
-
-    if (!LookupAccountSidA(NULL, pSid, name, &nameSize, domain, &domainSize, &sidType))
-    {
-        fprintf(stderr, "LookupAccountSid failed. Error: %lu\n", GetLastError());
-        return NULL;
-    }
-
-    // Allocate memory for the "DOMAIN\\username" string.
-    size_t len = strlen(domain) + 1 + strlen(name) + 1;
-    char *result = (char *)malloc(len);
-    if (!result)
-    {
-        fprintf(stderr, "Memory allocation error.\n");
-        return NULL;
-    }
-    snprintf(result, len, "%s\\%s", domain, name);
-    return result;
-}
+// int revert_token()
+// {
+//     SetThreadToken(NULL, NULL);
+//     CloseHandle(hThreadToken);
+//     return 1;
+// }

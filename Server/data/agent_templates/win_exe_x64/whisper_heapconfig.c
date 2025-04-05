@@ -87,6 +87,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "whisper_config.h"
+#include "whisper_config.h"
 
 /* put in structs or soemthign .c*/
 // Initialize structures and assign values to their members
@@ -200,6 +201,37 @@ void deinitStructs(HeapStore *heapStore)
     }
 }
 /* [end] put in structs or soemthign .c*/
+
+// -----------------------------------------
+// Current User funcs
+// -----------------------------------------
+HANDLE get_current_stored_token(HeapStore *heapStorePointer)
+{
+    // Acquire the lock before accessing the token
+    AcquireSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+    DEBUG_LOG("GET TOKEN");
+
+    HANDLE token = heapStorePointer->currentUserStore->token;
+
+    if (!token)
+    {
+        // Release the lock before retrieving the process token.
+        ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+
+        // If no token is stored, retrieve and return the current process token.
+        // is just a fallback incase a toekn doesn't exist or something
+        token = GetCurrentProcessToken();
+        if (!token)
+        {
+            DEBUG_LOG("Failed to retrieve current process token.\n");
+        }
+        return token;
+    }
+
+    // Release the lock before returning the stored token.
+    ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+    return token;
+}
 
 // -----------------------------------------
 // AgentBehaviorFuncs

