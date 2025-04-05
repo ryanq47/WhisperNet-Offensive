@@ -8,6 +8,7 @@
 #include "whisper_json.h"
 #include "whisper_winapi.h"
 #include "whisper_structs.h"
+#include "whisper_toolbox.h"
 // function command related items
 
 /*
@@ -50,6 +51,12 @@ void kill_process(OutboundJsonDataStruct *response_struct, char *args);
 void suspend_process(OutboundJsonDataStruct *response_struct, char *args);
 void resume_process(OutboundJsonDataStruct *response_struct, char *args);
 void list_processes(OutboundJsonDataStruct *response_struct);
+
+// user stuff
+//  void get_current_token_sid(OutboundJsonDataStruct *response_struct);
+
+void user_to_sid(OutboundJsonDataStruct *response_struct, char *args);
+void get_sid(OutboundJsonDataStruct *response_struct);
 
 // ====================
 // Functions
@@ -183,6 +190,16 @@ int parse_command(char *command, char *args, OutboundJsonDataStruct *response_st
     {
         DEBUG_LOG("[COMMAND] execution_mode\n");
         set_execution_mode_command(response_struct, args, heapStorePointer);
+    }
+    else if (strcmp(command, "sid") == 0)
+    {
+        DEBUG_LOG("[COMMAND] sid\n");
+        get_sid(response_struct);
+    }
+    else if (strcmp(command, "user_sid") == 0)
+    {
+        DEBUG_LOG("[COMMAND] sid\n");
+        user_to_sid(response_struct, args);
     }
     else
     {
@@ -1142,6 +1159,46 @@ void list_processes(OutboundJsonDataStruct *response_struct)
     {
         set_response_data(response_struct, processList);
     }
+}
+
+// ============
+// User Ops
+// ============
+
+void get_sid(OutboundJsonDataStruct *response_struct)
+{
+    const char *current_token_sid = get_current_token_sid();
+    set_response_data(response_struct, current_token_sid);
+}
+
+void user_to_sid(OutboundJsonDataStruct *response_struct, char *args)
+{
+    char *context = NULL;
+    char *arg_username = strtok_s(args, " ", &context);
+
+    if (!arg_username)
+    {
+        set_response_data(response_struct, "Invalid arguments. Expected: <username>");
+        return;
+    }
+
+    if (sizeof(arg_username) > 256)
+    {
+        set_response_data(response_struct, "Username too long");
+        return;
+    }
+
+    const char *sid = username_to_sid(arg_username);
+    // doing an additonal lookup for proper DOMAIN\User
+    // const char *full_username = get_user_from_sid_str(sid);
+
+    // sid: 256 max, + 256 for username max + 2 for formatting
+    char buffer[514];
+
+    // getting sid username being weird. just sendign back username liek this
+    snprintf(buffer, sizeof(buffer), "%s: %s", arg_username, sid);
+
+    set_response_data(response_struct, buffer);
 }
 
 /*

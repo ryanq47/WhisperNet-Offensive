@@ -90,12 +90,9 @@ typedef struct
 
 } HeapStore;
 
-typedef struct
-{
-    char *agent_id;
-    HeapStore *heapStorePointer;
-} EXEC_ARGS;
-
+// -----------------------------------------
+// Prototypes
+// -----------------------------------------
 // prototypes down here, so they can take advatage of the above
 void set_sleep_time(DWORD new_time, HeapStore *heapStorePointer);
 DWORD get_sleep_time(HeapStore *heapStorePointer);

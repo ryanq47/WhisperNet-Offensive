@@ -206,8 +206,6 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     return 0;
 }
 
-// need to init here so CONFIG is not a global.
-
 void generate_uuid4(char *uuid)
 {
     uint8_t bytes[16];

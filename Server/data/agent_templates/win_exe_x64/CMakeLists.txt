@@ -29,6 +29,8 @@ set(AGENT_SOURCES
     ${CMAKE_SOURCE_DIR}/whisper_winapi.c
     ${CMAKE_SOURCE_DIR}/whisper_credmanager.c
     ${CMAKE_SOURCE_DIR}/whisper_heapconfig.c
+    ${CMAKE_SOURCE_DIR}/whisper_toolbox.c
+
 )
 
 set(AGENT_HEADERS
@@ -41,6 +43,7 @@ set(AGENT_HEADERS
     ${CMAKE_SOURCE_DIR}/comms_http.h
     ${CMAKE_SOURCE_DIR}/whisper_credmanager.h
     ${CMAKE_SOURCE_DIR}/whisper_structs.h
+    ${CMAKE_SOURCE_DIR}/whisper_toolbox.h
 )
 
 # Platform-specific settings
