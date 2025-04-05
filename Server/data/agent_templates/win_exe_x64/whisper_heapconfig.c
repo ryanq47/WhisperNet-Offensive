@@ -232,6 +232,15 @@ HANDLE get_current_stored_token(HeapStore *heapStorePointer)
     return token;
 }
 
+void set_current_stored_token(HeapStore *heapStorePointer, HANDLE hToken)
+{
+    AcquireSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+
+    heapStorePointer->currentUserStore->token = hToken;
+
+    ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+}
+
 // -----------------------------------------
 // AgentBehaviorFuncs
 // -----------------------------------------
