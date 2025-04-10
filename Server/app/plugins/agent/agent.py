@@ -484,8 +484,112 @@ def handle_ping(data):
     return data
 
 
-@socketio.on("response", namespace="/shell")
-def handle_response(data):
+# @socketio.on("response", namespace="/shell")
+# def handle_response(data):
+#     """
+#     Expected data:
+#     {
+#         "agent_uuid": <agent_uuid>,
+#         "command_id": <command_id>,
+#         "data": <command_response_data>
+#     }
+#     """
+#     agent_uuid = data.get("agent_uuid")
+#     command_id = data.get("command_id")
+#     response_data = data.get("data")
+
+#     if agent_uuid and command_id and response_data is not None:
+#         logger.debug(
+#             f"Received response from agent {agent_uuid} for command {command_id}: {response_data}"
+#         )
+#         # Optionally, further processing or storage of response_data goes here.
+#         # For example, emitting to the room associated with this agent:
+#         emit(
+#             "response",
+#             # f"Response received for command {command_id}",
+#             response_data,
+#             room=agent_uuid,
+#             namespace="/shell",
+#         )
+#     else:
+#         logger.error("Invalid response data received: %s", data)
+
+
+@socketio.on("display_on_terminal", namespace="/shell")
+def handle_display_on_terminal(data):
+    """
+    Expecting data:
+    {
+        "agent_id": <agent_id>
+        "data": (str) Data to display
+    }
+    """
+    agent_id = data.get("agent_id")
+    display_data = data.get("data")
+
+    if agent_id and display_data is not None:
+        logger.debug(f"Receieved call for display_on_terminal")
+
+        emit(
+            "local_notif",
+            display_data,
+            room=agent_id,
+            namespace="/shell",
+        )
+    else:
+        logger.error(f"Invalid response data received: {data}")
+
+
+@socketio.on("on_agent_connect", namespace="/shell")
+def handle_on_agent_connect(data):
+    """
+    Expecting data:
+    {
+        "agent_id": <agent_id>
+    }
+    """
+    agent_id = data.get("agent_id")
+    # display_data = data.get("data")
+
+    if agent_id is not None:
+        logger.debug(f"Receieved call for display_on_terminal")
+
+        emit(
+            "on_agent_connect",
+            data,
+            room=agent_id,
+            namespace="/shell",
+        )
+    else:
+        logger.error(f"Invalid response data received: {data}")
+
+
+@socketio.on("on_agent_first_connect", namespace="/shell")
+def handle_on_agent_first_connect(data):
+    """
+    Expecting data:
+    {
+        "agent_id": <agent_id>
+    }
+    """
+    agent_id = data.get("agent_id")
+    # display_data = data.get("data")
+
+    if agent_id is not None:
+        logger.debug(f"Receieved call for on_agent_first_connect")
+
+        emit(
+            "on_agent_first_connect",
+            data,
+            room=agent_id,
+            namespace="/shell",
+        )
+    else:
+        logger.error(f"Invalid response data received: {data}")
+
+
+@socketio.on("on_agent_data", namespace="/shell")
+def handle_on_agent_data(data):
     """
     Expected data:
     {
@@ -494,25 +598,24 @@ def handle_response(data):
         "data": <command_response_data>
     }
     """
-    agent_uuid = data.get("agent_uuid")
+    agent_id = data.get("agent_id")
     command_id = data.get("command_id")
     response_data = data.get("data")
 
-    if agent_uuid and command_id and response_data is not None:
+    if agent_id and command_id and response_data is not None:
         logger.debug(
-            f"Received response from agent {agent_uuid} for command {command_id}: {response_data}"
+            f"Received response from agent {agent_id} for command {command_id}: {response_data}"
         )
         # Optionally, further processing or storage of response_data goes here.
         # For example, emitting to the room associated with this agent:
         emit(
-            "response",
-            # f"Response received for command {command_id}",
+            "on_agent_data",
             response_data,
-            room=agent_uuid,
+            room=agent_id,
             namespace="/shell",
         )
     else:
-        logger.error("Invalid response data received: %s", data)
+        logger.error(f"Invalid response data received: {data}")
 
 
 @socketio.on("join", namespace="/shell")

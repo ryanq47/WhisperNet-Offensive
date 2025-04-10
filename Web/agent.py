@@ -229,15 +229,44 @@ class Shell:
         self.data_bar = None
         self.current_settings = app.storage.user.get("settings", {})
 
-        # register socket things for class
-        Config.socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
-        Config.socketio.on(
-            "response", self.socket_set_agent_response, namespace="/shell"
-        )
-
     # ----------------------
     # Socket Ops
     # ----------------------
+    async def register_socket_handlers(self):
+        """
+        Registers websockets to their correct functions
+
+        In future iterations, with scripts, there will be overrides for the script functions to get called isntead
+        of the ones linked here.
+        """
+        # register socket things for class
+        Config.socketio.on("local_notif", self.socket_local_notif, namespace="/shell")
+        await self._update_log(f"[SYSTEM] local_notif registered successfully")
+
+        Config.socketio.on(
+            "display_on_terminal", self.socket_local_notif, namespace="/shell"
+        )
+        await self._update_log(f"[SYSTEM] display_on_terminal registered successfully")
+
+        Config.socketio.on(
+            "on_agent_connect", self.socket_on_agent_connect, namespace="/shell"
+        )
+        await self._update_log(f"[SYSTEM] on_agent_connect registered successfully")
+
+        Config.socketio.on(
+            "on_agent_first_connect",
+            self.socket_on_agent_first_connect,
+            namespace="/shell",
+        )
+        await self._update_log(
+            f"[SYSTEM] on_agent_first_connect registered successfully"
+        )
+
+        Config.socketio.on(
+            "on_agent_data", self.socket_on_agent_data, namespace="/shell"
+        )
+        await self._update_log(f"[SYSTEM] on_agent_data registered successfully")
+
     async def connect_to_agent_room(self):
         await self._update_log(
             f"[SYSTEM] Attempting to connect to {self.agent_id} room..."
@@ -256,6 +285,22 @@ class Shell:
     async def socket_set_agent_response(self, data):
         # print("Data from soket:", data)
         await self._update_log(f"[04/02 19:22:48] >> received output:\n{data}")
+
+    # setup additional sockets
+    async def socket_on_agent_connect(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(f"debug: agent {data} connected")
+        # something like this would be good in the script, once this base is implemented
+        # idea: if script.method_for_this, then script.call_method_for_it
+        await self._update_log(f"Agent checked in.")
+
+    async def socket_on_agent_first_connect(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(f"debug: socket_on_agent_first_connect")
+
+    async def socket_on_agent_data(self, data):
+        # print("Data from soket:", data)
+        await self._update_log(f"debug: socket_on_agent_data")
 
     # ----------------------
     # Render
@@ -282,16 +327,18 @@ class Shell:
 
         if Config.socketio.connected:
             await self._update_log("[SYSTEM] Socket connected...")
+            # register socket hanlders...
+            await self.register_socket_handlers()
             # And connect to agent room after ensuring connection is established.
             await self.connect_to_agent_room()
             ui.timer(1, self.measure_latency)
 
         else:
             ui.notify("Socket not connected", position="top-right", type="warning")
-            await self._update_log("Socket not connected...")
+            await self._update_log("[SYSTEM] Socket not connected...")
 
         # temporarily load scit here
-        await self._load_script()
+        # await self._load_script()
 
     def _render_log(self):
         """Create the log display area."""

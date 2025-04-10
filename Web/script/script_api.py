@@ -3,9 +3,11 @@ import asyncio
 from nicegui import ui
 import socketio
 from functools import partial
-from script.socket_client import sio_client, connect
+
+# from script.socket_client import sio_client, connect
 import pathlib
 import importlib.util
+from config import Config
 
 
 # a set of common web funcs to be inhereted
@@ -72,12 +74,16 @@ class Core:
                 # sio_client = socketio.AsyncClient()
                 # await sio_client.connect("http://localhost:5000")  # local server
                 # JOIN ROOM!
-                # print("attempting to broadcast...")
+                await Config.socketio.emit(
+                    # hardcoded for now
+                    "join",
+                    {"agent_id": self.agent_id},
+                    namespace="/shell",
+                )
 
-                # attempt connect JUST in case, if already connected, it's fine
-                await connect()
-                await sio_client.emit(
-                    event="display_on_terminal", data="Broadcast Message from Script"
+                d = {"agent_id": self.agent_id, "data": message}
+                await Config.socketio.emit(
+                    event="display_on_terminal", data=d, namespace="/shell"
                 )
 
     class Agent:  # agent stuff + calls/funcs for getting agent info
@@ -100,7 +106,7 @@ class Core:
 
 
 # importing script
-async def load_script(script_name):
+async def load_script(script_name, agent_id=None):
     print(f"Loading Script: {script_name}")
     # Build the script file path:
     path = pathlib.Path.cwd() / "data" / "scripts" / f"{script_name}.py"
@@ -128,7 +134,8 @@ async def load_script(script_name):
     else:
         try:
             # setup socket handler, call .run when this connects
-            sio_client.on("on_agent_connect", on_agent_connect.run)
+            Config.socketio.on("on_agent_connect", on_agent_connect.run)
+            print("registered on_agent_connect to on_agent_connect.run")
         except Exception as e:
             print(f"Error running on_agent_connect.run(): {e}")
 
@@ -139,10 +146,12 @@ async def load_script(script_name):
     else:
         try:
             # setup socket handler, call .run when this connects
-            sio_client.on(
+            Config.socketio.on(
                 "on_agent_first_connect",
                 on_agent_first_connect.run,
             )
+            print("registered on_agent_first_connect to on_agent_first_connect.run")
+
         except Exception as e:
             print(f"Error running on_agent_first_connect.run(): {e}")
 
@@ -153,7 +162,9 @@ async def load_script(script_name):
     else:
         try:
             # setup socket handler, call .run when this connects
-            sio_client.on("on_agent_data", on_agent_data.run)
+            Config.socketio.on("on_agent_data", on_agent_data.run)
+            print("registered on_agent_data to on_agent_data.run")
+
         except Exception as e:
             print(f"Error running on_agent_data.run(): {e}")
 
@@ -164,14 +175,18 @@ async def load_script(script_name):
     else:
         try:
             # setup socket handler, call .run when this connects
-            sio_client.on("display_on_terminal", display_on_terminal.run)
+            Config.socketio.on(
+                "display_on_terminal", display_on_terminal.run, namespace="/shell"
+            )
+            print("registered display_on_terminal to display_on_terminal.run")
+
         except Exception as e:
             print(f"Error running display_on_terminal.run(): {e}")
 
-    # class usage
-    # # Use the classes
-    # instance1 = MyClass()
-    # instance1.hello()  # Output: Hello from MyClass!
-
-    # instance2 = AnotherClass()
-    # instance2.greet()  # Output: Greetings from AnotherClass!
+    # send message to terminal that things are hooked up + script is loaded
+    instance = Core.Web.Terminal(
+        agent_id="45cb983e-9662-4410-b77f-5ed3ac2699cf", app=ui
+    )
+    await instance.broadcast(
+        "1. Loaded script successfully & registered websocket stuff"
+    )

@@ -26,7 +26,7 @@ Desc: Triggered when agent gives data (NOT checkin)
 
 # sio = socketio.Client()
 # sio.connect("http://localhost:5000")
-interface = Core.Web.Terminal(agent_id=42, app=ui)
+interface = Core.Web.Terminal(agent_id="45cb983e-9662-4410-b77f-5ed3ac2699cf", app=ui)
 
 
 class on_agent_connect:
@@ -66,6 +66,6 @@ class display_on_terminal:
         # Instantiate our Core.Web.Interface with NiceGUI's ui as our 'app'
         # interface.broadcast("Some data printed to terminal.")
         # interface.broadcast("SomeData")
-        await interface.broadcast("display_on_terminal")
+        await interface.broadcast("Script says hello from interface.broadcast")
         print("SCRIPT: display_on_terminal")
         # interface.notify("display_on_terminal")
