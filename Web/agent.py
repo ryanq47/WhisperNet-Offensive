@@ -10,6 +10,7 @@ from scripts import ScriptsView
 from nicegui.events import KeyEventArguments
 from perf_testing import *
 import socketio
+from script.script_api import load_script
 
 socketio = socketio.AsyncClient()
 
@@ -289,6 +290,9 @@ class Shell:
             ui.notify("Socket not connected", position="top-right", type="warning")
             await self._update_log("Socket not connected...")
 
+        # temporarily load scit here
+        await self._load_script()
+
     def _render_log(self):
         """Create the log display area."""
         self.display_log = ui.log(max_lines=100).classes(
@@ -428,6 +432,28 @@ class Shell:
         latency = (end_time - start_time) * 1000  # in milliseconds
         # ui.notify(f"Round-trip latency: {latency:.2f} ms")
         await self.update_latency_text(latency)
+
+    # ----------------------
+    # Misc
+    # ----------------------
+    async def _load_script(self, script="example_script"):
+        """
+        Function called to load a script from the GUI. Loads a script into
+        the current shell/agent session
+
+
+        script (str): The script to be loaded into the current agent session
+        """
+        try:
+            await load_script(script)
+
+            msg = f"[SYSTEM] Script successfully loaded: {script}"
+            await self._update_log(data=msg)
+
+        except Exception as e:
+            msg = f"[ERROR] Could not load script {script}: {e}"
+            await self._update_log(data=msg)
+            print(msg)
 
 
 # -----------------------------------------------
