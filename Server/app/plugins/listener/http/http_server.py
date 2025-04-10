@@ -85,6 +85,25 @@ class AgentDequeueCommandResource(Resource):
         logger.debug(f"Agent {agent_id} checked in.")
 
         try:
+            # --------------
+            # Emit agent checked in
+            # --------------
+            connect_to_websocket()
+            if ws.connected:
+                # Emit join event so the listener for this agent joins its room.
+                logger.debug(f"Emitting join for agent: {agent_id}")
+                ws.emit("join", {"agent_id": agent_id}, namespace="/shell")
+                # Emit the response to the room corresponding to this agent.
+                logger.debug(f"Emitting response to room: {agent_id}")
+                ws.emit(
+                    "on_agent_connect",
+                    {"agent_id": agent_id},
+                    namespace="/shell",
+                )
+
+            else:
+                logger.error("WebSocket client not connected.")
+
             a = Agent(agent_id=agent_id)
             update_last_seen(agent_class=a)
             command_object = a.dequeue_command()
@@ -104,25 +123,6 @@ class AgentDequeueCommandResource(Resource):
             parts = command.strip().split(" ", 1)
             command_name = parts[0]
             args = parts[1] if len(parts) > 1 else ""
-
-            # --------------
-            # Emit agent checked in
-            # --------------
-            connect_to_websocket()
-            if ws.connected:
-                # Emit join event so the listener for this agent joins its room.
-                logger.debug(f"Emitting join for agent: {agent_id}")
-                ws.emit("join", {"agent_id": agent_id}, namespace="/shell")
-                # Emit the response to the room corresponding to this agent.
-                logger.debug(f"Emitting response to room: {agent_id}")
-                ws.emit(
-                    "on_agent_connect",
-                    {"agent_id": agent_id},
-                    namespace="/shell",
-                )
-
-            else:
-                logger.error("WebSocket client not connected.")
 
             response_dict = {
                 "command_id": command_id,
