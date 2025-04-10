@@ -77,11 +77,12 @@ All shell-related real-time events occur under this namespace. When clients conn
   - Validate that an `agent_id` is provided.
   - Emit the event **`on_agent_connect`** (with the same payload) to the room identified by the agent ID.
   - This can be used to trigger routines or notifications once an agent is confirmed to be online.
+- **Trigger**: This is ONLY triggered by listeners, when an agent checks in to get the next command.
 
 ---
 
 ### on_agent_first_connect
-- **Purpose:** A distinct event to signal the very first connection of an agent.
+- **Purpose:** A distinct event to signal the very first connection of an agent. 
 - **Client Payload:**  
   ```json
   { "agent_id": "abc-123" }
@@ -90,6 +91,7 @@ All shell-related real-time events occur under this namespace. When clients conn
   - Validate that an `agent_id` is provided.
   - Emit the **`on_agent_first_connect`** event to the corresponding room.
   - This event helps differentiate between an agent’s first connection and subsequent reconnections.
+- **Trigger**: This is ONLY triggered by listeners, on an agents first connect.
 
 ---
 
@@ -107,6 +109,8 @@ All shell-related real-time events occur under this namespace. When clients conn
   - Validate that `agent_id`, `command_id`, and `data` are provided.
   - Log the received response for debugging or auditing purposes.
   - Emit the **`on_agent_data`** event to the room corresponding to the agent, distributing the response data.
+
+- **Trigger**: This is ONLY triggered by listeners, when an agent posts back data.
 
 ---
 
