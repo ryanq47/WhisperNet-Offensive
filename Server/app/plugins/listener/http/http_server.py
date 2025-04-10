@@ -135,11 +135,11 @@ class AgentDequeueCommandResource(Resource):
             return "", 500
 
 
-@beacon_http_ns.route("/post/<string:agent_uuid>")
+@beacon_http_ns.route("/post/<string:agent_id>")
 class PostResource(Resource):
-    def post(self, agent_uuid):
+    def post(self, agent_id):
         """Receives JSON data, stores it in Redis, and emits it via WebSocket."""
-        logger.debug(f"Agent {agent_uuid} posted data")
+        logger.debug(f"Agent {agent_id} posted data")
         try:
             # Ensure the websocket connection is active.
             connect_to_websocket()
@@ -159,25 +159,22 @@ class PostResource(Resource):
             logger.debug("BEFORE WEBSOCKET")
             if ws.connected:
                 # Emit join event so the listener for this agent joins its room.
-                logger.debug(f"Emitting join for agent: {agent_uuid}")
-                ws.emit("join", {"agent_id": agent_uuid}, namespace="/shell")
+                logger.debug(f"Emitting join for agent: {agent_id}")
+                ws.emit("join", {"agent_id": agent_id}, namespace="/shell")
                 # Emit the response to the room corresponding to this agent.
-                logger.debug(f"Emitting response to room: {agent_uuid}")
+                logger.debug(f"Emitting response to room: {agent_id}")
                 ws.emit(
                     "on_agent_data",
-                    {"agent_uuid": agent_uuid, "command_id": command_id, "data": data},
+                    {"agent_id": agent_id, "command_id": command_id, "data": data},
                     namespace="/shell",
                 )
-                # ws.emit(
-                #     "on_agent_connect",
-                #     namespace="/shell",
-                # )
+
             else:
                 logger.error("WebSocket client not connected.")
 
             # fialing as there's not command id entry on oneoffs... need to do a new entry?
             # Store the response in Redis, even if command_id is None.
-            agent = Agent(agent_uuid)
+            agent = Agent(agent_id)
             agent.store_response(command_id, data)
 
             return {"status": "received", "data": data}, 200

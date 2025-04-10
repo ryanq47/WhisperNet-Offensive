@@ -593,7 +593,7 @@ def handle_on_agent_data(data):
     """
     Expected data:
     {
-        "agent_uuid": <agent_uuid>,
+        "agent_id": <agent_id>,
         "command_id": <command_id>,
         "data": <command_response_data>
     }

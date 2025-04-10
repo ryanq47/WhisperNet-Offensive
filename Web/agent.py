@@ -228,6 +228,7 @@ class Shell:
         self.latency_text = None
         self.data_bar = None
         self.current_settings = app.storage.user.get("settings", {})
+        self.last_checkin_time = 0
 
     # ----------------------
     # Socket Ops
@@ -292,15 +293,22 @@ class Shell:
         await self._update_log(f"debug: agent {data} connected")
         # something like this would be good in the script, once this base is implemented
         # idea: if script.method_for_this, then script.call_method_for_it
-        await self._update_log(f"Agent checked in.")
+        await self._update_log(f"[SYSTEM]: Agent checked in.")
+        # on checkin, reset last checkin to 0 seconds
+        await self.reset_last_checkin()
 
     async def socket_on_agent_first_connect(self, data):
         # print("Data from soket:", data)
-        await self._update_log(f"debug: socket_on_agent_first_connect")
+        await self._update_log(f"[SYSTEM]: socket_on_agent_first_connect")
 
     async def socket_on_agent_data(self, data):
-        # print("Data from soket:", data)
-        await self._update_log(f"debug: socket_on_agent_data")
+        """
+        Functino to do stuff based on when agent posts its data back
+
+        data: str: The data from the agent
+
+        """
+        await self._update_log(data)
 
     # ----------------------
     # Render
@@ -318,6 +326,9 @@ class Shell:
             self.latency_text = ui.label("1234")
             with self.latency_text:
                 ui.tooltip("Latency between Shell & Server")
+            self.last_checkin_text = ui.label(0)
+            with self.last_checkin_text:
+                ui.tooltip("How long since the agent last checked in")
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
@@ -332,6 +343,7 @@ class Shell:
             # And connect to agent room after ensuring connection is established.
             await self.connect_to_agent_room()
             ui.timer(1, self.measure_latency)
+            ui.timer(1, self.check_last_checkin)
 
         else:
             ui.notify("Socket not connected", position="top-right", type="warning")
@@ -479,6 +491,17 @@ class Shell:
         latency = (end_time - start_time) * 1000  # in milliseconds
         # ui.notify(f"Round-trip latency: {latency:.2f} ms")
         await self.update_latency_text(latency)
+
+    async def check_last_checkin(self):
+        # Record the time before sending the ping
+        self.last_checkin_time = self.last_checkin_time + 1
+        await self.update_last_checkin_text(self.last_checkin_time)
+
+    async def reset_last_checkin(self):
+        self.last_checkin_time = 0
+
+    async def update_last_checkin_text(self, data):
+        self.last_checkin_text.set_text(f"Last Checkin: {data:.2f} s ago")
 
     # ----------------------
     # Misc
