@@ -229,6 +229,7 @@ class Shell:
         self.data_bar = None
         self.current_settings = app.storage.user.get("settings", {})
         self.last_checkin_time = 0
+        self.loaded_script_module = None
 
     # ----------------------
     # Socket Ops
@@ -297,6 +298,25 @@ class Shell:
         # on checkin, reset last checkin to 0 seconds
         await self.reset_last_checkin()
 
+        """
+        Idea here... do a check, IF related module exists in imported script...
+        run that classes .run
+        
+        Would need special handling for custom commands
+        """
+
+        # from data.scripts.example_script import on_agent_connect
+
+        # check if class is in script
+        on_agent_connect = getattr(self.loaded_script_module, "on_agent_connect", None)
+        if on_agent_connect is None:
+            print("Warning: 'on_agent_connect' attribute not found in module.")
+        else:
+            try:
+                await on_agent_connect.run(data)
+            except Exception as e:
+                print(f"Error running on_agent_connect.run(): {e}")
+
     async def socket_on_agent_first_connect(self, data):
         # print("Data from soket:", data)
         await self._update_log(f"[SYSTEM]: socket_on_agent_first_connect")
@@ -350,7 +370,7 @@ class Shell:
             await self._update_log("[SYSTEM] Socket not connected...")
 
         # temporarily load scit here
-        # await self._load_script()
+        await self._load_script("example_script")
 
     def _render_log(self):
         """Create the log display area."""
@@ -514,8 +534,27 @@ class Shell:
 
         script (str): The script to be loaded into the current agent session
         """
+        import pathlib
+        import importlib
+
         try:
-            await load_script(script)
+            # await load_script(script)
+            path = pathlib.Path.cwd() / "data" / "scripts" / f"{script}.py"
+
+            if not path.exists():
+                print(f"Script file not found: {path}")
+                return
+
+            # Create a spec from the file location.
+            spec = importlib.util.spec_from_file_location(script, str(path))
+            if spec is None:
+                print("Could not load spec for", str(path))
+                return
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # set the self.module so it can be used elsewehre
+            self.loaded_script_module = module
 
             msg = f"[SYSTEM] Script successfully loaded: {script}"
             await self._update_log(data=msg)

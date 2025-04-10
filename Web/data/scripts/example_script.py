@@ -32,7 +32,7 @@ interface = Core.Web.Terminal(agent_id="45cb983e-9662-4410-b77f-5ed3ac2699cf", a
 class on_agent_connect:
     async def run(data):
         # interface.broadcast("Agent connected")
-        await interface.broadcast("on_agent_connect")
+        await interface.broadcast("Hello from custom broadcast in script")
         print("SCRIPT: on_agent_connect")
         # await interface.broadcast("on_agent_connect")
         # replace this with interface.broadcast, this is just a dev call
