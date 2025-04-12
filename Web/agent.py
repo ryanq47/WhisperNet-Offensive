@@ -11,6 +11,8 @@ from nicegui.events import KeyEventArguments
 from perf_testing import *
 import socketio
 from script.script_api import load_script
+import pathlib
+import importlib
 
 socketio = socketio.AsyncClient()
 
@@ -291,7 +293,7 @@ class Shell:
     # setup additional sockets
     async def socket_on_agent_connect(self, data):
         # print("Data from soket:", data)
-        await self._update_log(f"debug: agent {data} connected")
+        # await self._update_log(f"debug: agent {data} connected")
         # something like this would be good in the script, once this base is implemented
         # idea: if script.method_for_this, then script.call_method_for_it
         await self._update_log(f"[SYSTEM]: Agent checked in.")
@@ -320,6 +322,16 @@ class Shell:
     async def socket_on_agent_first_connect(self, data):
         # print("Data from soket:", data)
         await self._update_log(f"[SYSTEM]: socket_on_agent_first_connect")
+        on_agent_first_connect = getattr(
+            self.loaded_script_module, "on_agent_first_connect", None
+        )
+        if on_agent_first_connect is None:
+            print("Warning: 'on_agent_first_connect' attribute not found in module.")
+        else:
+            try:
+                await on_agent_first_connect.run(data)
+            except Exception as e:
+                print(f"Error running on_agent_first_connect.run(): {e}")
 
     async def socket_on_agent_data(self, data):
         """
@@ -329,6 +341,15 @@ class Shell:
 
         """
         await self._update_log(data)
+
+        on_agent_data = getattr(self.loaded_script_module, "on_agent_data", None)
+        if on_agent_data is None:
+            print("Warning: 'on_agent_data' attribute not found in module.")
+        else:
+            try:
+                await on_agent_data.run(data)
+            except Exception as e:
+                print(f"Error running on_agent_data.run(): {e}")
 
     # ----------------------
     # Render
@@ -369,8 +390,20 @@ class Shell:
             ui.notify("Socket not connected", position="top-right", type="warning")
             await self._update_log("[SYSTEM] Socket not connected...")
 
-        # temporarily load scit here
+        # temporarily load script here
         await self._load_script("example_script")
+
+        with ui.context_menu():
+            ui.menu_item("Change Script", on_click=self.render_scripts_dialog)
+            ui.menu_item("Option 2")
+            ui.separator()
+            with ui.menu_item("Option 3", auto_close=False):
+                with ui.item_section().props("side"):
+                    ui.icon("keyboard_arrow_right")
+                with ui.menu().props('anchor="top end" self="top start" auto-close'):
+                    ui.menu_item("Sub-option 1")
+                    ui.menu_item("Sub-option 2")
+                    ui.menu_item("Sub-option 3")
 
     def _render_log(self):
         """Create the log display area."""
@@ -418,10 +451,42 @@ class Shell:
                     ui.button(
                         ">broken< Toggle Fullscreen", on_click="fullscreen.toggle"
                     ).classes("h-16")
+                    ui.button(
+                        "Chnage Script", on_click=self.render_scripts_dialog
+                    ).classes("h-16")
 
                     # # ui.button('response inspector', on_click=fullscreen.toggle) # pops all json commands in the json editor
                     # ui.separator()
                     # ui.menu_item("Close", menu.close)
+
+    # old menu
+    # def render_scripts_options(self):
+    #     """
+    #     Renders the script options dropdown.
+
+    #     Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
+    #     then creates a dropdown. Changing the selection triggers _register_script.
+    #     """
+    #     response = api_call(url="/scripts/files")
+    #     scripts_data = (
+    #         [
+    #             script.get("filename", "Unknown Script")
+    #             for script in response.get("data", [])
+    #         ]
+    #         if response.get("data")
+    #         else ["No Scripts Available"]
+    #     )
+    #     agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+    #     agent_info = next(iter(agent_data.values()), {})
+    #     agent_script = (
+    #         agent_info.get("data", {}).get("config", {}).get("command_script")
+    #     )
+    #     ui.select(
+    #         options=scripts_data,
+    #         label="Extension Scripts",
+    #         on_change=lambda e: self._register_script(e.value),
+    #         value=agent_script,
+    #     ).classes("w-full")
 
     def render_scripts_options(self):
         """
@@ -430,26 +495,45 @@ class Shell:
         Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
         then creates a dropdown. Changing the selection triggers _register_script.
         """
-        response = api_call(url="/scripts/files")
-        scripts_data = (
-            [
-                script.get("filename", "Unknown Script")
-                for script in response.get("data", [])
-            ]
-            if response.get("data")
-            else ["No Scripts Available"]
-        )
-        agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
-        agent_info = next(iter(agent_data.values()), {})
-        agent_script = (
-            agent_info.get("data", {}).get("config", {}).get("command_script")
-        )
+        # response = api_call(url="/scripts/files")
+        # scripts_data = (
+        #     [
+        #         script.get("filename", "Unknown Script")
+        #         for script in response.get("data", [])
+        #     ]
+        #     if response.get("data")
+        #     else ["No Scripts Available"]
+        # )
+        # agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
+        # agent_info = next(iter(agent_data.values()), {})
+        # agent_script = (
+        #     agent_info.get("data", {}).get("config", {}).get("command_script")
+        # )
+
+        scripts_dir_cwd = pathlib.Path.cwd() / "data" / "scripts"
+        scripts_dir = pathlib.Path(scripts_dir_cwd)
+
+        # Iterate over directory contents and convert each PosixPath to a string
+        scripts_in_script_dir = [str(p) for p in scripts_dir.iterdir()]
+
+        # get list of files in folder
+        # format into list
         ui.select(
-            options=scripts_data,
+            options=scripts_in_script_dir,
             label="Extension Scripts",
-            on_change=lambda e: self._register_script(e.value),
-            value=agent_script,
+            on_change=lambda e: self._load_script(e.value),
+            # moved to load script instead of register script
         ).classes("w-full")
+
+    def render_scripts_dialog(self):
+        """Displays a help dialog for the agents tab."""
+        with ui.dialog().classes() as dialog, ui.card():
+            ui.markdown("# Select a script:")
+            self.render_scripts_options()
+            with ui.row():
+                ui.button("Apply")  # onlick apply script
+                ui.button("close")  # onclick close
+        dialog.open()
 
     # ----------------------
     # Events
@@ -534,8 +618,6 @@ class Shell:
 
         script (str): The script to be loaded into the current agent session
         """
-        import pathlib
-        import importlib
 
         try:
             # await load_script(script)
