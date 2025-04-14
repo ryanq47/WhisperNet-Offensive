@@ -227,11 +227,12 @@ class Shell:
         )  # Store previous commands to allow for history navigation
 
         self.send_button = None
-        self.latency_text = None
+        self.data_bar_latency_text = None
         self.data_bar = None
         self.current_settings = app.storage.user.get("settings", {})
         self.last_checkin_time = 0
         self.loaded_script_module = None
+        self.agent_data = {}  # agent data from the server
 
     # ----------------------
     # Socket Ops
@@ -300,6 +301,8 @@ class Shell:
         # on checkin, reset last checkin to 0 seconds
         await self.reset_last_checkin()
 
+        await self.update_metadata_fields()
+
         """
         Idea here... do a check, IF related module exists in imported script...
         run that classes .run
@@ -322,6 +325,8 @@ class Shell:
     async def socket_on_agent_first_connect(self, data):
         # print("Data from soket:", data)
         await self._update_log(f"[SYSTEM]: socket_on_agent_first_connect")
+        await self.update_metadata_fields()
+
         on_agent_first_connect = getattr(
             self.loaded_script_module, "on_agent_first_connect", None
         )
@@ -360,38 +365,7 @@ class Shell:
         # render FIRST
         self._render_log()  # Ensure display_log is ready
 
-        self.data_bar = ui.row().classes(
-            "w-full h-[12px] text-grey m-0 p-0 items-center"
-        )
-        with self.data_bar:
-            # self.latency_text = ui.label("Metadata bar: ")
-
-            # latency
-            self.latency_text = ui.label("1234")
-            with self.latency_text:
-                ui.tooltip("Latency between Shell & Server")
-
-            # last checkin
-            self.last_checkin_text = ui.label(0)
-            with self.last_checkin_text:
-                ui.tooltip("How long since the agent last checked in")
-
-            # int_ip
-            self.int_ip = ui.label("int_ip: 127.0.0.1")
-            with self.int_ip:
-                ui.tooltip("The internal IP of the agent")
-
-            # ext_ip
-            self.ext_ip = ui.label("ext_ip: 69.69.69.69")
-            with self.ext_ip:
-                ui.tooltip("The external ip of the agent")
-
-            # ext_ip
-            self.current_user = ui.label("context/user: SomeDomain\SomeUser")
-            with self.current_user:
-                ui.tooltip(
-                    "The current user that the agent is impersonating/running under"
-                )
+        await self._render_data_bar()
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
@@ -481,34 +455,54 @@ class Shell:
                     # ui.separator()
                     # ui.menu_item("Close", menu.close)
 
-    # old menu
-    # def render_scripts_options(self):
-    #     """
-    #     Renders the script options dropdown.
+    async def _render_data_bar(self):
+        """
 
-    #     Retrieves available scripts from the /scripts/files endpoint and the agent's current script,
-    #     then creates a dropdown. Changing the selection triggers _register_script.
-    #     """
-    #     response = api_call(url="/scripts/files")
-    #     scripts_data = (
-    #         [
-    #             script.get("filename", "Unknown Script")
-    #             for script in response.get("data", [])
-    #         ]
-    #         if response.get("data")
-    #         else ["No Scripts Available"]
-    #     )
-    #     agent_data = api_call(url=f"/stats/agent/{self.agent_id}").get("data", {})
-    #     agent_info = next(iter(agent_data.values()), {})
-    #     agent_script = (
-    #         agent_info.get("data", {}).get("config", {}).get("command_script")
-    #     )
-    #     ui.select(
-    #         options=scripts_data,
-    #         label="Extension Scripts",
-    #         on_change=lambda e: self._register_script(e.value),
-    #         value=agent_script,
-    #     ).classes("w-full")
+        Renders the data bar, called from class.render()
+
+        """
+        self.data_bar = ui.row().classes(
+            "w-full h-[12px] text-grey m-0 p-0 items-center"
+        )
+        with self.data_bar:
+            # self.data_bar_latency_text = ui.label("Metadata bar: ")
+
+            # HEY - change these to self.meta_nameofvar
+
+            # latency
+            self.data_bar_latency_text = ui.label("--")
+            with self.data_bar_latency_text:
+                ui.tooltip("Latency between Shell & Server")
+
+            # last checkin
+            self.data_bar_last_checkin_text = ui.label(0)
+            with self.data_bar_last_checkin_text:
+                ui.tooltip("How long since the agent last checked in")
+
+            # int_ip
+            self.data_bar_int_ip_text = ui.label("int_ip: --")
+            with self.data_bar_int_ip_text:
+                ui.tooltip("The internal IP of the agent")
+
+            # ext_ip
+            self.data_bar_ext_ip_text = ui.label("ext_ip: --")
+            with self.data_bar_ext_ip_text:
+                ui.tooltip("The external ip of the agent")
+
+            # user
+            self.data_bar_current_user_text = ui.label("context/user: --")
+            with self.data_bar_current_user_text:
+                ui.tooltip(
+                    "The current user that the agent is impersonating/running under"
+                )
+
+            # os
+            self.data_bar_os_text = ui.label("os: --")
+            with self.data_bar_os_text:
+                ui.tooltip("The operating system the agent is running on")
+
+        # finally, once rendered/class vars are declared, update values:
+        await self.update_metadata_fields()
 
     def render_scripts_options(self):
         """
@@ -561,7 +555,7 @@ class Shell:
     # Events
     # ----------------------
     async def update_latency_text(self, data):
-        self.latency_text.set_text(f"Latency: {data:.2f} ms")
+        self.data_bar_latency_text.set_text(f"Latency: {data:.2f} ms")
 
     async def handle_keydown(self, e):
         if e.args.get("key") == "Enter":
@@ -627,7 +621,42 @@ class Shell:
         self.last_checkin_time = 0
 
     async def update_last_checkin_text(self, data):
-        self.last_checkin_text.set_text(f"Last Checkin: {data:.2f} s ago")
+        self.data_bar_last_checkin_text.set_text(f"Last Checkin: {data:.2f} s ago")
+
+    async def update_metadata_fields(self):
+        """
+        Update the data_bar with data from agent
+
+        """
+        # get data key from agent to avoid redundant .get("data")
+        data = self.get_agent_data().get("data", {})
+
+        ext_ip = data.get("network", {}).get("external_ip", "--")
+        int_ip = data.get("network", {}).get("internal_ip", "--")
+        os = data.get("system", {}).get("os", "--")
+        user = data.get("system", {}).get("username", "--")
+
+        self.data_bar_ext_ip_text.set_text(f"ext_ip: {ext_ip}")
+        self.data_bar_int_ip_text.set_text(f"int_ip: {int_ip}")
+        self.data_bar_os_text.set_text(f"os: {os}")
+        self.data_bar_current_user_text.set_text(f"User: {user}")
+
+    def get_agent_data(self):
+        """
+        Loads agent data synchronously from the /stats/agent/{agent_id} endpoint.
+
+        Processes the response and stores the relevant data in self.agent_data.
+
+        Temporarily using this function for getting agent data
+        """
+        response = api_call(url=f"/stats/agent/{self.agent_id}")
+        data = response.get("data", {})
+        if data:
+            first_key = next(iter(data))
+            return data.get(first_key, {})
+        else:
+            # self.agent_data = {}
+            return {}
 
     # ----------------------
     # Misc

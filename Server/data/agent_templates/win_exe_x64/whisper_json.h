@@ -61,6 +61,7 @@ char *encode_json(const char *agent_id, const char *command_result_data, const c
  *   "command_result_data": "some data",
  *   "command_id": "cmd456",
  *   "metadata": {
+ *     "os": "os",
  *     "ext_ip": "ext_ip",
  *     "int_ip": "int_ip",
  *     "context": "context"
@@ -94,6 +95,7 @@ char *encode_json(const char *agent_id, const char *command_result_data, const c
     }
 
     // Add metadata fields
+    cJSON_AddStringToObject(metadata, "os", "context");
     cJSON_AddStringToObject(metadata, "ext_ip", "ext_ip");
     cJSON_AddStringToObject(metadata, "int_ip", "int_ip");
     cJSON_AddStringToObject(metadata, "context", "context");

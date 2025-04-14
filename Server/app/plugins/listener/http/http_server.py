@@ -151,6 +151,11 @@ class PostResource(Resource):
             command_id = response.get("command_id")
             data = response.get("command_result_data")
 
+            ext_ip = response.get("metadata", {}).get("ext_ip", "")
+            int_ip = response.get("metadata", {}).get("int_ip", "")
+            os = response.get("metadata", {}).get("os", "")
+            context = response.get("metadata", {}).get("context", "")
+
             if data is None:
                 logger.warning("Missing 'command_result_data' in payload.")
                 return {"error": "Missing required field: command_result_data."}, 400
@@ -176,6 +181,14 @@ class PostResource(Resource):
             # Store the response in Redis, even if command_id is None.
             agent = Agent(agent_id)
             agent.store_response(command_id, data)
+
+            # need to extract metadata fields from the responses to store as well
+            logger.warning(response)
+
+            agent.update_data_field(field="network.internal_ip", value=int_ip)
+            agent.update_data_field(field="network.external_ip", value=ext_ip)
+            agent.update_data_field(field="system.os", value=os)
+            agent.update_data_field(field="system.username", value=context)
 
             return {"status": "received", "data": data}, 200
 
