@@ -258,6 +258,8 @@ void agent_send_now(HeapStore *heapStorePointer, const char *input)
         return;
     }
 
+    // Add additional metadata
+
     // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
                                               OutboundJsonData->command_result_data,

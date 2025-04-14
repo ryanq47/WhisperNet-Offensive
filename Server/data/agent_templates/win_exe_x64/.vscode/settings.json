@@ -5,6 +5,7 @@
         "whisper_structs.h": "c",
         "whisper_json.h": "c",
         "whisper_config.h": "c",
-        "type_conversions.h": "c"
+        "type_conversions.h": "c",
+        "functional": "c"
     }
 }
