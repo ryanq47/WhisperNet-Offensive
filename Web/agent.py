@@ -364,12 +364,34 @@ class Shell:
             "w-full h-[12px] text-grey m-0 p-0 items-center"
         )
         with self.data_bar:
+            # self.latency_text = ui.label("Metadata bar: ")
+
+            # latency
             self.latency_text = ui.label("1234")
             with self.latency_text:
                 ui.tooltip("Latency between Shell & Server")
+
+            # last checkin
             self.last_checkin_text = ui.label(0)
             with self.last_checkin_text:
                 ui.tooltip("How long since the agent last checked in")
+
+            # int_ip
+            self.int_ip = ui.label("int_ip: 127.0.0.1")
+            with self.int_ip:
+                ui.tooltip("The internal IP of the agent")
+
+            # ext_ip
+            self.ext_ip = ui.label("ext_ip: 69.69.69.69")
+            with self.ext_ip:
+                ui.tooltip("The external ip of the agent")
+
+            # ext_ip
+            self.current_user = ui.label("context/user: SomeDomain\SomeUser")
+            with self.current_user:
+                ui.tooltip(
+                    "The current user that the agent is impersonating/running under"
+                )
 
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
