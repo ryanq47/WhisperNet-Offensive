@@ -154,7 +154,7 @@ class PostResource(Resource):
             ext_ip = response.get("metadata", {}).get("ext_ip", "")
             int_ip = response.get("metadata", {}).get("int_ip", "")
             os = response.get("metadata", {}).get("os", "")
-            context = response.get("metadata", {}).get("context", "")
+            user = response.get("metadata", {}).get("user", "")
 
             if data is None:
                 logger.warning("Missing 'command_result_data' in payload.")
@@ -188,7 +188,7 @@ class PostResource(Resource):
             agent.update_data_field(field="network.internal_ip", value=int_ip)
             agent.update_data_field(field="network.external_ip", value=ext_ip)
             agent.update_data_field(field="system.os", value=os)
-            agent.update_data_field(field="system.username", value=context)
+            agent.update_data_field(field="system.username", value=user)
 
             return {"status": "received", "data": data}, 200
 

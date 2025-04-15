@@ -297,7 +297,7 @@ class Shell:
         # await self._update_log(f"debug: agent {data} connected")
         # something like this would be good in the script, once this base is implemented
         # idea: if script.method_for_this, then script.call_method_for_it
-        await self._update_log(f"[SYSTEM]: Agent checked in.")
+        await self._update_log(f"[SYSTEM]: Agent requested command.")
         # on checkin, reset last checkin to 0 seconds
         await self.reset_last_checkin()
 
@@ -345,7 +345,10 @@ class Shell:
         data: str: The data from the agent
 
         """
+        await self._update_log(f"[SYSTEM]: Agent posted data:")
+        await self._update_log(f"{'='*20}")
         await self._update_log(data)
+        await self._update_log(f"{'='*20}")
 
         on_agent_data = getattr(self.loaded_script_module, "on_agent_data", None)
         if on_agent_data is None:
