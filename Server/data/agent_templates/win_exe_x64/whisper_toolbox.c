@@ -257,3 +257,33 @@ int set_thread_token(HANDLE hImpersonationToken)
 //     CloseHandle(hThreadToken);
 //     return 1;
 // }
+
+// ------------------------
+// Info from %ENV
+// ------------------------
+/**
+ * Retrieves the value of the specified environment variable and returns
+ * a heap-allocated copy of it.
+ *
+ * @param varname The name of the environment variable to retrieve.
+ * @return A pointer to a newly allocated string containing the variable's value,
+ *         or NULL if the variable is not found or memory allocation fails.
+ *         The returned string must be freed by the caller using free().
+ */
+char *get_env(const char *varname)
+
+{
+    char buffer[256];
+    DWORD len = GetEnvironmentVariableA(varname, buffer, sizeof(buffer));
+
+    if (len > 0 && len < sizeof(buffer))
+    {
+        char *result = malloc(len + 1);
+        if (result)
+        {
+            strcpy(result, buffer);
+            return result;
+        }
+    }
+    return NULL;
+}
