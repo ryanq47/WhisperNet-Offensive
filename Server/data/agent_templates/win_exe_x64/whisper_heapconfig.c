@@ -230,6 +230,9 @@ void deinitStructs(HeapStore *heapStore)
  * This ensures that the HeapStore owns its own copy of the data, preventing external
  * modifications and reducing the risk of memory leaks or dangling pointers.
  *
+ * Similar happens when getting a value, a copy is made, and that copy is returned.
+ *
+ *
  * The locking mechanism used is the Windows SRWLock, which guarantees exclusive access
  * during modifications and maintains consistency during concurrent accesses.
  */
@@ -482,4 +485,50 @@ void set_internal_ip(HeapStore *heapStorePointer, char *int_ip)
     }
     heapStorePointer->agentNetworkStore->int_ip = int_ip_copy;
     ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+}
+
+// -----------------------------------------
+// AgentNetworkFuncs
+// -----------------------------------------
+
+// -----------------------------------------
+// AgentFuncs
+// -----------------------------------------
+void set_os(HeapStore *heapStorePointer, char *os)
+{
+    char *os_copy = strdup(os);
+    if (os_copy == NULL)
+    {
+        DEBUG_LOG("Failed to allocate memory for os_copy.\n");
+        return;
+    }
+
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    if (heapStorePointer->agentStore->os != NULL)
+    {
+        free(heapStorePointer->agentStore->os);
+    }
+    heapStorePointer->agentStore->os = os_copy;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+}
+
+char *get_os(HeapStore *heapStorePointer)
+{
+    if (heapStorePointer == NULL || heapStorePointer->currentUserStore == NULL)
+    {
+        return NULL;
+    }
+
+    // Use a shared lock since this is a read-only operation.
+    AcquireSRWLockShared(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+
+    char *os_copy = NULL;
+    if (heapStorePointer->agentStore->os != NULL)
+    {
+        os_copy = strdup(heapStorePointer->agentStore->os);
+    }
+
+    // Release the shared lock.
+    ReleaseSRWLockShared(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    return os_copy;
 }

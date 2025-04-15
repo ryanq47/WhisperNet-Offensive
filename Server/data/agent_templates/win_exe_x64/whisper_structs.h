@@ -59,6 +59,7 @@ typedef struct
 
     char agent_id[37];
     // os version
+    char *os;
 
 } AgentStoreStruct;
 

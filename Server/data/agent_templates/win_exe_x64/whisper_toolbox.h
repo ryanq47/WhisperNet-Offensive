@@ -14,3 +14,5 @@ char *get_user_from_sid_str(const char *sidString);
 // char *get_user_from_binary_sid(PSID pSid);
 int set_thread_token(HANDLE hImpersonationToken);
 char *get_env(const char *varname);
+void set_os(HeapStore *heapStorePointer, char *os);
+char *get_os(HeapStore *heapStorePointer);
