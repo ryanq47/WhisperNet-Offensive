@@ -49,8 +49,8 @@ The type of Agent
 
 | Agent Type/Name             | Executable/Output Formats |  Notes | Running|
 |--------------------------------|------------------|-----------|-----------|
-|Standard Agent (exe_x64) | **.EXE**      | Bog standard EXE Agent      | Command: `.\Agent.exe` |
-|Standard Agent (dll_x64) | **.DLL**        | Same as EXE Agent, but in DLL form | Entry Point Function: `Start`<br> Command: `rundll32.exe Agent.dll, Start`|
+|Standard Agent (win_exe_x64) | **.EXE**      | Bog standard EXE Agent      | Command: `.\Agent.exe` |
+|Standard Agent (win_dll_x64) | **.DLL**        | Same as EXE Agent, but in DLL form | Entry Point Function: `Start`<br> Command: `rundll32.exe Agent.dll, Start`|
 
 ---
 NOTE: In the future, the `CallbackAddress` and `CallbackPort` options will be replaced by a "listener" dropdown, to select a listener to communicate with.
@@ -79,8 +79,8 @@ The config script used to modify the Agent. These are located at `<name_of_Agent
 
 | Agent Type/Name             | Script                                |  Short Description | 
 |--------------------------------|------------------------------------------------------|-----------|
-|Standard Agent (exe_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
-|Standard Agent (dll_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
+|Standard Agent (win_exe_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
+|Standard Agent (win_dll_x64) | `default.py`    | The default configure script. XOR's strings, etc.     | 
 
 ![Binary Build Dialog](../img/webinterface/build_agent_scripts_dialog.png)
 
