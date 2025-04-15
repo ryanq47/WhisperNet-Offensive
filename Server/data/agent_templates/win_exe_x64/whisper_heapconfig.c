@@ -92,17 +92,21 @@
 // Initialize structures and assign values to their members
 int initStructs(HeapStore *heapStore)
 {
+    // Notes:
+    // Using calloc to have predictable 0'd out memory
 
     // Initialize pointers to NULL to ensure safe cleanup later + clear data
     heapStore->tokenStore = NULL;
     heapStore->configStore = NULL;
     heapStore->securityStore = NULL;
     heapStore->currentUserStore = NULL;
+    heapStore->agentNetworkStore = NULL;
+    heapStore->agentBehaviorStore = NULL;
 
     // -----------------------------------------
     // SecurityStoreStruct
     // -----------------------------------------
-    SecurityStoreStruct *secstruct = malloc(sizeof(SecurityStoreStruct));
+    SecurityStoreStruct *secstruct = calloc(1, sizeof(SecurityStoreStruct));
     if (secstruct == NULL)
     {
         fprintf(stderr, "Memory allocation failed for SecurityStoreStruct\n");
@@ -113,7 +117,7 @@ int initStructs(HeapStore *heapStore)
     // -----------------------------------------
     // CurrentUserStoreStruct
     // -----------------------------------------
-    CurrentUserStoreStruct *curruserstruct = malloc(sizeof(CurrentUserStoreStruct));
+    CurrentUserStoreStruct *curruserstruct = calloc(1, sizeof(CurrentUserStoreStruct));
     if (curruserstruct == NULL)
     {
         fprintf(stderr, "Memory allocation failed for CurrentUserStoreStruct\n");
@@ -123,7 +127,7 @@ int initStructs(HeapStore *heapStore)
     // -----------------------------------------
     // AgentStoreStruct
     // -----------------------------------------
-    AgentStoreStruct *agentstruct = malloc(sizeof(AgentStoreStruct));
+    AgentStoreStruct *agentstruct = calloc(1, sizeof(AgentStoreStruct));
     if (agentstruct == NULL)
     {
         fprintf(stderr, "Memory allocation failed for AgentStoreStruct\n");
@@ -131,9 +135,19 @@ int initStructs(HeapStore *heapStore)
     }
 
     // -----------------------------------------
+    // AgentNetworkStruct
+    // -----------------------------------------
+    AgentNetworkStruct *networkstruct = calloc(1, sizeof(AgentNetworkStruct));
+    if (networkstruct == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed for AgentNetworkStruct\n");
+        return -1;
+    }
+
+    // -----------------------------------------
     // AgentBehaviorStruct
     // -----------------------------------------
-    AgentBehaviorStruct *agentbehaviorstruct = malloc(sizeof(AgentBehaviorStruct));
+    AgentBehaviorStruct *agentbehaviorstruct = calloc(1, sizeof(AgentBehaviorStruct));
     if (agentbehaviorstruct == NULL)
     {
         fprintf(stderr, "Memory allocation failed for AgentBehaviorStruct\n");
@@ -148,7 +162,7 @@ int initStructs(HeapStore *heapStore)
     heapStore->currentUserStore = curruserstruct;
     heapStore->agentStore = agentstruct;
     heapStore->agentBehaviorStore = agentbehaviorstruct;
-
+    heapStore->agentNetworkStore = networkstruct;
     return 0;
 }
 
@@ -280,4 +294,22 @@ DWORD get_sleep_time(HeapStore *heapStorePointer)
     DWORD sleep_time = heapStorePointer->agentBehaviorStore->sleep_time;
     ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
     return sleep_time;
+}
+
+// -----------------------------------------
+// AgentNetworkStruct
+// -----------------------------------------
+
+void set_external_ip(HeapStore *heapStorePointer, char *ext_ip)
+{
+    AcquireSRWLockExclusive(&heapStorePointer->agentNetworkStore->ext_ip);
+    heapStorePointer->agentNetworkStore->ext_ip = ext_ip;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentNetworkStore->ext_ip);
+}
+
+void set_internal_ip(HeapStore *heapStorePointer, char *int_ip)
+{
+    AcquireSRWLockExclusive(&heapStorePointer->agentNetworkStore->int_ip);
+    heapStorePointer->agentNetworkStore->int_ip = int_ip;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentNetworkStore->int_ip);
 }

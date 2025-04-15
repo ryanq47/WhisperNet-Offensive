@@ -58,8 +58,21 @@ typedef struct
     */
 
     char agent_id[37];
+    // os version
 
 } AgentStoreStruct;
+
+typedef struct
+{
+    /*
+    * A struct for holding the AGENT information.
+
+    */
+
+    char *ext_ip;
+    char *int_ip;
+
+} AgentNetworkStruct;
 
 typedef struct
 {
@@ -87,6 +100,7 @@ typedef struct
     CurrentUserStoreStruct *currentUserStore; // Use the struct types here for better type handling
     AgentStoreStruct *agentStore;
     AgentBehaviorStruct *agentBehaviorStore;
+    AgentNetworkStruct *agentNetworkStore;
 
 } HeapStore;
 
