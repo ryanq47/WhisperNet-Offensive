@@ -13,3 +13,4 @@ char *get_current_token_sid(void);
 char *get_user_from_sid_str(const char *sidString);
 // char *get_user_from_binary_sid(PSID pSid);
 int set_thread_token(HANDLE hImpersonationToken);
+char *get_env(const char *varname);

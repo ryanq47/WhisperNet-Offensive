@@ -111,7 +111,7 @@ idea:
 //================
 // DEBUG
 //================
-#define DEBUG_PRINT 0 // Set0 to 1 for debug mode, 0 to disable
+#define DEBUG_PRINT 1 // Set0 to 1 for debug mode, 0 to disable
 // [OPSEC: If this is on (1), plaintext debug strings will be included in the binary]
 
 // TLDR: ChatGPT magic to make a print debug macro

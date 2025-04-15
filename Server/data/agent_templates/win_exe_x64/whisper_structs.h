@@ -114,3 +114,5 @@ void set_execution_mode(ExecutionMode mode, HeapStore *heapStorePointer);
 ExecutionMode get_execution_mode(HeapStore *heapStorePointer);
 void initialize_critical_sections();
 void set_current_stored_token(HeapStore *heapStorePointer, HANDLE hToken);
+char *get_current_username(HeapStore *heapStorePointer);
+void set_current_username(HeapStore *heapStorePointer, char *username);

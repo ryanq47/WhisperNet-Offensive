@@ -282,6 +282,7 @@ char *get_env(const char *varname)
         if (result)
         {
             strcpy(result, buffer);
+            printf("ENVVAR: %s", result);
             return result;
         }
     }

