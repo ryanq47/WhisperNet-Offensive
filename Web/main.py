@@ -1,5 +1,5 @@
 from nicegui import events, ui, app
-from agent import AgentView, AgentsPage
+from agent import AgentView, AgentsPage, OldReliable
 from listener import ListenerView, ListenersPage
 from about import AboutView
 from home import HomeView
@@ -135,6 +135,17 @@ async def agent_view_page():
         # needs to be renamed, prolly re-factored too
         a = AgentsPage()
         a.render()
+
+
+@ui.page("/old-reliable")
+async def old_reliable():
+    check_login()
+    if not sio.connected:
+        await connect_to_client_socket()
+    main_container = navbar()
+    with main_container:
+        s = OldReliable()
+        await s.render()
 
 
 @ui.page("/listener/{uuid}")

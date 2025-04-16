@@ -93,6 +93,13 @@ def normal_navbar():
                     color="bg-neutral-600",
                 ).props("flat color=white").classes("py-2 text-xs")
 
+                ui.button(
+                    "Old Reliable",
+                    on_click=lambda: ui.navigate.to("/old-reliable"),
+                    icon="elderly",
+                    color="bg-neutral-600",
+                ).props("flat color=white").classes("py-2 text-xs")
+
         # An extra button on the far right as an example
         ui.button(icon="menu").props("flat color=white").classes(
             "py-2 text-xs"
