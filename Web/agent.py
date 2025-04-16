@@ -716,14 +716,31 @@ class OldReliable:
         with ui.splitter(horizontal=True, value=40).classes(
             "w-full h-full"
         ) as splitter:
-            # Left pane: agents table, takes full space
-            with splitter.before:
-                with ui.element().classes("w-full h-full"):
-                    await self.render_agents_table()
+            """
+            Explanation:
+             due to bad planning, OldReliableAgentsView(self.shell_manager) takes in a class instance of OldReliableShellManager, to manage shell tabs
+
+             This means that an instance of OldReliableShellManager (self.shell_manager) needs to be setup first.
+
+             as such, the splitter.after is called before splitter.before, to call render_shell_tabs, which assigns self.shell_manager to the created
+             shell manager object.
+
+             If not done this way, the views are rendered out of order
+
+             Possible solution: combine OldReliableShellManager and OldReliableAgentsView into one class, so they can access eachothers methods (such as popping a new shell)
+
+            """
             # Right pane: shell tabs, takes full space
             with splitter.after:
+                ui.notify("after")
                 with ui.element().classes("w-full h-full"):
                     await self.render_shell_tabs()
+
+            # Left pane: agents table, takes full space
+            with splitter.before:
+                ui.notify("before")
+                with ui.element().classes("w-full h-full"):
+                    await self.render_agents_table()
 
     async def render_agents_table(self):
         # would get this data from aggrid
@@ -733,9 +750,9 @@ class OldReliable:
         # )
         # placeholder for custom aggrid/regular grid here
 
-        a = OldReliableAgentsView()
+        self.agents_view = OldReliableAgentsView(self.shell_manager)
 
-        a.render()
+        await self.agents_view.render()
 
     async def open_shell(self, agent_id):
         ui.notify("POP SHELL")
@@ -855,11 +872,11 @@ class OldReliableAgentsView:
           Main render method. Loads agent data, renders the grid, and adds a refresh button.
     """
 
-    def __init__(self):
+    def __init__(self, shell_manager):
         self.agents_data = {}
         self.aggrid = None
         self.current_settings = app.storage.user.get("settings", {})
-        # self.shell_manager = shell_manager
+        self.shell_manager = shell_manager
 
     # --------------------
     # Help Button
@@ -998,9 +1015,13 @@ class OldReliableAgentsView:
             ).classes(f"{aggrid_theme} w-full h-full")
             self.aggrid.on(
                 "cellClicked",
-                lambda event: ui.notify(
-                    f'Cell value: {event.args["value"]}'
-                ),  # need to pass in class for shell manager, call it to pop open a shell
+                # lambda event: ui.notify(
+                #     f'Cell value: {event.args["value"]}'
+                # ),  # need to pass in class for shell manager, call it to pop open a shell
+                lambda event: self.shell_manager.create_tab(
+                    name=event.args["data"]["Raw Agent ID"],
+                    agent_id=event.args["data"]["Raw Agent ID"],
+                ),
             )
             self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
 
@@ -1071,7 +1092,7 @@ class OldReliableAgentsView:
             self.aggrid.update()
             ui.notify("Data refreshed", type="positive", position="top-right")
 
-    def render(self):
+    async def render(self):
         """Main render method: load data, render grid, and add a refresh button."""
 
         # Load data on render. COULD swithc to async later.
@@ -1080,6 +1101,7 @@ class OldReliableAgentsView:
         # ui.button("dev - Refresh Data", on_click=self.refresh_data).classes("mt-4")
 
         # ui.timer(5, self.update_aggrid_times)
+        await self.shell_manager.create_tab("1234", "1234")
 
     async def update_aggrid_times(self):
         self.aggrid.options["rowData"][0]["Last Seen"] = "HI THERE"

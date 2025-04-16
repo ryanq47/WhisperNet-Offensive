@@ -252,7 +252,7 @@ Startup tasks to do for the agent.
 */
 void startup_tasks(HeapStore *heapStorePointer)
 {
-    DEBUG_LOG("STARTUP TASKS")
+    DEBUG_LOG("STARTUP TASKS");
     // generate a uuid for this agent
     generate_uuid4(heapStorePointer->agentStore->agent_id);
 
