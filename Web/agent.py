@@ -789,17 +789,21 @@ class OldReliableShellManager:
         return self.tabs_component
 
     async def create_tab(self, name, agent_id):
-        # Avoid duplicates
+        # Avoid duplicates, allow tabs to be unhidden if already exist
         if name in self.tabs:
+            self.tabs[name]["tab"].classes(remove="hidden")
+            self.tabs[name]["panel"].classes(remove="hidden")
+            self.tabs_component.value = name
             return
 
         # Add a new tab with close button under the tabs container
         with self.tabs_component:
-            with ui.tab(name=name) as tab:
-                ui.label(name).classes("mr-2")
-                ui.button("✖", on_click=lambda name=name: self.delete_tab(name)).props(
-                    "flat dense round"
-                ).classes("text-red-500")
+            with ui.tab(name=name).props("dense").classes("h-6") as tab:
+                with ui.row().classes("items-center gap-2"):
+                    ui.button("✖", on_click=lambda: self.delete_tab(name)).props(
+                        "flat dense round"
+                    ).classes("text-red-500")
+                    # ui.label(name)
 
         # Create associated panel and run the temp shell inside the panels container
         with self.panels_component:
@@ -820,10 +824,14 @@ class OldReliableShellManager:
 
     async def delete_tab(self, name: str):
         # Remove the tab and its panel
+        # if name in self.tabs:
+        #     self.tabs[name]["tab"].delete()
+        #     self.tabs[name]["panel"].delete()
+        #     del self.tabs[name]
+        ui.notify("DELETING")
         if name in self.tabs:
-            self.tabs[name]["tab"].delete()
-            self.tabs[name]["panel"].delete()
-            del self.tabs[name]
+            self.tabs[name]["tab"].classes("hidden")
+            self.tabs[name]["panel"].classes("hidden")
 
 
 class OldReliableAgentsView:
