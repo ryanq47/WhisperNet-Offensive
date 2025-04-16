@@ -117,3 +117,4 @@ void initialize_critical_sections();
 void set_current_stored_token(HeapStore *heapStorePointer, HANDLE hToken);
 char *get_current_username(HeapStore *heapStorePointer);
 void set_current_username(HeapStore *heapStorePointer, char *username);
+char *get_os(HeapStore *heapStorePointer);

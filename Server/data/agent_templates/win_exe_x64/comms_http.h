@@ -294,8 +294,7 @@ void agent_send_now(HeapStore *heapStorePointer, const char *input)
     }
 
     // os
-    char *os = "placeholder_os";
-    OutboundJsonData->os = strdup(os);
+    OutboundJsonData->os = get_os(heapStorePointer);
     if (!OutboundJsonData->os)
     {
         DEBUG_LOG("Memory allocation failed for os.\n");

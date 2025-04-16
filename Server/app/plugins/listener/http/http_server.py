@@ -177,18 +177,24 @@ class PostResource(Resource):
             else:
                 logger.error("WebSocket client not connected.")
 
-            # fialing as there's not command id entry on oneoffs... need to do a new entry?
-            # Store the response in Redis, even if command_id is None.
             agent = Agent(agent_id)
-            agent.store_response(command_id, data)
 
-            # need to extract metadata fields from the responses to store as well
-            logger.warning(response)
-
+            # updating fields even IF teh store_response fails. Temp workaround
             agent.update_data_field(field="network.internal_ip", value=int_ip)
             agent.update_data_field(field="network.external_ip", value=ext_ip)
             agent.update_data_field(field="system.os", value=os)
             agent.update_data_field(field="system.username", value=user)
+
+            # fialing as there's not command id entry on oneoffs... need to do a new entry?
+            # Store the response in Redis, even if command_id is None.
+            # note... this fails if it cannot find the correct/matching ID. BUG
+            logger.warning(
+                "BUG: Cannot store command responses without corresponding redis entry"
+            )
+            agent.store_response(command_id, data)
+
+            # need to extract metadata fields from the responses to store as well
+            logger.warning(response)
 
             return {"status": "received", "data": data}, 200
 
