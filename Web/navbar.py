@@ -147,6 +147,13 @@ def normal_navbar():
             color="bg-neutral-600",
         ).classes("w-full text-slate-50").props("square flat condensed")
 
+        ui.button(
+            "Old Reliable",
+            on_click=lambda: ui.navigate.to("/old-reliable"),
+            icon="elderly",
+            color="bg-neutral-600",
+        ).classes("w-full text-slate-50").props("square flat condensed")
+
         # Info Section
         ui.separator().classes("my-2 border-slate-400")
         ui.label("Misc").classes("text-slate-200 text-lg font-bold px-4 py-2")
