@@ -406,6 +406,7 @@ class Shell:
         await self._load_script("example_script")
 
         self._render_context_menu()
+        self.create_agent_command_history_dialog()
 
         # last but not least,
         if self.shell_manager:
@@ -431,13 +432,32 @@ class Shell:
                 with ui.item_section().props("side"):
                     ui.icon("keyboard_arrow_right")
                 with ui.menu().props('anchor="top end" self="top start" auto-close'):
-                    ui.menu_item("View [pop qdialog, with aggrid of commands]")
-                    ui.menu_item("Download [downloads that csv]")
+                    ui.menu_item(
+                        "View",
+                        on_click=lambda: self.command_history_dialog.open(),
+                    )
+                    ui.menu_item(
+                        "Download [broken - see comments, open `view` to download]",
+                        # might not be working cuz its not rendered
+                        on_click=lambda: self._download_agent_command_history_data(),
+                    )
 
             with ui.menu_item("Prebaked Command", auto_close=False):
                 with ui.item_section().props("side"):
                     ui.icon("keyboard_arrow_right")
                 with ui.menu().props('anchor="top end" self="top start" auto-close'):
+                    # # prebaked sub menu
+                    # with ui.menu_item("Add New Prebaked", auto_close=False):
+                    #     with ui.item_section().props("side"):
+                    #         ui.icon("keyboard_arrow_right")
+                    #     with ui.menu().props(
+                    #         'anchor="top end" self="top start" auto-close'
+                    #     ):
+                    #         ui.menu_item("Add New Prebaked")
+                    #         ui.separator()
+                    #         ui.menu_item("SomeCommand1: powershell something...")
+                    #         ui.menu_item("Sub-option 3")
+                    # rest of options
                     ui.menu_item("Add New Prebaked")
                     ui.separator()
                     ui.menu_item("SomeCommand1: powershell something...")
@@ -615,6 +635,66 @@ class Shell:
                 ui.button("close")  # onclick close
         dialog.open()
 
+    def _render_command_history_aggrid(self):
+        """
+        Renders an aggrid with command history and allows CSV export and data refresh.
+        Ensures the grid fills available vertical space in the dialog.
+        """
+        aggrid_theme = (
+            "ag-theme-balham-dark"
+            if app.storage.user.get("settings", {}).get("Dark Mode", False)
+            else "ag-theme-balham"
+        )
+
+        # Wrapper for layout
+        with ui.column().classes("w-full h-full").style(
+            "display: flex; flex-direction: column;"
+        ):
+            ui.separator()
+
+            # Buttons row
+            with ui.row().classes("w-full justify-end gap-2"):
+                ui.button(
+                    "Refresh", on_click=self._refresh_agent_command_history_aggrid
+                ).props("flat outlined")
+                ui.button(
+                    "Export",
+                    on_click=lambda: self._download_agent_command_history_data(),
+                ).props("flat outlined")
+
+            # Ag-grid container that fills space
+            with ui.element("div").classes("w-full h-full").style(
+                "flex-grow: 1; overflow: auto;"
+            ):
+                data_list = api_call(url=f"/agent/{self.agent_id}/command/all").get(
+                    "data", []
+                )
+                self.command_grid = ui.aggrid(
+                    {
+                        "columnDefs": [
+                            {
+                                "headerName": "Timestamp",
+                                "field": "timestamp",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Command",
+                                "field": "command",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                            {
+                                "headerName": "Response",
+                                "field": "response",
+                                "filter": "agTextColumnFilter",
+                                "floatingFilter": True,
+                            },
+                        ],
+                        "rowData": data_list,
+                    }
+                ).classes(f"{aggrid_theme} h-full")
+
     # ----------------------
     # Events
     # ----------------------
@@ -721,6 +801,64 @@ class Shell:
         else:
             # self.agent_data = {}
             return {}
+
+    def create_agent_command_history_dialog(self):
+        """
+        Creates and configures the command history dialog for agents.
+
+        This method initializes a full-screen dialog that displays historical command data
+        related to connected agents. The dialog includes:
+        - A title section
+        - A short explanatory markdown description
+        - A custom-rendered ag-grid table showing command history
+
+        The dialog is intended to be created once during the UI setup and can be opened
+        later using `self.command_history_dialog.open()` from menu actions or other triggers.
+        """
+        self.command_history_dialog = (
+            ui.dialog().classes("w-full h-full").props("full-width")
+        )
+
+        with self.command_history_dialog:
+            # use flex layout and set flex-grow on the ag-grid container
+            # so it fills remaining vertical space inside the dialog.
+            # Without this, the grid collapses or doesn't expand since parent divs
+            # don’t have defined heights by default.
+            with ui.card().classes("w-full h-full").style(
+                "display: flex; flex-direction: column;"
+            ):
+                # Header row with title on the left, X button on the right
+                with ui.row().classes("w-full items-center justify-between"):
+                    ui.markdown("### Command History:")
+                    ui.button("✖", on_click=self.command_history_dialog.close).props(
+                        "flat"
+                    ).classes("text-red-500")
+
+                ui.separator()
+                ui.markdown(
+                    "Command history for the current agent. If no data is shown, no commands have been run. Hit `refresh` to refresh the grid, or `export`, to export as a .CSV"
+                )
+                # This container lets the ag-grid grow and fill available vertical space
+                with ui.row().classes("w-full h-full").style(
+                    "flex-grow: 1; overflow: auto;"
+                ):
+                    self._render_command_history_aggrid()
+
+    def _refresh_agent_command_history_aggrid(self):
+        """Fetches fresh command history data and updates the ag-grid."""
+        new_data = api_call(url=f"/agent/{self.agent_id}/command/all").get("data", [])
+        self.command_grid.options["rowData"] = new_data
+        self.command_grid.update()
+
+    def _download_agent_command_history_data(self):
+        """
+        Calls aggrid exportDataAsCSV to download the data as a csv
+
+        """
+        self.command_grid.run_grid_method(
+            "exportDataAsCsv",
+            {"fileName": f"{self.agent_id}_command_history.csv"},
+        )
 
     # ----------------------
     # Misc
