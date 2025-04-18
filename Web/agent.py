@@ -218,7 +218,17 @@ class AgentView:
 # -----------------------------------------------
 # lots of async here, better safe than sorry to have it for future things
 class Shell:
-    def __init__(self, agent_id):
+    """
+    The shell class for whispernet.
+
+    agent_id: the UUID of the agent that this shell is for. Required
+
+    shell_manager: If this class was spawned from a shell manager class (ex: OldReliableShellManager)
+    shell_manager is that class object. This is used to have shell manager specific functinality (ex, open/close tabs)
+
+    """
+
+    def __init__(self, agent_id, shell_manager=None):
         self.agent_id = agent_id
         self.display_log = None
         self.command_input = None
@@ -233,6 +243,9 @@ class Shell:
         self.last_checkin_time = 0
         self.loaded_script_module = None
         self.agent_data = {}  # agent data from the server
+
+        # IF a shell manager is passed in...
+        self.shell_manager = shell_manager
 
     # ----------------------
     # Socket Ops
@@ -392,17 +405,57 @@ class Shell:
         # temporarily load script here
         await self._load_script("example_script")
 
-        with ui.context_menu():
-            ui.menu_item("Change Script", on_click=self.render_scripts_dialog)
-            ui.menu_item("Option 2")
-            ui.separator()
-            with ui.menu_item("Option 3", auto_close=False):
+        self._render_context_menu()
+
+        # last but not least,
+        if self.shell_manager:
+            self._include_shell_manager_addons()
+
+    def _render_context_menu(self):
+        """
+        Create a context menu for the shell. Activated on right click
+
+        """
+        self.context_menu = ui.context_menu()
+        with self.context_menu:
+            # ui.menu_item("Change Script", on_click=self.render_scripts_dialog)
+            with ui.menu_item("Load agent script", auto_close=False):
                 with ui.item_section().props("side"):
                     ui.icon("keyboard_arrow_right")
                 with ui.menu().props('anchor="top end" self="top start" auto-close'):
                     ui.menu_item("Sub-option 1")
                     ui.menu_item("Sub-option 2")
                     ui.menu_item("Sub-option 3")
+
+            with ui.menu_item("Prebaked Command", auto_close=False):
+                with ui.item_section().props("side"):
+                    ui.icon("keyboard_arrow_right")
+                with ui.menu().props('anchor="top end" self="top start" auto-close'):
+                    ui.menu_item("Sub-option 1")
+                    ui.menu_item("Sub-option 2")
+                    ui.menu_item("Sub-option 3")
+
+            ui.separator()
+
+            # If shell tab manager... on click call the close tab
+
+    def _include_shell_manager_addons(self):
+        """
+        If a shell manager is present, add on the following features
+
+        """
+
+        if self.shell_manager:
+            # Kind of cursed way to close the tab/tabs
+            with self.context_menu:
+                ui.menu_item(
+                    "Close Current Tab",
+                    on_click=lambda: self.shell_manager.delete_tab(self.agent_id),
+                ).classes("text-red-500")
+                ui.menu_item(
+                    "Close All Tabs",
+                    on_click=lambda: self.shell_manager.delete_all_tabs(),
+                ).classes("text-red-500")
 
     def _render_log(self):
         """Create the log display area."""
@@ -810,7 +863,7 @@ class OldReliableShellManager:
             with ui.tab_panel(tab) as panel:
                 # self._temp_shell()
                 try:
-                    shell = Shell(agent_id=agent_id)
+                    shell = Shell(agent_id=agent_id, shell_manager=self)
                     await shell.render()
                 except Exception as e:
                     ui.label(f"Error rendering shell for {agent_id}")
@@ -832,6 +885,19 @@ class OldReliableShellManager:
         if name in self.tabs:
             self.tabs[name]["tab"].classes("hidden")
             self.tabs[name]["panel"].classes("hidden")
+
+    async def delete_all_tabs(self):
+        # Remove the tab and its panel
+        # if name in self.tabs:
+        #     self.tabs[name]["tab"].delete()
+        #     self.tabs[name]["panel"].delete()
+        #     del self.tabs[name]
+        ui.notify("DELETING")
+
+        for entry in self.tabs:
+            # if name in self.tabs:
+            self.tabs[entry]["tab"].classes("hidden")
+            self.tabs[entry]["panel"].classes("hidden")
 
 
 class OldReliableAgentsView:
