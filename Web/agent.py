@@ -837,6 +837,15 @@ class OldReliableShellManager:
         ) as self.panels_component:
             pass
 
+        # Create background label (hidden by default)
+        self.background_label = (
+            ui.label("Congrats! You closed all the shells...")
+            .style("z-index: 999; position: absolute;")
+            .classes(
+                "hidden inset-0 flex items-center justify-center text-gray-400 text-2xl"
+            )
+        )
+
     async def render(self):
         # Ensure the tabs component is part of the UI
         return self.tabs_component
@@ -874,6 +883,7 @@ class OldReliableShellManager:
 
         # and open it
         self.tabs_component.value = name
+        self._update_background_visibility()
 
     async def delete_tab(self, name: str):
         # Remove the tab and its panel
@@ -885,6 +895,7 @@ class OldReliableShellManager:
         if name in self.tabs:
             self.tabs[name]["tab"].classes("hidden")
             self.tabs[name]["panel"].classes("hidden")
+        self._update_background_visibility()
 
     async def delete_all_tabs(self):
         # Remove the tab and its panel
@@ -898,6 +909,29 @@ class OldReliableShellManager:
             # if name in self.tabs:
             self.tabs[entry]["tab"].classes("hidden")
             self.tabs[entry]["panel"].classes("hidden")
+        self._update_background_visibility()
+
+    async def render_background(self):
+        """
+        Render background for when all tabs are closed
+
+        """
+        ui.label("This is a label with high z-index").style(
+            "z-index: 999; position: relative;"
+        )
+
+    def _update_background_visibility(self):
+        """Show background label if all tabs are hidden"""
+        all_hidden = all(
+            "hidden" in self.tabs[name]["tab"].classes
+            and "hidden" in self.tabs[name]["panel"].classes
+            for name in self.tabs
+        )
+        if all_hidden or not self.tabs:
+            self.background_label.classes(remove="hidden")
+            ui.notify("All Tabs Closed")
+        else:
+            self.background_label.classes("hidden")
 
 
 class OldReliableAgentsView:
