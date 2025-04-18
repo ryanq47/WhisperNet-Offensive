@@ -386,8 +386,8 @@ class Shell:
         with ui.element().classes("flex w-full gap-2"):
             self._render_command_input()
             self._render_send_button()
-            with ui.column().classes("items-center justify-center"):
-                self._render_toolbox_button()
+            # with ui.column().classes("items-center justify-center"):
+            #     self._render_toolbox_button()
 
         if Config.socketio.connected:
             await self._update_log("[SYSTEM] Socket connected...")
@@ -427,12 +427,20 @@ class Shell:
                     ui.menu_item("Sub-option 2")
                     ui.menu_item("Sub-option 3")
 
+            with ui.menu_item("Command history", auto_close=False):
+                with ui.item_section().props("side"):
+                    ui.icon("keyboard_arrow_right")
+                with ui.menu().props('anchor="top end" self="top start" auto-close'):
+                    ui.menu_item("View [pop qdialog, with aggrid of commands]")
+                    ui.menu_item("Download [downloads that csv]")
+
             with ui.menu_item("Prebaked Command", auto_close=False):
                 with ui.item_section().props("side"):
                     ui.icon("keyboard_arrow_right")
                 with ui.menu().props('anchor="top end" self="top start" auto-close'):
-                    ui.menu_item("Sub-option 1")
-                    ui.menu_item("Sub-option 2")
+                    ui.menu_item("Add New Prebaked")
+                    ui.separator()
+                    ui.menu_item("SomeCommand1: powershell something...")
                     ui.menu_item("Sub-option 3")
 
             ui.separator()
@@ -761,459 +769,734 @@ from functools import partial
 
 
 class OldReliable:
+    """
+    Combined view that handles both the agents table and shell tabs in one class,
+    using clear prefixes for agents_view_ and shell_view_ to avoid ambiguity.
+
+    shell_view_ (tab manager) &  and agents_view_ used to be 2 seperate classes, but it was easier to
+    combine them into one for shared variables/interactivity between the 2
+    """
+
     def __init__(self):
-        self.temp = None
+        # ----- Agents view state -----
+        self.agents_view_data = {}
+        self.agents_view_grid = None
+        self.agents_view_settings = app.storage.user.get("settings", {})
+
+        # ----- Shell view state -----
+        self.shell_view_tabs = (
+            {}
+        )  # {name: {'tab': TabComponent, 'panel': PanelComponent}}
 
     async def render(self):
-        # Full-width, full-height splitter with draggable bar
+        """
+        Entry point: renders a horizontal splitter with agents on the left and shells on the right.
+        """
         with ui.splitter(horizontal=True, value=40).classes(
             "w-full h-full"
-        ) as splitter:
-            """
-            Explanation:
-             due to bad planning, OldReliableAgentsView(self.shell_manager) takes in a class instance of OldReliableShellManager, to manage shell tabs
+        ) as main_splitter:
 
-             This means that an instance of OldReliableShellManager (self.shell_manager) needs to be setup first.
+            # top: agents table
+            with main_splitter.before:
+                with ui.element().classes("w-full h-full py-2"):
+                    await self.agents_view_render()
 
-             as such, the splitter.after is called before splitter.before, to call render_shell_tabs, which assigns self.shell_manager to the created
-             shell manager object.
-
-             If not done this way, the views are rendered out of order
-
-             Possible solution: combine OldReliableShellManager and OldReliableAgentsView into one class, so they can access eachothers methods (such as popping a new shell)
-
-            """
-            # Right pane: shell tabs, takes full space
-            with splitter.after:
-                ui.notify("after")
+            # bottom: shell tabs
+            with main_splitter.after:
                 with ui.element().classes("w-full h-full"):
-                    await self.render_shell_tabs()
+                    await self.shell_view_render()
 
-            # Left pane: agents table, takes full space
+    # -----------------------
+    # Agents view methods
+    # -----------------------
+
+    def agents_view_on_cell_value_changed(self, event):
+        if event.args.get("colId") == "Notes":
+            agent_id = event.args.get("data", {}).get("Raw Agent ID")
+            notes = event.args.get("newValue")
+            api_post_call(f"/agent/{agent_id}/notes", data={"notes": notes})
+            ui.notify(f"Updated notes for {agent_id}")
+
+    def agents_view_load_data(self):
+        try:
+            resp = api_call(url="/stats/agents")
+            self.agents_view_data = resp.get("data", {})
+        except Exception as e:
+            ui.notify(f"Error loading agents: {e}", type="negative")
+            self.agents_view_data = {}
+
+    def agents_view_build_row_data(self):
+        rows = []
+        for info in self.agents_view_data.values():
+            agent_id = info.get("agent_id", "Unknown")
+            data = info.get("data", {})
+            row = {
+                "Link Agent ID": f"<u><a href='/agent/{agent_id}' target=_blank>{agent_id}</a></u>",
+                "Raw Agent ID": agent_id,
+                "Hostname": data.get("system", {}).get("hostname", "Unknown"),
+                "OS": data.get("system", {}).get("os", "Unknown"),
+                "Notes": data.get("agent", {}).get("notes", ""),
+                "Internal IP": data.get("network", {}).get("internal_ip", "Unknown"),
+                "External IP": data.get("network", {}).get("external_ip", "Unknown"),
+                "Last Seen": data.get("agent", {}).get("last_seen", "Unknown"),
+                "New": data.get("agent", {}).get("new", False),
+            }
+            rows.append(row)
+        return rows
+
+    @func_call_time
+    def agents_view_render_grid(self):
+        row_data = self.agents_view_build_row_data()
+        theme = (
+            "ag-theme-balham-dark"
+            if self.agents_view_settings.get("Dark Mode", False)
+            else "ag-theme-balham"
+        )
+        self.agents_view_grid = ui.aggrid(
+            {
+                "columnDefs": [
+                    {
+                        "headerName": "",
+                        "checkboxSelection": True,
+                        "headerCheckboxSelection": True,
+                        "width": 50,
+                        "pinned": "left",
+                    },
+                    {
+                        "headerName": "Link Agent ID",
+                        "field": "Link Agent ID",
+                        "width": 225,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "Raw Agent ID",
+                        "field": "Raw Agent ID",
+                        "hide": True,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "Hostname",
+                        "field": "Hostname",
+                        "width": 225,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "OS",
+                        "field": "OS",
+                        "width": 225,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "Notes (Editable)",
+                        "field": "Notes",
+                        "editable": True,
+                        "width": 150,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "Internal IP",
+                        "field": "Internal IP",
+                        "width": 150,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "External IP",
+                        "field": "External IP",
+                        "width": 150,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                    {
+                        "headerName": "Last Seen",
+                        "field": "Last Seen",
+                        "sort": "desc",
+                        "width": 225,
+                        "filter": "agTextColumnFilter",
+                        "floatingFilter": True,
+                    },
+                ],
+                "rowSelection": "multiple",
+                "rowData": row_data,
+            },
+            html_columns=[1],
+        ).classes(f"{theme} w-full h-full")
+        self.agents_view_grid.on(
+            "cellClicked",
+            lambda e: self.shell_view_create_tab(
+                name=e.args["data"]["Raw Agent ID"],
+                agent_id=e.args["data"]["Raw Agent ID"],
+            ),
+        )
+        self.agents_view_grid.on(
+            "cellValueChanged", self.agents_view_on_cell_value_changed
+        )
+
+    async def agents_view_render(self):
+        self.agents_view_load_data()
+        self.agents_view_render_grid()
+
+    # -----------------------
+    # Shell view methods
+    # -----------------------
+    async def shell_view_render(self):
+        """
+        Render the "shell view", or bottom half of the screen
+
+        """
+        # Pre-create shell UI components
+        with ui.splitter(value=20).props().classes("w-full h-full") as splitter:
             with splitter.before:
-                ui.notify("before")
-                with ui.element().classes("w-full h-full"):
-                    await self.render_agents_table()
+                with ui.tabs().props("dense vertical").classes(
+                    "w-full h-full"
+                ) as self.shell_view_tabs_component:
+                    pass
+            with splitter.after:
+                with ui.tab_panels(self.shell_view_tabs_component).classes(
+                    "w-full h-full"
+                ) as self.shell_view_panels_component:
+                    pass
 
-    async def render_agents_table(self):
-        # would get this data from aggrid
-        # ui.button(
-        #     "clickme",
-        #     on_click=lambda: self.open_shell("9e804897-e6b0-4098-83bc-171fed489584"),
-        # )
-        # placeholder for custom aggrid/regular grid here
-
-        self.agents_view = OldReliableAgentsView(self.shell_manager)
-
-        await self.agents_view.render()
-
-    async def open_shell(self, agent_id):
-        ui.notify("POP SHELL")
-        # create tab
-        await self.shell_manager.create_tab(agent_id, agent_id)
-        #
-
-    async def render_shell_tabs(self):
-        self.shell_manager = OldReliableShellManager()
-        await self.shell_manager.render()  # .classes("w-full h-full")
-        await self.open_shell("9e804897-e6b0-4098-83bc-171fed489584")
-        # await self.shell_manager.create_tab("SomeTab")
-        # await self.shell_manager.create_tab("SomeTab1")
-        # await self.shell_manager.create_tab("SomeTab2")
-        # await self.shell_manager.create_tab("SomeTab3")
-
-
-class OldReliableShellManager:
-    def __init__(self):
-        # not full height still hrmmmm
-        self.tabs = {}  # store {'name': {'tab': TabComponent, 'panel': PanelComponent}}
-
-        # Create the tabs container
-        with ui.tabs().props("dense").classes("w-full h-12") as self.tabs_component:
-            pass
-        # Create the panels container - this is content IN the tab
-        with ui.tab_panels(self.tabs_component).classes(
-            "w-full h-full"
-        ) as self.panels_component:
-            pass
-
-        # Create background label (hidden by default)
-        self.background_label = (
+        # Background label shown when no tabs are open
+        self.shell_view_background_label = (
             ui.label("Congrats! You closed all the shells...")
             .style("z-index: 999; position: absolute;")
             .classes(
                 "hidden inset-0 flex items-center justify-center text-gray-400 text-2xl"
             )
         )
+        # check if any tabs at render
+        self.shell_view_update_background_visibility()
 
-    async def render(self):
-        # Ensure the tabs component is part of the UI
-        return self.tabs_component
-
-    async def create_tab(self, name, agent_id):
-        # Avoid duplicates, allow tabs to be unhidden if already exist
-        if name in self.tabs:
-            self.tabs[name]["tab"].classes(remove="hidden")
-            self.tabs[name]["panel"].classes(remove="hidden")
-            self.tabs_component.value = name
+    async def shell_view_create_tab(self, name: str, agent_id: str):
+        # show existing tab
+        if name in self.shell_view_tabs:
+            self.shell_view_tabs[name]["tab"].classes(remove="hidden")
+            self.shell_view_tabs[name]["panel"].classes(remove="hidden")
+            self.shell_view_tabs_component.value = name
             return
 
-        # Add a new tab with close button under the tabs container
-        with self.tabs_component:
-            with ui.tab(name=name).props("dense").classes("h-6") as tab:
-                with ui.row().classes("items-center gap-2"):
-                    ui.button("✖", on_click=lambda: self.delete_tab(name)).props(
-                        "flat dense round"
-                    ).classes("text-red-500")
-                    # ui.label(name)
+        # new tab
+        with self.shell_view_tabs_component:
+            with ui.tab(name=name, label="").props("dense").classes("h-8") as tab:
+                with ui.row().classes(
+                    "items-center justify-start gap-2 overflow-visible"
+                ):
+                    # Create the close button X on the left
+                    ui.button(
+                        "✖", on_click=lambda _, n=name: self.shell_view_delete_tab(n)
+                    ).props("flat dense").classes("text-red-500")
+                    # Create the label with the name/id next to the X button
+                    ui.label(name).classes("overflow-visible whitespace-nowrap")
 
-        # Create associated panel and run the temp shell inside the panels container
-        with self.panels_component:
+        with self.shell_view_panels_component:
             with ui.tab_panel(tab) as panel:
-                # self._temp_shell()
                 try:
                     shell = Shell(agent_id=agent_id, shell_manager=self)
                     await shell.render()
-                except Exception as e:
+                except Exception:
                     ui.label(f"Error rendering shell for {agent_id}")
                     ui.notify(f"Error rendering shell for {agent_id}")
 
-        # add tab to tracking dict of tabs
-        self.tabs[name] = {"tab": tab, "panel": panel}
+        self.shell_view_tabs[name] = {"tab": tab, "panel": panel}
+        self.shell_view_tabs_component.value = name
+        self.shell_view_update_background_visibility()
 
-        # and open it
-        self.tabs_component.value = name
-        self._update_background_visibility()
+    async def shell_view_delete_tab(self, name: str):
+        if name in self.shell_view_tabs:
+            self.shell_view_tabs[name]["tab"].classes("hidden")
+            self.shell_view_tabs[name]["panel"].classes("hidden")
+        self.shell_view_update_background_visibility()
 
-    async def delete_tab(self, name: str):
-        # Remove the tab and its panel
-        # if name in self.tabs:
-        #     self.tabs[name]["tab"].delete()
-        #     self.tabs[name]["panel"].delete()
-        #     del self.tabs[name]
-        ui.notify("DELETING")
-        if name in self.tabs:
-            self.tabs[name]["tab"].classes("hidden")
-            self.tabs[name]["panel"].classes("hidden")
-        self._update_background_visibility()
+    async def shell_view_delete_all_tabs(self):
+        for entry in self.shell_view_tabs:
+            self.shell_view_tabs[entry]["tab"].classes("hidden")
+            self.shell_view_tabs[entry]["panel"].classes("hidden")
+        self.shell_view_update_background_visibility()
 
-    async def delete_all_tabs(self):
-        # Remove the tab and its panel
-        # if name in self.tabs:
-        #     self.tabs[name]["tab"].delete()
-        #     self.tabs[name]["panel"].delete()
-        #     del self.tabs[name]
-        ui.notify("DELETING")
-
-        for entry in self.tabs:
-            # if name in self.tabs:
-            self.tabs[entry]["tab"].classes("hidden")
-            self.tabs[entry]["panel"].classes("hidden")
-        self._update_background_visibility()
-
-    async def render_background(self):
-        """
-        Render background for when all tabs are closed
-
-        """
-        ui.label("This is a label with high z-index").style(
-            "z-index: 999; position: relative;"
-        )
-
-    def _update_background_visibility(self):
-        """Show background label if all tabs are hidden"""
+    def shell_view_update_background_visibility(self):
         all_hidden = all(
-            "hidden" in self.tabs[name]["tab"].classes
-            and "hidden" in self.tabs[name]["panel"].classes
-            for name in self.tabs
+            "hidden" in self.shell_view_tabs[name]["tab"].classes
+            and "hidden" in self.shell_view_tabs[name]["panel"].classes
+            for name in self.shell_view_tabs
         )
-        if all_hidden or not self.tabs:
-            self.background_label.classes(remove="hidden")
-            ui.notify("All Tabs Closed")
+        if all_hidden or not self.shell_view_tabs:
+            self.shell_view_background_label.classes(remove="hidden")
         else:
-            self.background_label.classes("hidden")
+            self.shell_view_background_label.classes("hidden")
 
 
-class OldReliableAgentsView:
-    """
-    Displays a list of agents with refresh and help functionality.
+# class OldReliable:
+#     def __init__(self):
+#         self.temp = None
 
-    This class is responsible for:
-      - Fetching agent data from the API via a synchronous call.
-      - Converting the fetched data into a row format suitable for AG Grid.
-      - Rendering an AG Grid to display agent details such as Agent ID, Hostname, OS, Notes, IP addresses, and last check-in time.
-      - Handling cell value changes (for example, when editing the "Notes" field) by sending update calls to the API.
-      - Providing a help dialog and a refresh button to reload and update the displayed data.
+#     async def render(self):
+#         # Full-width, full-height splitter with draggable bar
+#         with ui.splitter(horizontal=True, value=40).classes(
+#             "w-full h-full"
+#         ) as splitter:
+#             """
+#             Explanation:
+#              due to bad planning, OldReliableAgentsView(self.shell_manager) takes in a class instance of OldReliableShellManager, to manage shell tabs
 
-    Attributes:
-      agents_data (dict): Dictionary containing agent data fetched from the API.
-      aggrid (object): The AG Grid component that displays the agents.
-      current_settings (dict): User settings (such as theme) loaded from session storage.
-      shell_manager (object): used to manage the shell component in the page, passed in at __init__
+#              This means that an instance of OldReliableShellManager (self.shell_manager) needs to be setup first.
+
+#              as such, the splitter.after is called before splitter.before, to call render_shell_tabs, which assigns self.shell_manager to the created
+#              shell manager object.
+
+#              If not done this way, the views are rendered out of order
+
+#              Possible solution: combine OldReliableShellManager and OldReliableAgentsView into one class, so they can access eachothers methods (such as popping a new shell)
+
+#             """
+#             # Right pane: shell tabs, takes full space
+#             # Right pane: shell tabs
+#             with splitter.after:
+#                 ui.notify("after")
+#                 with ui.element().classes("w-full h-full"):  # added padding here
+#                     await self.render_shell_tabs()
+
+#             # Left pane: agents table
+#             with splitter.before:
+#                 ui.notify("before")
+#                 with ui.element().classes(
+#                     "w-full h-full py-2"
+#                 ):  # Paddint ot make it look betteer/lit its own element
+#                     await self.render_agents_table()
+
+#     async def render_agents_table(self):
+#         # would get this data from aggrid
+#         # ui.button(
+#         #     "clickme",
+#         #     on_click=lambda: self.open_shell("9e804897-e6b0-4098-83bc-171fed489584"),
+#         # )
+#         # placeholder for custom aggrid/regular grid here
+
+#         self.agents_view = OldReliableAgentsView(self.shell_manager)
+
+#         await self.agents_view.render()
+
+#     async def open_shell(self, agent_id):
+#         ui.notify("POP SHELL")
+#         # create tab
+#         await self.shell_manager.create_tab(agent_id, agent_id)
+#         #
+
+#     async def render_shell_tabs(self):
+#         self.shell_manager = OldReliableShellManager()
+#         await self.shell_manager.render()  # .classes("w-full h-full")
+#         await self.open_shell("9e804897-e6b0-4098-83bc-171fed489584")
+#         # await self.shell_manager.create_tab("SomeTab")
+#         # await self.shell_manager.create_tab("SomeTab1")
+#         # await self.shell_manager.create_tab("SomeTab2")
+#         # await self.shell_manager.create_tab("SomeTab3")
 
 
-    Methods:
-      load_data():
-          Fetches agent data synchronously from the '/stats/agents' endpoint and stores it in the agents_data attribute.
+# class OldReliableShellManager:
+#     def __init__(self):
+#         # not full height still hrmmmm
+#         self.tabs = {}  # store {'name': {'tab': TabComponent, 'panel': PanelComponent}}
 
-      refresh_data():
-          Reloads the agent data by calling load_data(), rebuilds the grid row data, updates the AG Grid, and notifies the user.
+#         with ui.splitter(value=20, limits=(0, 50)).props().classes(
+#             "w-full h-full"
+#         ) as splitter:
+#             # Left side: vertical tabs
+#             with splitter.before:
+#                 with ui.tabs().props("dense vertical").classes(
+#                     "w-full h-full"
+#                 ) as self.tabs_component:
+#                     pass
 
-      open_help_dialog():
-          Opens a full-width dialog that displays help text explaining the functionality of the Agents tab.
+#             # Right side: tab content (shells)
+#             with splitter.after:
+#                 with ui.tab_panels(self.tabs_component).classes(
+#                     "w-full h-full"
+#                 ) as self.panels_component:
+#                     pass
 
-      render_help_button():
-          Renders a help button fixed in the upper-right corner; clicking it opens the help dialog.
+#         # Create background label (hidden by default)
+#         self.background_label = (
+#             ui.label("Congrats! You closed all the shells...")
+#             .style("z-index: 999; position: absolute;")
+#             .classes(
+#                 "hidden inset-0 flex items-center justify-center text-gray-400 text-2xl"
+#             )
+#         )
 
-      _on_cell_value_changed(event):
-          Handles updates when an editable cell (e.g., the "Notes" field) changes.
-          Extracts the new value and sends a POST request to update the corresponding agent's notes.
+#     async def render(self):
+#         # Ensure the tabs component is part of the UI
+#         return self.tabs_component
 
-      render_grid():
-          Renders the AG Grid component using the row data built from agents_data.
-          Applies theme settings and registers the cell value change event handler.
+#     async def create_tab(self, name, agent_id):
+#         # Avoid duplicates, allow tabs to be unhidden if already exist
+#         if name in self.tabs:
+#             self.tabs[name]["tab"].classes(remove="hidden")
+#             self.tabs[name]["panel"].classes(remove="hidden")
+#             self.tabs_component.value = name
+#             return
 
-      build_row_data():
-          Processes the raw agents_data and converts it into a list of dictionaries formatted for the AG Grid.
+#         # Add a new tab with close button under the tabs container
+#         with self.tabs_component:
+#             with ui.tab(name=name).props("dense").classes() as tab:
+#                 with ui.row().classes("items-center gap-2"):
+#                     # ui.label("SomeNotes...") # notes for later, when I can figure out how to get all 3 classes talking cleaner
+#                     ui.button("✖", on_click=lambda: self.delete_tab(name)).props(
+#                         "flat dense"
+#                     ).classes("text-red-500")
+#                     # ui.label(name)
 
-      render():
-          Main render method. Loads agent data, renders the grid, and adds a refresh button.
-    """
+#         # Create associated panel and run the temp shell inside the panels container
+#         with self.panels_component:
+#             with ui.tab_panel(tab) as panel:
+#                 # self._temp_shell()
+#                 try:
+#                     shell = Shell(agent_id=agent_id, shell_manager=self)
+#                     await shell.render()
+#                 except Exception as e:
+#                     ui.label(f"Error rendering shell for {agent_id}")
+#                     ui.notify(f"Error rendering shell for {agent_id}")
 
-    def __init__(self, shell_manager):
-        self.agents_data = {}
-        self.aggrid = None
-        self.current_settings = app.storage.user.get("settings", {})
-        self.shell_manager = shell_manager
+#         # add tab to tracking dict of tabs
+#         self.tabs[name] = {"tab": tab, "panel": panel}
 
-    # --------------------
-    # Help Button
-    # --------------------
-    def open_help_dialog(self):
-        """Displays a help dialog for the agents tab."""
-        with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
-            ui.markdown("# Agents Tab:")
-            ui.separator()
-            ui.markdown(
-                "This tab displays all connected agents. Click on an agent's UUID to view details. "
-                "Use the 'Refresh Data' button below to reload the latest data."
-            )
-        dialog.open()
+#         # and open it
+#         self.tabs_component.value = name
+#         self._update_background_visibility()
 
-    def render_help_button(self):
-        """Render a help button in the upper right corner."""
-        help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
-        help_button.style("position: fixed; top: 170px; right: 24px; ")
+#     async def delete_tab(self, name: str):
+#         # Remove the tab and its panel
+#         # if name in self.tabs:
+#         #     self.tabs[name]["tab"].delete()
+#         #     self.tabs[name]["panel"].delete()
+#         #     del self.tabs[name]
+#         ui.notify("DELETING")
+#         if name in self.tabs:
+#             self.tabs[name]["tab"].classes("hidden")
+#             self.tabs[name]["panel"].classes("hidden")
+#         self._update_background_visibility()
 
-    # --------------------
-    # Aggrid editable notes
-    # --------------------
-    def _on_cell_value_changed(self, event):
-        """
-        Handles updates when a cell’s value changes (for example, when editing the 'Notes' field).
-        """
-        event_data = event.args
-        if event_data.get("colId") == "Notes":
-            clicked_agent_id = event_data.get("data").get("Raw Agent ID")
-            note_data = {"notes": event_data.get("newValue")}
-            api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
-            ui.notify(
-                f"Updated notes for {clicked_agent_id} with: {event_data.get('newValue')}",
-                position="top-right",
-            )
+#     async def delete_all_tabs(self):
+#         # Remove the tab and its panel
+#         # if name in self.tabs:
+#         #     self.tabs[name]["tab"].delete()
+#         #     self.tabs[name]["panel"].delete()
+#         #     del self.tabs[name]
+#         ui.notify("DELETING")
 
-    # --------------------
-    # Aggrid
-    # --------------------
-    @func_call_time
-    def render_grid(self):
-        """Renders the AG Grid with agent data."""
-        self.render_help_button()
-        row_data = self.build_row_data()
-        aggrid_theme = (
-            "ag-theme-balham-dark"
-            if self.current_settings.get("Dark Mode", False)
-            else "ag-theme-balham"
-        )
-        with ui.column().classes("w-full h-full overflow-auto"):
-            self.aggrid = ui.aggrid(
-                {
-                    "columnDefs": [
-                        {
-                            "headerName": "",
-                            "checkboxSelection": True,
-                            "headerCheckboxSelection": True,
-                            "width": 50,
-                            "pinned": "left",
-                            "floatingFilter": True,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Link Agent ID",
-                            "field": "Link Agent ID",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 225,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Raw Agent ID",
-                            "field": "Raw Agent ID",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 225,
-                            "hide": True,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Hostname",
-                            "field": "Hostname",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 225,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "OS",
-                            "field": "OS",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 225,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Notes (Editable)",
-                            "field": "Notes",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 150,
-                            "editable": True,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Internal IP",
-                            "field": "Internal IP",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 150,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "External IP",
-                            "field": "External IP",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 150,
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                        {
-                            "headerName": "Last Seen",
-                            "field": "Last Seen",
-                            "filter": "agTextColumnFilter",
-                            "floatingFilter": True,
-                            "width": 225,
-                            "sort": "desc",
-                            "cellClassRules": {"bg-blue-500": "data.New"},
-                        },
-                    ],
-                    "rowSelection": "multiple",
-                    "rowData": row_data,
-                },
-                html_columns=[1],
-            ).classes(f"{aggrid_theme} w-full h-full")
-            self.aggrid.on(
-                "cellClicked",
-                # lambda event: ui.notify(
-                #     f'Cell value: {event.args["value"]}'
-                # ),  # need to pass in class for shell manager, call it to pop open a shell
-                lambda event: self.shell_manager.create_tab(
-                    name=event.args["data"]["Raw Agent ID"],
-                    agent_id=event.args["data"]["Raw Agent ID"],
-                ),
-            )
-            self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+#         for entry in self.tabs:
+#             # if name in self.tabs:
+#             self.tabs[entry]["tab"].classes("hidden")
+#             self.tabs[entry]["panel"].classes("hidden")
+#         self._update_background_visibility()
 
-    def build_row_data(self):
-        """Builds a list of dictionaries for AG Grid from the loaded agent data."""
-        row_data = []
-        for key, agent_info in self.agents_data.items():
-            agent_id = agent_info.get("agent_id", "Unknown")
-            hostname = (
-                agent_info.get("data", {}).get("system", {}).get("hostname", "Unknown")
-            )
-            os = agent_info.get("data", {}).get("system", {}).get("os", "Unknown")
-            notes = agent_info.get("data", {}).get("agent", {}).get("notes", "")
-            internal_ip = (
-                agent_info.get("data", {})
-                .get("network", {})
-                .get("internal_ip", "Unknown")
-            )
-            external_ip = (
-                agent_info.get("data", {})
-                .get("network", {})
-                .get("external_ip", "Unknown")
-            )
-            last_seen = (
-                agent_info.get("data", {}).get("agent", {}).get("last_seen", "Unknown")
-            )
-            new_agent = agent_info.get("data", {}).get("agent", {}).get("new", False)
+#     async def render_background(self):
+#         """
+#         Render background for when all tabs are closed
 
-            row_data.append(
-                {
-                    "Link Agent ID": f"<u><a href='/agent/{agent_id}' target=_blank>{agent_id}</a></u>",
-                    "Raw Agent ID": agent_id,
-                    "Hostname": hostname,
-                    "OS": os,
-                    "Notes": notes,
-                    "Internal IP": internal_ip,
-                    "External IP": external_ip,
-                    "Last Seen": last_seen,
-                    "New": new_agent,
-                }
-            )
-        return row_data
+#         """
+#         ui.label("This is a label with high z-index").style(
+#             "z-index: 999; position: relative;"
+#         )
 
-    # --------------------
-    # Class entrypoint + Important funcs
-    # --------------------
+#     def _update_background_visibility(self):
+#         """Show background label if all tabs are hidden"""
+#         all_hidden = all(
+#             "hidden" in self.tabs[name]["tab"].classes
+#             and "hidden" in self.tabs[name]["panel"].classes
+#             for name in self.tabs
+#         )
+#         if all_hidden or not self.tabs:
+#             self.background_label.classes(remove="hidden")
+#             ui.notify("All Tabs Closed")
+#         else:
+#             self.background_label.classes("hidden")
 
-    def load_data(self):
-        """Load agent data synchronously.
 
-        This way allows for easy data refresh, etc.
-        """
-        try:
-            response = api_call(url="/stats/agents")
-            self.agents_data = response.get("data", {})
-        except Exception as e:
-            ui.notify(f"Error loading agents: {e}", type="negative")
-            self.agents_data = {}
+# class OldReliableAgentsView:
+#     """
+#     Displays a list of agents with refresh and help functionality.
 
-    def refresh_data(self):
-        """Refreshes everything on page"""
+#     This class is responsible for:
+#       - Fetching agent data from the API via a synchronous call.
+#       - Converting the fetched data into a row format suitable for AG Grid.
+#       - Rendering an AG Grid to display agent details such as Agent ID, Hostname, OS, Notes, IP addresses, and last check-in time.
+#       - Handling cell value changes (for example, when editing the "Notes" field) by sending update calls to the API.
+#       - Providing a help dialog and a refresh button to reload and update the displayed data.
 
-        # grab new data
-        self.load_data()
-        if self.aggrid:
-            # toss new data into aggrid
-            self.aggrid.options["rowData"] = self.build_row_data()
-            self.aggrid.update()
-            ui.notify("Data refreshed", type="positive", position="top-right")
+#     Attributes:
+#       agents_data (dict): Dictionary containing agent data fetched from the API.
+#       aggrid (object): The AG Grid component that displays the agents.
+#       current_settings (dict): User settings (such as theme) loaded from session storage.
+#       shell_manager (object): used to manage the shell component in the page, passed in at __init__
 
-    async def render(self):
-        """Main render method: load data, render grid, and add a refresh button."""
 
-        # Load data on render. COULD swithc to async later.
-        self.load_data()
-        self.render_grid()
-        # ui.button("dev - Refresh Data", on_click=self.refresh_data).classes("mt-4")
+#     Methods:
+#       load_data():
+#           Fetches agent data synchronously from the '/stats/agents' endpoint and stores it in the agents_data attribute.
 
-        # ui.timer(5, self.update_aggrid_times)
-        await self.shell_manager.create_tab("1234", "1234")
+#       refresh_data():
+#           Reloads the agent data by calling load_data(), rebuilds the grid row data, updates the AG Grid, and notifies the user.
 
-    async def update_aggrid_times(self):
-        self.aggrid.options["rowData"][0]["Last Seen"] = "HI THERE"
-        self.aggrid.update()
+#       open_help_dialog():
+#           Opens a full-width dialog that displays help text explaining the functionality of the Agents tab.
+
+#       render_help_button():
+#           Renders a help button fixed in the upper-right corner; clicking it opens the help dialog.
+
+#       _on_cell_value_changed(event):
+#           Handles updates when an editable cell (e.g., the "Notes" field) changes.
+#           Extracts the new value and sends a POST request to update the corresponding agent's notes.
+
+#       render_grid():
+#           Renders the AG Grid component using the row data built from agents_data.
+#           Applies theme settings and registers the cell value change event handler.
+
+#       build_row_data():
+#           Processes the raw agents_data and converts it into a list of dictionaries formatted for the AG Grid.
+
+#       render():
+#           Main render method. Loads agent data, renders the grid, and adds a refresh button.
+#     """
+
+#     def __init__(self, shell_manager):
+#         self.agents_data = {}
+#         self.aggrid = None
+#         self.current_settings = app.storage.user.get("settings", {})
+#         self.shell_manager = shell_manager
+
+#     # --------------------
+#     # Help Button
+#     # --------------------
+#     def open_help_dialog(self):
+#         """Displays a help dialog for the agents tab."""
+#         with ui.dialog().classes("w-full").props("full-width") as dialog, ui.card():
+#             ui.markdown("# Agents Tab:")
+#             ui.separator()
+#             ui.markdown(
+#                 "This tab displays all connected agents. Click on an agent's UUID to view details. "
+#                 "Use the 'Refresh Data' button below to reload the latest data."
+#             )
+#         dialog.open()
+
+#     def render_help_button(self):
+#         """Render a help button in the upper right corner."""
+#         help_button = ui.button("Current Page Info", on_click=self.open_help_dialog)
+#         help_button.style("position: fixed; top: 170px; right: 24px; ")
+
+#     # --------------------
+#     # Aggrid editable notes
+#     # --------------------
+#     def _on_cell_value_changed(self, event):
+#         """
+#         Handles updates when a cell’s value changes (for example, when editing the 'Notes' field).
+#         """
+#         event_data = event.args
+#         if event_data.get("colId") == "Notes":
+#             clicked_agent_id = event_data.get("data").get("Raw Agent ID")
+#             note_data = {"notes": event_data.get("newValue")}
+#             api_post_call(f"/agent/{clicked_agent_id}/notes", data=note_data)
+#             ui.notify(
+#                 f"Updated notes for {clicked_agent_id} with: {event_data.get('newValue')}",
+#                 position="top-right",
+#             )
+
+#     # --------------------
+#     # Aggrid
+#     # --------------------
+#     @func_call_time
+#     def render_grid(self):
+#         """Renders the AG Grid with agent data."""
+#         self.render_help_button()
+#         row_data = self.build_row_data()
+#         aggrid_theme = (
+#             "ag-theme-balham-dark"
+#             if self.current_settings.get("Dark Mode", False)
+#             else "ag-theme-balham"
+#         )
+#         with ui.column().classes("w-full h-full overflow-auto"):
+#             self.aggrid = ui.aggrid(
+#                 {
+#                     "columnDefs": [
+#                         {
+#                             "headerName": "",
+#                             "checkboxSelection": True,
+#                             "headerCheckboxSelection": True,
+#                             "width": 50,
+#                             "pinned": "left",
+#                             "floatingFilter": True,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Link Agent ID",
+#                             "field": "Link Agent ID",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 225,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Raw Agent ID",
+#                             "field": "Raw Agent ID",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 225,
+#                             "hide": True,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Hostname",
+#                             "field": "Hostname",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 225,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "OS",
+#                             "field": "OS",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 225,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Notes (Editable)",
+#                             "field": "Notes",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 150,
+#                             "editable": True,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Internal IP",
+#                             "field": "Internal IP",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 150,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "External IP",
+#                             "field": "External IP",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 150,
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                         {
+#                             "headerName": "Last Seen",
+#                             "field": "Last Seen",
+#                             "filter": "agTextColumnFilter",
+#                             "floatingFilter": True,
+#                             "width": 225,
+#                             "sort": "desc",
+#                             "cellClassRules": {"bg-blue-500": "data.New"},
+#                         },
+#                     ],
+#                     "rowSelection": "multiple",
+#                     "rowData": row_data,
+#                 },
+#                 html_columns=[1],
+#             ).classes(f"{aggrid_theme} w-full h-full")
+#             self.aggrid.on(
+#                 "cellClicked",
+#                 # lambda event: ui.notify(
+#                 #     f'Cell value: {event.args["value"]}'
+#                 # ),  # need to pass in class for shell manager, call it to pop open a shell
+#                 lambda event: self.shell_manager.create_tab(
+#                     name=event.args["data"]["Raw Agent ID"],
+#                     agent_id=event.args["data"]["Raw Agent ID"],
+#                 ),
+#             )
+#             self.aggrid.on("cellValueChanged", self._on_cell_value_changed)
+
+#     def build_row_data(self):
+#         """Builds a list of dictionaries for AG Grid from the loaded agent data."""
+#         row_data = []
+#         for key, agent_info in self.agents_data.items():
+#             agent_id = agent_info.get("agent_id", "Unknown")
+#             hostname = (
+#                 agent_info.get("data", {}).get("system", {}).get("hostname", "Unknown")
+#             )
+#             os = agent_info.get("data", {}).get("system", {}).get("os", "Unknown")
+#             notes = agent_info.get("data", {}).get("agent", {}).get("notes", "")
+#             internal_ip = (
+#                 agent_info.get("data", {})
+#                 .get("network", {})
+#                 .get("internal_ip", "Unknown")
+#             )
+#             external_ip = (
+#                 agent_info.get("data", {})
+#                 .get("network", {})
+#                 .get("external_ip", "Unknown")
+#             )
+#             last_seen = (
+#                 agent_info.get("data", {}).get("agent", {}).get("last_seen", "Unknown")
+#             )
+#             new_agent = agent_info.get("data", {}).get("agent", {}).get("new", False)
+
+#             row_data.append(
+#                 {
+#                     "Link Agent ID": f"<u><a href='/agent/{agent_id}' target=_blank>{agent_id}</a></u>",
+#                     "Raw Agent ID": agent_id,
+#                     "Hostname": hostname,
+#                     "OS": os,
+#                     "Notes": notes,
+#                     "Internal IP": internal_ip,
+#                     "External IP": external_ip,
+#                     "Last Seen": last_seen,
+#                     "New": new_agent,
+#                 }
+#             )
+#         return row_data
+
+#     # --------------------
+#     # Class entrypoint + Important funcs
+#     # --------------------
+
+#     def load_data(self):
+#         """Load agent data synchronously.
+
+#         This way allows for easy data refresh, etc.
+#         """
+#         try:
+#             response = api_call(url="/stats/agents")
+#             self.agents_data = response.get("data", {})
+#         except Exception as e:
+#             ui.notify(f"Error loading agents: {e}", type="negative")
+#             self.agents_data = {}
+
+#     def refresh_data(self):
+#         """Refreshes everything on page"""
+
+#         # grab new data
+#         self.load_data()
+#         if self.aggrid:
+#             # toss new data into aggrid
+#             self.aggrid.options["rowData"] = self.build_row_data()
+#             self.aggrid.update()
+#             ui.notify("Data refreshed", type="positive", position="top-right")
+
+#     async def render(self):
+#         """Main render method: load data, render grid, and add a refresh button."""
+
+#         # Load data on render. COULD swithc to async later.
+#         self.load_data()
+#         self.render_grid()
+#         # ui.button("dev - Refresh Data", on_click=self.refresh_data).classes("mt-4")
+
+#         # ui.timer(5, self.update_aggrid_times)
+#         # await self.shell_manager.create_tab("1234", "1234")
+
+#     async def update_aggrid_times(self):
+#         self.aggrid.options["rowData"][0]["Last Seen"] = "HI THERE"
+#         self.aggrid.update()
 
 
 # -----------------------------------------------
