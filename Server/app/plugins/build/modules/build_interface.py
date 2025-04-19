@@ -67,7 +67,7 @@ class HttpBuildInterface:
             self.copy_from_template_files()
             self.pre_compilation_configuration()  # Placeholder for macro replacement
             self.custom_configure_script()
-            self.compile()
+            # self.compile()
             self.copy_to_output_folder()
             logger.info(f"Build {self.build_id} completed successfully.")
         except Exception as e:
@@ -97,29 +97,29 @@ class HttpBuildInterface:
             logger.error(f"Error copying template files: {e}")
             raise
 
-    def compile(self):
-        try:
-            logger.debug("Starting CMake configuration.")
-            subprocess.run(
-                [
-                    "cmake",
-                    "-S",
-                    str(self.base_build_path),
-                    "-B",
-                    str(self.build_subdir),
-                ],
-                check=True,
-            )
+    # def compile(self):
+    #     try:
+    #         logger.debug("Starting CMake configuration.")
+    #         subprocess.run(
+    #             [
+    #                 "cmake",
+    #                 "-S",
+    #                 str(self.base_build_path),
+    #                 "-B",
+    #                 str(self.build_subdir),
+    #             ],
+    #             check=True,
+    #         )
 
-            logger.debug("Building the project with CMake.")
-            subprocess.run(["cmake", "--build", str(self.build_subdir)], check=True)
+    #         logger.debug("Building the project with CMake.")
+    #         subprocess.run(["cmake", "--build", str(self.build_subdir)], check=True)
 
-            logger.info(
-                f"Compilation completed successfully for build {self.build_id}."
-            )
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Compilation failed: {e}")
-            raise
+    #         logger.info(
+    #             f"Compilation completed successfully for build {self.build_id}."
+    #         )
+    #     except subprocess.CalledProcessError as e:
+    #         logger.error(f"Compilation failed: {e}")
+    #         raise
 
     def pre_compilation_configuration(self):
         """
@@ -187,11 +187,20 @@ class HttpBuildInterface:
         # otherwise do dynamic import & call script
         module_path = self.base_build_path / "configure.py"  # path of agent
         mod = load_module_from_path("configure.py", module_path)
+
+        if hasattr(mod, "run"):
+            run_script = getattr(mod, "run")
+            run_script(
+                self.base_build_path, self.binary_name
+            )  # call run function in script, which takes self.base_build_path
+        else:
+            raise AttributeError(f"run not found in module")
+
         # Dynamically retrieve the "build" class
-        ConfigureClass = getattr(mod, "Configure")  # Assuming the class name is "build"
-        # Initialize the class with the required arguments
-        ConfigureClass = ConfigureClass(self.base_build_path)
-        ConfigureClass.configure()
+        # ConfigureClass = getattr(mod, "Configure")  # Assuming the class name is "build"
+        # # Initialize the class with the required arguments
+        # ConfigureClass = ConfigureClass(self.base_build_path)
+        # ConfigureClass.configure()
 
     def cleanup(self):
         try:
