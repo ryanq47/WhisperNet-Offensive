@@ -30,6 +30,7 @@ set(AGENT_SOURCES
     ${CMAKE_SOURCE_DIR}/whisper_credmanager.c
     ${CMAKE_SOURCE_DIR}/whisper_heapconfig.c
     ${CMAKE_SOURCE_DIR}/whisper_toolbox.c
+    ${CMAKE_SOURCE_DIR}/whisper_json.c
 
 )
 

