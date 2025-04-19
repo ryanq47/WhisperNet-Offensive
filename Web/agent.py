@@ -475,9 +475,7 @@ class Shell:
 
     def _render_log(self):
         """Create the log display area."""
-        self.display_log = ui.log(max_lines=100).classes(
-            "w-full h-full monospace-font "
-        )
+        self.display_log = ui.log().classes("w-full h-full monospace-font ")
 
     def _render_command_input(self):
         """Create the input field for the user to type commands."""
