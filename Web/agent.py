@@ -441,31 +441,17 @@ class Shell:
                         # might not be working cuz its not rendered
                         on_click=lambda: self._download_agent_command_history_data(),
                     )
+            # with ui.menu_item("Prebaked Command", auto_close=False):
+            #     with ui.item_section().props("side"):
+            #         ui.icon("keyboard_arrow_right")
+            #     with ui.menu().props('anchor="top end" self="top start" auto-close'):
 
-            with ui.menu_item("Prebaked Command", auto_close=False):
-                with ui.item_section().props("side"):
-                    ui.icon("keyboard_arrow_right")
-                with ui.menu().props('anchor="top end" self="top start" auto-close'):
-                    # # prebaked sub menu
-                    # with ui.menu_item("Add New Prebaked", auto_close=False):
-                    #     with ui.item_section().props("side"):
-                    #         ui.icon("keyboard_arrow_right")
-                    #     with ui.menu().props(
-                    #         'anchor="top end" self="top start" auto-close'
-                    #     ):
-                    #         ui.menu_item("Add New Prebaked")
-                    #         ui.separator()
-                    #         ui.menu_item("SomeCommand1: powershell something...")
-                    #         ui.menu_item("Sub-option 3")
-                    # rest of options
-                    ui.menu_item("Add New Prebaked")
-                    ui.separator()
-                    ui.menu_item("SomeCommand1: powershell something...")
-                    ui.menu_item("Sub-option 3")
+            #         ui.menu_item("Add New Prebaked")
+            #         ui.separator()
+            #         ui.menu_item("SomeCommand1: powershell something...")
+            #         ui.menu_item("Sub-option 3")
 
             ui.separator()
-
-            # If shell tab manager... on click call the close tab
 
     def _include_shell_manager_addons(self):
         """
@@ -478,11 +464,13 @@ class Shell:
             with self.context_menu:
                 ui.menu_item(
                     "Close Current Tab",
-                    on_click=lambda: self.shell_manager.delete_tab(self.agent_id),
+                    on_click=lambda: self.shell_manager.shell_view_delete_tab(
+                        self.agent_id
+                    ),
                 ).classes("text-red-500")
                 ui.menu_item(
                     "Close All Tabs",
-                    on_click=lambda: self.shell_manager.delete_all_tabs(),
+                    on_click=lambda: self.shell_manager.shell_view_delete_all_tabs(),
                 ).classes("text-red-500")
 
     def _render_log(self):
@@ -944,6 +932,55 @@ class OldReliable:
                 with ui.element().classes("w-full h-full"):
                     await self.shell_view_render()
 
+        # maybe consider an update ONLY on new agent connect? and first load?
+        ui.timer(10, self.agents_view_refresh_data)
+
+        # # test for dynamic updates of aggrid
+        # ui.button(  # doesn't work due to row id being something, need to find out what.
+        #     "Update",
+        #     on_click=lambda: self.agents_view_grid.run_row_method(
+        #         "aa27c16d-ee11-4812-b2e6-85aa203aeb8b", "setDataValue", "Last Seen", 99
+        #     ),
+        # )
+
+    # ----------------------
+    # Socket Ops
+    # ----------------------
+    async def register_socket_handlers(self):
+        """
+        Registers websockets to their correct functions
+
+        Future usage:
+
+        on_first_connect: this will be used to trigger event updates for the agents aggrid, rather than a polling method
+        """
+        ...
+        # register socket things for class
+
+        # Config.socketio.on(
+        #     "display_on_terminal", self.socket_local_notif, namespace="/shell"
+        # )
+        # await self._update_log(f"[SYSTEM] display_on_terminal registered successfully")
+
+        # Config.socketio.on(
+        #     "on_agent_connect", self.socket_on_agent_connect, namespace="/shell"
+        # )
+        # await self._update_log(f"[SYSTEM] on_agent_connect registered successfully")
+
+        # Config.socketio.on(
+        #     "on_agent_first_connect",
+        #     self.socket_on_agent_first_connect,
+        #     namespace="/shell",
+        # )
+        # await self._update_log(
+        #     f"[SYSTEM] on_agent_first_connect registered successfully"
+        # )
+
+        # Config.socketio.on(
+        #     "on_agent_data", self.socket_on_agent_data, namespace="/shell"
+        # )
+        # await self._update_log(f"[SYSTEM] on_agent_data registered successfully")
+
     # -----------------------
     # Agents view methods
     # -----------------------
@@ -1078,6 +1115,17 @@ class OldReliable:
     async def agents_view_render(self):
         self.agents_view_load_data()
         self.agents_view_render_grid()
+
+    def agents_view_refresh_data(self):
+        """Refreshes everything on page"""
+
+        # grab new data
+        self.agents_view_load_data()
+        if self.agents_view_grid:
+            # toss new data into aggrid
+            self.agents_view_grid.options["rowData"] = self.agents_view_build_row_data()
+            self.agents_view_grid.update()
+            ui.notify("Data refreshed", type="positive", position="top-right")
 
     # -----------------------
     # Shell view methods
